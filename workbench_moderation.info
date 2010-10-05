@@ -1,0 +1,16 @@
+; $Id$
+project = "workbench_moderation"
+core = 7.x
+name = Workbench Moderation
+description = Provides content moderation services
+package = "Workbench"
+files[] = workbench_moderation.admin.inc
+files[] = workbench_moderation.install
+files[] = workbench_moderation.module
+files[] = workbench_moderation.node.inc
+files[] = workbench_moderation.rules.inc
+files[] = workbench_moderation.trigger.inc
+files[] = workbench_moderation.views.inc
+files[] = workbench_moderation_handler_filter_state.inc
+files[] = workbench_moderation_info_block.tpl.php
+files[] = workbench_moderation_revisions_list.tpl.php

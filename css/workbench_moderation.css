@@ -1,0 +1,12 @@
+@CHARSET "UTF-8";
+
+
+.state_live {
+  color: green;
+  font-weight:bolder;
+}
+
+.revision-live {
+  background-color: #aaFFaa;
+  font-weight:bolder;
+}

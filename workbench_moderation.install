@@ -1,0 +1,98 @@
+<?php
+
+// $Id$
+
+/**
+ * @file
+ * Install file for the content moderation module.
+ *
+ */
+
+/**
+ * Implements hook_install().
+ */
+function workbench_moderation_install() {
+  // Create tables.
+  _workbench_moderation_insert_values();
+  db_query("UPDATE {system} SET weight = 5 WHERE name = 'workbench_moderation'");
+}
+
+/**
+ * Implements hook_schema().
+ */
+function workbench_moderation_schema() {
+  $schema['workbench_moderation_states'] = array(
+    'description' => 'Defines all possible states',
+    'fields'    => array(
+      'name'    => array('type' => 'varchar', 'length' => '255', 'not null' => FALSE),
+      'description'   => array('type' => 'varchar', 'length' => '255', 'not null' => FALSE),
+      'weight'  => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0, 'size' => 'small'),
+    ),
+    'unique keys' => array('name' => array('name'))
+  );
+
+  $schema['workbench_moderation_node_history'] = array(
+    'fields' => array(
+      'hid' => array('type' => 'serial', 'not null' => TRUE),
+      'vid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0, 'disp-width' => '10'),
+      'nid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0, 'disp-width' => '10'),
+      'from_state' => array('type' => 'varchar', 'length' => '255', 'not null' => FALSE),
+      'state'=> array('type' => 'varchar', 'length' => '255', 'not null' => FALSE),
+      'uid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0, 'disp-width' => '10'),
+      'stamp' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0, 'disp-width' => '10'),
+      'published' => array(
+        'description' => 'Is this the live version?',
+        'type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0, 'disp-width' => '10'),
+      'current' => array(
+        'description' => 'Is this the current version?',
+        'type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0, 'disp-width' => '10'),
+    ),
+    'primary key' => array('hid'),
+  );
+
+  $schema['workbench_moderation_transitions'] = array(
+    'description' => 'Defines the valid transitions for states',
+    'fields' => array(
+      'from_name' => array('type' => 'varchar', 'length' => '255', 'not null' => FALSE),
+      'to_name'   => array('type' => 'varchar', 'length' => '255', 'not null' => FALSE),
+      'ntype'     => array('type' => 'varchar', 'length' => '40', 'default' => 'all'),
+    ),
+  );
+
+  return $schema;
+}
+
+
+/**
+ * Adds default data for workflow states
+ */
+function _workbench_moderation_insert_values() {
+  $states[] = array('name' => workbench_moderation_state_none());
+  $states[] = array('name' => 'review');
+  $states[] = array('name' => 'approve');
+  $states[] = array('name' => workbench_moderation_state_published());
+  foreach ($states as $state) {
+    // See http://drupal.org/node/568640 to change this after it's fixed.
+    db_query('INSERT INTO {workbench_moderation_states} (name, description) VALUES(:state, :description)', array(
+      ':state' => $state,
+      ':description' => $state
+    ));
+    //drupal_write_record('workbench_moderation_states', $state);
+  }
+
+  // Transitions.
+  $transitions[] = array(workbench_moderation_state_none(), 'Review');
+  $transitions[] = array('Review', 'Approve');
+  $transitions[] = array('Approve', workbench_moderation_state_published());
+  $transitions[] = array(workbench_moderation_state_published(), 'review');
+  $transitions[] = array('Approve', 'Review');
+  $transitions[] = array('Approve', workbench_moderation_state_none(),);
+  foreach ($transitions as $transition) {
+    // See http://drupal.org/node/568640 to change this after it's fixed.
+    db_query('INSERT INTO {workbench_moderation_transitions} (from_name, to_name) VALUES(:from_name, :to_name)', array(
+      ':from_name' => $transition[0],
+      ':to_name' => $transition[1],
+    ));
+    //drupal_write_record('workbench_moderation_transitions', $transition);
+  }
+}

@@ -1,0 +1,785 @@
+<?php
+
+// $Id: content_moderation.module,v 1.12.2.17 2010/04/18 11:31:29 eugenmayer Exp $
+
+/**
+ *
+ * @file
+ *
+ *
+ * @TODO i18n is a huge consideration which this module currently does not handle-
+ *       this is something to consider for down the road.
+ * @TODO for the most part this module is now assuming a more linear editing
+ *       workflow. This may need to be rethought down the road.
+ *
+ * @TODO support revision deletion
+ *
+ * @TODO on node/11/moderation "view" and node/11/revisions/147/view
+ *       should display moderation information
+ *
+ * @TODO permissions for displaying moderation info on node/X (ie: the live node)
+ *       need to be put into place to show moderators that there are other
+ *       versions of this content
+ *
+ * @TODO change all language around "live" to "published to better match drupal
+ *       conventions
+ *
+ *
+ *
+ */
+
+
+/* **************************************** */
+/* Drupal hooks                             */
+/* **************************************** */
+
+
+/**
+ * Implements hook_menu().
+ */
+function workbench_moderation_menu() {
+  $items = array();
+  // Display a nodes moderation history
+  $items["node/%node/moderation"] = array(
+    'title' => 'Moderation history',
+    'description' => 'Show the content moderation history.',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'workbench_moderation_node_history_view',
+    'page arguments' => array(1),
+    // 'access callback' => '_workbench_moderation_access',
+    //'access arguments' => array('view history', 1),
+    // @TODO fix this!
+    'access callback' => TRUE,
+    'file' => 'workbench_moderation.node.inc'
+  );
+  // Interface for unpublishing a live revision
+  $items["node/%node/moderation/%/unpublish"] = array(
+    'title' => 'Unpublish revision',
+    'description' => 'Unpublish the current live revision.',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('workbench_moderation_node_unpublish_form', 1, 3),
+    //'access callback' => '_workbench_moderation_access',
+    // @TODO fix this!
+    'access callback' => TRUE,
+    //'access arguments' => array('view history', 1),
+    'file' => 'workbench_moderation.node.inc'
+  );
+
+  $items["node/%node/current_revision"] = array(
+    'page callback' => 'workbench_moderation_node_current_view',
+    'page arguments' => array(1),
+    // @TODO fix this!
+    'access callback' => TRUE,
+    'file' => 'workbench_moderation.node.inc'
+    //'access arguments' => array('view revision', 1),
+  );
+
+  // Module settings.
+  $items["admin/config/content/content_moderation"] = array(
+    'title' => 'Content moderation',
+    'description' => 'Configure content moderation.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('workbench_moderation_admin_settings_states'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'workbench_moderation.admin.inc',
+  );
+  $items['admin/config/content/content_moderation/general'] = array(
+    'title' => 'States',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -1,
+  );
+  $items['admin/config/content/content_moderation/transitions'] = array(
+    'title' => 'Transitions',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('workbench_moderation_admin_settings_transitions'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'workbench_moderation.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function workbench_moderation_menu_alter(&$items) {
+  // Hijack the node/X/edit page to ensure that the right revision (most current)
+  // is displayed.
+  $items['node/%node/edit']['page callback'] = 'workbench_moderation_node_edit_page_override';  
+}
+
+
+/**
+ * Implements hook_help().
+ */
+function workbench_moderation_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#workbench_moderation':
+      return '<p>' . t("Enables you to control node display with a moderation
+        workflow. You can have a 'Live version' for all visitors and pending
+        revisions which need to be approved to become the new 'Live Version.'") . '</p>';
+  }
+}
+
+
+/**
+ * Implements hook_node_presave().
+ * @param <type> $node
+ */
+function workbench_moderation_node_presave(&$node) {
+  // Set the published status when a node is set to live
+  // Is this a node that is controlled by content moderation?
+  if (isset($node->workbench_moderation_state_new)) {
+    // Is the new state live?
+    if ($node->workbench_moderation_state_new == workbench_moderation_state_published()) {
+      $node->status = 1;
+    }
+    else {
+      $node->status = 0;
+    }
+  }
+}
+
+
+/**
+ * Handles the submit of the node form moderation information
+ *
+ * @param $form
+ * @param $form_state
+ */
+function workbench_moderation_node_insert(&$node) {
+  workbench_moderation_node_update($node);
+}
+
+
+/**
+ * Implements hook_node_update().
+ */
+function workbench_moderation_node_update($node) {
+  global $user;
+  // Is this content in moderation?
+  if (! isset($node->workbench_moderation_state_current)) {
+    return;
+  }
+
+  // Unset the previous current node
+  db_query('UPDATE {workbench_moderation_node_history} SET current = 0 WHERE nid = :nid',
+    array(':nid' => $node->nid)
+  );
+
+  // Write a history record regardless if there was a moderation state change
+  $node_history = array(
+    'from_state' => $node->workbench_moderation_state_current,
+    'state' => $node->workbench_moderation_state_new,
+    'nid' => $node->nid,
+    'vid' => $node->vid,
+    'uid' => $user->uid,
+    'current' => 1,
+    'stamp' => time()
+  );
+  // Should this revision be set live?
+  if ($node->workbench_moderation_state_new == workbench_moderation_state_published()) {
+    $node_history['live'] = workbench_moderation_state_published();
+  }
+  drupal_write_record('workbench_moderation_node_history', $node_history);
+
+  // If this revision is not the live version and there is a live version, we
+  // need to replace *this* node with the correct revision
+  // We do not need to bother with new nodes
+  if (! $node->is_new) {
+    if ($node->workbench_moderation_state_new != workbench_moderation_state_published() && ! isset($node->content_moderation['creating_new_revision'])) {
+      // Load the live revsion
+      if ($live_revision = workbench_moderation_node_live_load($node)) {
+        if ($live_revision->vid != $node->vid) {
+          // We only need to create a new revision if the current node's VID does
+          // not match the live node's
+          $live_revision->revision = 1;
+          $live_revision->status = 1;
+          $live_revision->log = $node->log . '<br/>' . t('Last live revision was: !revision. This is now the current live revision',
+            array('!revision' => $live_revision->vid)
+          );
+          $live_revision->content_moderation['creating_new_revision'] = TRUE;
+          node_save($live_revision);
+
+          // Now we have to update the revision state to get this new revision
+          drupal_set_message(t('Your content is now waiting for moderation.'));
+        }
+      }
+    }
+  }
+}
+
+
+/**
+ * Implements hook_node_load().
+ *
+ * Load content moderation history and status on a node.
+ */
+function workbench_moderation_node_load($nodes) {
+  foreach ($nodes as $node) {
+    // Add the node history
+    workbench_moderation_node_data($node);
+  }
+}
+
+
+/**
+ * Implements hook_node_view().
+ */
+function workbench_moderation_node_view(&$node, $view_mode = 'full') {
+  // Is this a moderated content type?
+  if (! workbench_moderation_node_type_moderated($node->type)) {
+    return;
+  }
+
+  // Is this the live version of this node?
+  if ($live_node = workbench_moderation_node_live_load($node)) {
+    $node = $live_node;
+    // Alert the user that there are moderated versions
+    // Only show this message on node/x
+    // @TODO permission this
+    if (arg(0) == 'node' && is_numeric(arg(1)) && arg(2) == NULL) {
+      // Only show the message once
+      static $live_control = FALSE;
+      if (! $live_control) {
+        drupal_set_message(t('This is the current live version of this !type. You
+          can view the more recent version in moderation !here.',
+          array(
+            '!type' => $node->type,
+            '!here' => l(t('here'), 'node/' . $node->nid . '/current_revision')
+          )
+        ));
+        $live_control = TRUE;
+      }
+    }
+    return;
+  }
+
+  // This node is in moderation. If the user has permission to see unpublished
+  // nodes, show it and alert the user
+  $node = workbench_moderation_node_current_load($node);
+  if (arg(0) == 'node' && is_numeric(arg(1)) && arg(2) == NULL) {
+    static $revision_control = FALSE;
+    if (! $revision_control) {
+      drupal_set_message(t('The content of this document has not been approved yet. '), 'warning' );    
+      $revision_control = TRUE;
+    }    
+  }
+ 
+
+return;
+
+// THIS IS ALL OLDER CODE
+
+  // If we are showing a revision, show the author informations
+  if (($live != NULL && $node->vid != $live->vid) && user_access('view content moderation message created by')) {
+    // Get username for the revision rather than the original node.
+    $revision_author = user_load_multiple($node->revision_uid);
+    drupal_set_message(
+          t('The revision of this node has been created on @date by !author.',
+            array(
+             '@date' => format_date($node->revision_timestamp, 'short'),
+             '!author' => theme('username', array('account' => $revision_author))
+            )
+          )
+        );
+  }
+  // If we are showing the live revision of the node and there are any pending version. tell the user about that
+  elseif (user_access('view content moderation message pending')) {
+    $pending_revisions = _workbench_moderation_get_latest_revisions($node->nid, 0, NULL);
+    $count = count($pending_revisions);
+
+    if ($count == 1) {
+      drupal_set_message(t('This document has 1 pending revision', array('@count' => $count)));
+    }
+    elseif ($count > 1) {
+      drupal_set_message(t('This document has @count pending revisions', array('@count' => $count)));
+    }
+  }
+}
+
+
+/**
+ * Implements hook_node_delete().
+ */
+function workbench_moderation_node_delete($node) {
+  // Delete node history when it is deleted
+  db_query('DELETE FROM {workbench_moderation_node_history} WHERE nid = :nid', array(':nid' => $node->nid));
+}
+
+
+/**
+ * Implements hook_permission().
+ *
+ * Provides permissions for each state to state change
+ */
+function workbench_moderation_permission() {
+  static $rights = FALSE;
+
+  if (! $rights) {
+    // This user right is later used for granting the user the approval of pending version
+    // making those version "live".
+    $states = workbench_moderation_states_get();
+    $types = workbench_moderation_moderate_node_types();
+    $rights = array();
+    foreach ($types as $type) {
+      foreach ($states as $from_state) {
+        $to_states = _workbench_moderation_next_states($from_state, $type);
+        // values are translated
+        $to_states = array_keys($to_states);
+        foreach ($to_states as $to_state) {
+          $rights["moderate $type state $from_state to $to_state"] = array(
+            'title' => t('Moderate from state !type to !to_state', array('!type' => $from_state, '!to_state' => $to_state)),
+          );
+        }
+      }
+      $rights["view $type moderation history"] = array(
+        'title' => t('View !type moderation history', array('!type' => $type)),
+        'description' => t('See the complete moderation history of !type content type')
+      );
+
+    }
+
+    $rights['view content moderation message'] = array(
+      'title' => t('View the moderation messages on a node')
+    );
+
+    $rights['view content moderation message pending'] = array(
+      'title' => t('View the moderation messages on a node that is pending')
+    );
+
+    $rights['view content moderation message not live yet'] = array(
+      'title' => t('View the moderation messages on a node that is not live yet')
+    );
+
+    $rights['unpublish live version'] = array(
+      'title' => t('Unpublish the current live version')
+    );
+  }
+}
+
+
+
+/**
+ * Implements hook_form_alter().
+ */
+function workbench_moderation_form_node_type_form_alter(&$form, $form_state) {
+  // Add JS which handles hiding and showing of these options.
+  drupal_add_js(drupal_get_path('module', 'workbench_moderation') . '/js/workbench_moderation.js');
+  // What states can this node start out in?
+  $form['workflow']['node_options']['#options']['moderation'] = t('Enable moderation of revisions');
+  $form['workflow']['node_options']['#description'] .= '<p>' . t('Revisions must be enabled for moderation');
+  $form['workflow']['workbench_moderation_default_state'] = array(
+    '#title' => t('Default moderation state'),
+    '#type' => 'select',
+    '#options' => workbench_moderation_states_get(),
+    '#default_value' => variable_get('workbench_moderation_default_state_' . $form['#node_type']->type),
+    '#description' => t('Set the default workflow state for this content.
+      If a user has additional moderation rights they will be able to change it
+      on the node')
+  );
+  $form['#validate'][] = 'workbench_moderation_node_type_form_validate';
+}
+
+
+/**
+ * Validate the content type form
+ */
+function workbench_moderation_node_type_form_validate($from, &$form_state) {
+  // Ensure that revisions are enabled if moderation is.
+  if ($form_state['values']['node_options']['moderation']) {
+    $form_state['values']['node_options']['status'] = 0;
+    $form_state['values']['node_options']['revisions'] = 1;
+  }
+}
+
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Forcing new reversion and publishing.
+ */
+function workbench_moderation_form_alter(&$form, $form_state, $form_id) {
+  global $user;
+
+  // This must be a node form and a type that has moderation enabled
+  if (! (isset($form['#node_edit_form']) && workbench_moderation_node_type_moderated($form['type']['#value']))) {
+    return;
+  }
+
+  // Set a moderation state even if there is not one defined
+  if (isset($form['#node']->content_moderation['current']->state)) {
+    $moderation_state = $form['#node']->content_moderation['current']->state;
+  }
+  else {
+    $moderation_state = variable_get('workbench_moderation_default_state_' . $form['type']['#value']);
+  }
+  // We have a use case where a live node is being edited. This will always
+  // revert back to the original node status
+  if ($moderation_state == workbench_moderation_state_published()) {
+    $moderation_state = workbench_moderation_state_none();
+  }
+  
+  // Get all the states *this* user can access. If states is false, this user
+  // can not change the moderation state
+  if ($states = workbench_moderation_states_next($moderation_state, $user, $form['type']['#value'])) {
+    $current = array($moderation_state => t('Current: !state', array('!state' => $moderation_state)));
+    $states = array_merge($current, $states);
+    $form['options']['workbench_moderation_state_new'] = array(
+      '#title' => t('Moderation state'),
+      '#type' => 'select',
+      '#options' => $states,
+      '#default_value' => $moderation_state,
+      '#description' => t('Set the moderation state for this content.'),
+      '#access' => $states ? TRUE: FALSE,
+    );
+
+    // Store the current moderation state
+    $form['workbench_moderation_state_current'] = array(
+      '#type' => 'value',
+      '#value' => $moderation_state
+    );
+  }
+
+  // Move the Revision log under publishing to make things pretty
+  $form['options']['log'] = $form['revision_information']['log'];
+  $form['options']['log']['#title'] = t('Moderation notes');
+  unset($form['revision_information']['log']);
+
+  // Always create new revisions for nodes that are moderated
+  $form['revision_information']['revision']['#default_value'] = TRUE;
+  // Do not allow users to change the revision status
+  $form['revision_information']['#access'] = FALSE;
+
+  // User has no ability to choose if this content is published or not. If the
+  // moderation status is live, then it will be published, otherwise not.
+  $form['options']['status']['#access'] = FALSE;
+}
+
+
+/* **************************************** */
+/* Contrib hooks                             */
+/* **************************************** */
+
+/**
+ * Needed by the views API
+ */
+function workbench_moderation_views_api() {
+  return array('api' => 2.0);
+}
+
+
+/* **************************************** */
+/* Internal functions                       */
+/* **************************************** */
+
+
+/**
+ * Overrides the node/X/edit page to ensure the proper revision is shown
+ */
+function workbench_moderation_node_edit_page_override($node) {
+ // Check to see if this is an existing node
+  if (isset($node->nid)) {
+    if (workbench_moderation_node_type_moderated($node->type)) {
+      // Load the node moderation data
+      workbench_moderation_node_data($node);
+      // We ONLY edit the current revision
+      $node = workbench_moderation_node_current_load($node);
+      // Is this revision the same as the live revision?
+      if (! isset($node->content_moderation['published']->vid) || $node->vid != $node->content_moderation['published']->vid) {
+        // This revision is not live; alte the user
+        drupal_set_message(t('You are editing the pending revision (@revision)
+          and not the live version of this content. Your changes will be
+          moderated before they are reflected.',
+          array(
+            '@revision' => $node->vid
+            )
+          ), 'warning', FALSE
+        );
+      }
+    }
+  }
+
+  return node_page_edit($node);
+}
+
+
+/**
+ * Returns the key which represents the live version.
+ * Should be later an interface to change the live state
+ */
+function workbench_moderation_state_published() {
+  return t('Published');
+}
+
+/**
+ * Returns the key which represents the neutral non moderated version.
+ * Should be later an interface to change the live state
+ */
+function workbench_moderation_state_none() {
+  return t('None');
+}
+
+
+/**
+ * Determine if this content type is set to be moderated
+ *
+ * @param $type
+ *   String, content type name
+ * @return boolean
+ */
+function workbench_moderation_node_type_moderated($type) {
+  // Is this content even in moderatation?
+  if (in_array('moderation', variable_get("node_options_$type", array()))) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+
+/**
+ * List of content types that are moderated
+ */
+function workbench_moderation_moderate_node_types() {
+  $types = node_type_get_types();
+  $result = array();
+  foreach ($types as $type) {
+    // Is this content even in moderatation?
+    if ( workbench_moderation_node_type_moderated($type->type)) {
+      $result[] = $type->type;
+    }
+  }
+  return $result;
+}
+
+
+/**
+ * Checking, if the user has the proper rights to change the state of a node, so
+ * checking the transition and node type.
+ */
+function workbench_moderation_state_allowed($user, $from_state, $to_state, $node_type) {
+  return user_access("content moderation $node_type state $from_state to $to_state");
+}
+
+/**
+ * Provides a hook where modules can register there access handler.
+ *
+ * Example:
+ *
+ * function mymodul_workbench_moderation_access($op,$node) {
+ *  switch($op) {
+ *    case 'view history':
+ *      return node_acces($op,$node)
+ *    break;
+ *  }
+ * }
+ */
+function _workbench_moderation_access($op, $node) {
+  if (workbench_moderation_node_type_moderated($node->type) === FALSE) {
+    return FALSE;
+  }
+
+  $modules = module_implements('workbench_moderation_access');
+  if (count($modules) > 0) {
+    $grants = module_invoke_all('workbench_moderation_access', $op, $node);
+    $result = TRUE;
+    foreach ($grants as $bool) {
+      $return = $return && $bool;
+    }
+    return $result;
+  }
+
+  //else the default
+  switch ($op) {
+    case 'view history':
+      return workbench_moderation_node_type_moderated($node->type) && user_access("content moderation view {$node->type} moderation history");
+      break;
+    case 'view revision':
+      return node_access('view', $node);
+      break;
+  }
+}
+
+
+/**
+ * Adds current and live revision data to a node
+ *
+ * @param $node
+ *   Object, Drupal node object
+ */
+function workbench_moderation_node_data(&$node) {
+  // Check to make sure that this node type is moderated
+  if (workbench_moderation_node_type_moderated($node->type)&& isset($node->nid)) {
+    $current = db_query('SELECT cmnh.*, nr.title, nr.timestamp FROM {workbench_moderation_node_history} cmnh
+      LEFT JOIN {node_revision} nr ON nr.vid = cmnh.vid
+      WHERE cmnh.nid = :nid
+        AND cmnh.current = 1
+      ORDER BY cmnh.stamp DESC',
+      array(':nid' => $node->nid))
+      ->fetch();
+    $node->content_moderation['current'] = $current;
+    // Is this the live node as well?
+    if ($current->published) {
+      $node->content_moderation['published'] = $current;
+    }
+    else {
+      // If there is a published version, get that with that revisions title
+      $published = db_query('SELECT cmnh.*, nr.title, nr.timestamp FROM {workbench_moderation_node_history} cmnh
+        LEFT JOIN {node_revision} nr ON nr.vid = cmnh.vid
+        WHERE cmnh.nid = :nid
+          AND cmnh.state = :state
+        ORDER BY cmnh.stamp DESC',
+        array(
+          ':nid' => $node->nid,
+          ':state' => workbench_moderation_state_published()))
+        ->fetch();
+      if ($published) {
+        $node->content_moderation['published'] = $published;
+      }
+    }
+  }
+}
+
+
+/* **************************************** */
+/* Utility functions                        */
+/* **************************************** */
+
+/**
+ * Utility function to load the current version of a node.
+ * 
+ * This is used to load the current moderated version of a node not the live version.
+ * This is needed because the live version of a node will have the
+ *  
+ * @param $node
+ *   Object, Drupal node
+ * @return Object, Drupal node of the current revision or
+ */
+function workbench_moderation_node_current_load(&$node) {
+  // Is there a current revision?
+  if (isset($node->content_moderation['current']->vid)) {
+    // Ensure that we will return the current version
+    if ($node->vid != $node->content_moderation['current']->vid) {
+      $node = node_load($node->nid, $node->content_moderation['current']->vid);
+    }
+  }
+  return $node;
+}
+
+
+/**
+ * Utility function to load the live version of a node. 
+ * 
+ * This is encapsulated so that changes to how the moderation data is stored
+ * will not impact the API.
+ *  
+ * @param $node
+ *   Object, Drupal node
+ * @return Object, Drupal node of the current revision or
+ */
+function workbench_moderation_node_live_load($node) {
+  // Is there a live revision of this node?
+  if (isset($node->content_moderation['published']->vid)) {
+    // If the live revision is not this version, we need to load that revision
+    if ($node->vid != $node->content_moderation['published']->vid) {
+      return node_load($node->nid, $node->content_moderation['published']->vid, TRUE);
+    }
+    // This is the live node, return it
+    return $node;
+  }
+}
+
+
+/**
+ * Utility function to determine if this node is in the live state
+ * @param <type> $node
+ */
+function workbench_moderation_node_is_current($node) {
+  if (isset($node->content_moderation['published']->vid)) {
+    if ($node->content_moderation['published']->vid == $node->vid) {
+      return TRUE;
+    }
+  }
+}
+
+/**
+ * Return a list of transitions
+ */
+function workbench_moderation_transitions_get() {
+  static $transitions = FALSE;
+  if (! $transitions) {
+    $results = db_query('SELECT * FROM {workbench_moderation_transitions}');
+    $transitions = array();
+    foreach ($results as $transition) {
+      $transinfo = $transition->from_name . '---' . $transition->to_name;
+      $transitions[$transinfo] = $transition->from_name . ' -> ' . $transition->to_name;
+    }
+  }
+  return $transitions;
+}
+
+
+/**
+ * Return a list of all states in the system
+ */
+function workbench_moderation_states_get() {
+  static $states = FALSE;
+  if (! $states) {
+    $results = db_query('SELECT * FROM {workbench_moderation_states}');
+    $states = array();
+    foreach ($results as $state) {
+      $states[$state->name] = $state->description ? $state->description : $state->name;
+    }
+  }
+  return $states;
+}
+
+/**
+ * Provides a list of possible next states for this node.
+ *
+ * @param $current_state
+ *   String, current state, optional.
+ * @param $account
+ *   Object, Drupal user, optional. If this is omitted, all states are returned
+ * @param $node_type
+ *   String, node type
+ * @return array or FALSE
+ */
+function workbench_moderation_states_next($current_state = FALSE, $account = FALSE, $node_type = FALSE) {
+  // Do we have a current state?
+  if (! $current_state) {
+    $current_state = workbench_moderation_state_none();
+  }
+  $results = db_query("SELECT to_name AS state
+    FROM {workbench_moderation_transitions}
+    WHERE from_name = :from_name
+      AND (
+        ntype = :ntype
+        OR ntype = 'all'
+      )",
+    array(
+      ':from_name' => $current_state,
+      ':ntype' => $node_type
+    )
+  );
+
+  $states = array();
+  foreach ($results as $state) {
+    $states[$state->state] = t($state->state);
+  }
+
+  if ($account && $node_type) {
+    foreach ($states as $state => $value) {
+      if (! workbench_moderation_state_allowed($account, $current_state, $state, $node_type)) {
+        unset($states[$state]);
+      }
+    }
+  }
+
+  if ($states) {
+    return $states;
+  }
+  return FALSE;
+}
