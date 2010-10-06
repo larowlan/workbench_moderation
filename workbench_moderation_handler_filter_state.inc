@@ -4,35 +4,13 @@
 
 /**
  * @file
- */
-
-/**
- * @file
  *   Filter state handlers.
  */
-class workbench_moderation_handler_filter_state extends views_handler_filter {
-  function option_definition() {
-    $options = parent::option_definition();
-    $options['value'] = array('default' => NULL);
-    return $options;
-  }
-
-  function value_form(&$form, &$form_state) {
-    $result = db_query("select name FROM {workbench_moderation_states}");
-    while ($item = db_fetch_array($result)) {
-      $options[$item['name']] = $item['name'];
+class workbench_moderation_handler_filter_state extends views_handler_filter_in_operator {
+  function get_value_options() {
+    if (!isset($this->value_options)) {
+      $this->value_title = t('Moderation Status');
+      $this->value_options = workbench_moderation_states_get();
     }
-    $form['value'] = array(
-      '#type' => 'select',
-      '#options' => $options,
-      '#default_value' => $this->options['state'],
-      '#title' => t('State'),
-      '#description' => t('Select a workflow state (content moderation).'),
-    );
-  }
-
-  function query() {
-    $this->ensure_my_table();
-    $this->query->add_where($this->options['group'], "$this->table_alias.$this->real_field " . $this->operator . " '%s'", $this->value);
   }
 }
