@@ -189,12 +189,9 @@ function workbench_moderation_node_update($node) {
     'vid' => $node->vid,
     'uid' => $user->uid,
     'current' => 1,
-    'stamp' => time()
+    'published' => ($node->workbench_moderation_state_new == workbench_moderation_state_published()),
+    'stamp' => time(),
   );
-  // Should this revision be set live?
-  if ($node->workbench_moderation_state_new == workbench_moderation_state_published()) {
-    $node_history['live'] = workbench_moderation_state_published();
-  }
   drupal_write_record('workbench_moderation_node_history', $node_history);
 
   // If this revision is not the live version and there is a live version, we
