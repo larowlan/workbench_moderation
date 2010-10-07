@@ -821,14 +821,14 @@ function workbench_moderation_moderate($node, $state) {
     drupal_set_message("You can't moderate this revision.");
   }
 
-  $destination = drupal_get_destination();
+  $destination = $_GET['destination'];
   drupal_goto($destination ? $destination : 'node/' . $node->nid . '/moderation');
 }
 
 /**
  * Generate a list of links to available moderation actions.
  */
-function workbench_moderation_get_moderation_links($nid) {
+function workbench_moderation_get_moderation_links($nid, $destination = NULL) {
   global $user;
   $links = array();
 
@@ -840,8 +840,9 @@ function workbench_moderation_get_moderation_links($nid) {
     ", array(':nid' => $nid))
     ->fetchObject();
   $next_states = workbench_moderation_states_next($current->state, $user, $current->node_type);
+  $options = ($destination ? array('query' => array('destination' => $destination)) : array());
   foreach ($next_states as $state => $label) {
-    $links[] = l($label, "node/{$current->nid}/moderation/{$current->vid}/change-state/{$state}");
+    $links[] = l($label, "node/{$current->nid}/moderation/{$current->vid}/change-state/{$state}", $options);
   }
 
   return $links;

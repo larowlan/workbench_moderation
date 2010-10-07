@@ -7,19 +7,6 @@
  */
 
 /**
- * Implementation of hook_views_handlers().
- */
-function workbench_moderation_views_handlers() {
-  return array(
-    'handlers' => array(
-      'workbench_moderation_handler_filter_state' => array(
-        'parent' => 'views_handler_filter_in_operator',
-      ),
-    )
-  );
-}
-
-/**
  * Implementation of hook_views_data().
  */
 function workbench_moderation_views_data() {
@@ -68,6 +55,16 @@ function workbench_moderation_views_data() {
     ),
     'argument' => array(
       'handler' => 'views_handler_argument_string',
+    ),
+  );
+  $data['workbench_moderation_node_history']['moderation_links'] = array(
+    'title' => t('Moderation Links'),
+    'help' => t('Content moderation state of the node revisision.'),
+    'real field' => 'nid',
+    'field' => array(
+      'handler' => 'workbench_moderation_handler_field_links',
+      'click sortable' => FALSE,
+      'additional fields' => array('current'),
     ),
   );
   $data['workbench_moderation_node_history']['uid'] = array(
