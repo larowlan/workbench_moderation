@@ -828,14 +828,20 @@ function workbench_moderation_moderate($node, $state) {
 /**
  * Generate a list of links to available moderation actions.
  */
-function workbench_moderation_get_moderation_links($node) {
+function workbench_moderation_get_moderation_links($nid) {
   global $user;
   $links = array();
 
-  $current = $node->content_moderation['current'];
-  $next_states = workbench_moderation_states_next($current->state, $user, $node->type);
+  $current = db_query("
+    SELECT moderation.*, n.type AS node_type
+    FROM {workbench_moderation_node_history} moderation
+      JOIN {node} n ON moderation.nid = n.nid
+    WHERE moderation.nid = :nid AND moderation.current = 1
+    ", array(':nid' => $nid))
+    ->fetchObject();
+  $next_states = workbench_moderation_states_next($current->state, $user, $current->node_type);
   foreach ($next_states as $state => $label) {
-    $links[] = l($label, 'node/' . $node->nid . '/moderation/' . $node->vid . '/change-state/' . $state);
+    $links[] = l($label, "node/{$current->nid}/moderation/{$current->vid}/change-state/{$state}");
   }
 
   return $links;
