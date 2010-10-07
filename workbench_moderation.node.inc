@@ -155,14 +155,17 @@ function workbench_moderation_node_unpublish_form($form, $form_state, $node, $vi
 function workbench_moderation_node_unpublish_form_submit($form, $form_state) {
   global $user;
   $node = $form_state['values']['node'];
+
+  // Update the moderation history.
   $data = array(
     'hid' => $node->content_moderation['published']->hid,
-    'state' => workbench_moderation_state_none(),
+    'from_state' => workbench_moderation_state_none(),
     'state' => workbench_moderation_state_none(),
     'uid' => $user->uid,
+    'published' => 0,
   );
   drupal_write_record('workbench_moderation_node_history', $data, 'hid');
-  drupal_write_record('workbench_moderation_revision_state', $data, 'hid');
+
   // Now update the node status to unpublished
   $data = array(
     'nid' => $node->nid,
@@ -170,7 +173,10 @@ function workbench_moderation_node_unpublish_form_submit($form, $form_state) {
     'log' => t('Unpublished by moderation'),
   );
   drupal_write_record('node', $data, 'nid');
+
+  // Update the revision log.
   $data['vid'] = $node->vid;
   drupal_write_record('node_revison', $data, 'vid');
+
   drupal_set_message(t('The live revision of this content has been unpublished.'));
 }
