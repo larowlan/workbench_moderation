@@ -825,8 +825,7 @@ function workbench_moderation_moderate($node, $state) {
     drupal_set_message("You can't moderate this revision.");
   }
 
-  $destination = $_GET['destination'];
-  drupal_goto($destination ? $destination : 'node/' . $node->nid . '/moderation');
+  drupal_goto(isset($_GET['destination']) ? $_GET['destination'] : 'node/' . $node->nid . '/moderation');
 }
 
 /**
