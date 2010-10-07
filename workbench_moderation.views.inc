@@ -59,22 +59,12 @@ function workbench_moderation_views_data() {
       'handler' => 'views_handler_argument_string',
     ),
   );
-  $data['workbench_moderation_node_history']['moderation_links'] = array(
-    'title' => t('Moderation Links'),
-    'help' => t('Content moderation state of the node revisision.'),
-    'real field' => 'nid',
-    'field' => array(
-      'handler' => 'workbench_moderation_handler_field_links',
-      'click sortable' => FALSE,
-      'additional fields' => array('current'),
-    ),
-  );
   $data['workbench_moderation_node_history']['uid'] = array(
     'title' => t('User'),
     'help' => t('User who moderated this revision.'),
     'relationship' => array(
       'title' => t('User'),
-      'label' => t('User'),
+      'label' => t('moderator user'),
       'base' => 'users',
       'base field' => 'uid',
     ),
@@ -123,6 +113,22 @@ function workbench_moderation_views_data() {
     ),
     'sort' => array(
       'handler' => 'views_handler_sort',
+    ),
+  );
+  $data['workbench_moderation_node_history']['moderation_actions'] = array(
+    'title' => t('Moderation Actions'),
+    'help' => t('Content moderation state of the node revisision.'),
+    'real field' => 'state',
+    'field' => array(
+      'title' => t('Moderation Links'),
+      'handler' => 'workbench_moderation_handler_field_links',
+      'click sortable' => FALSE,
+      'additional fields' => array('nid', 'current'),
+    ),
+    'filter' => array(
+      'title' => t('User Can Moderate'),
+      'handler' => 'workbench_moderation_handler_filter_user_can_moderate',
+      'label' => t('Can moderate'),
     ),
   );
 
