@@ -12,5 +12,6 @@ files[] = workbench_moderation.rules.inc
 files[] = workbench_moderation.trigger.inc
 files[] = workbench_moderation.views.inc
 files[] = workbench_moderation_handler_filter_state.inc
+files[] = workbench_moderation_handler_field_links.inc
 files[] = workbench_moderation_info_block.tpl.php
 files[] = workbench_moderation_revisions_list.tpl.php
