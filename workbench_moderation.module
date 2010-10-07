@@ -623,7 +623,7 @@ function _workbench_moderation_access($op, $node) {
  */
 function workbench_moderation_node_data(&$node) {
   // Check to make sure that this node type is moderated
-  if (workbench_moderation_node_type_moderated($node->type)&& isset($node->nid)) {
+  if (workbench_moderation_node_type_moderated($node->type) && isset($node->nid)) {
     $current = db_query('SELECT cmnh.*, nr.title, nr.timestamp FROM {workbench_moderation_node_history} cmnh
       LEFT JOIN {node_revision} nr ON nr.vid = cmnh.vid
       WHERE cmnh.nid = :nid
@@ -633,7 +633,7 @@ function workbench_moderation_node_data(&$node) {
       ->fetch();
     $node->content_moderation['current'] = $current;
     // Is this the live node as well?
-    if ($current->published) {
+    if (!empty($current->published)) {
       $node->content_moderation['published'] = $current;
     }
     else {
