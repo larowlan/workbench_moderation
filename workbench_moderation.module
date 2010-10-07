@@ -328,9 +328,9 @@ function workbench_moderation_node_delete($node) {
  * Provides permissions for each state to state change
  */
 function workbench_moderation_permission() {
-  static $rights = FALSE;
+  $rights = &drupal_static(__FUNCTION__);
 
-  if (! $rights) {
+  if (!isset($rights)) {
     // This user right is later used for granting the user the approval of pending version
     // making those version "live".
     $states = workbench_moderation_states_get();
@@ -338,7 +338,7 @@ function workbench_moderation_permission() {
     $rights = array();
     foreach ($types as $type) {
       foreach ($states as $from_state) {
-        $to_states = _workbench_moderation_next_states($from_state, $type);
+        $to_states = workbench_moderation_states_next($from_state, NULL, $type);
         // values are translated
         $to_states = array_keys($to_states);
         foreach ($to_states as $to_state) {
@@ -370,6 +370,8 @@ function workbench_moderation_permission() {
       'title' => t('Unpublish the current live version')
     );
   }
+
+  return $rights;
 }
 
 
