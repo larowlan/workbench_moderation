@@ -16,8 +16,8 @@ function workbench_moderation_views_data() {
   $data['workbench_moderation_node_history']['table']['join'] = array(
     'node' => array(
       'left_table' => 'node_revision',
-      'left_field' => 'nid',
-      'field' => 'nid',
+      'left_field' => 'vid',
+      'field' => 'vid',
     ),
     'node_revision' => array(
       'left_field' => 'vid',
@@ -33,6 +33,7 @@ function workbench_moderation_views_data() {
     ),
     'field' => array(
       'handler' => 'views_handler_field',
+      'click sortable' => TRUE,
     ),
     'sort' => array(
       'handler' => 'views_handler_sort',
@@ -49,6 +50,7 @@ function workbench_moderation_views_data() {
     ),
     'field' => array(
       'handler' => 'views_handler_field',
+      'click sortable' => TRUE,
     ),
     'sort' => array(
       'handler' => 'views_handler_sort',
