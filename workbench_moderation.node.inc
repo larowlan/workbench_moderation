@@ -77,8 +77,14 @@ function workbench_moderation_node_history_view($node) {
 
       // Is this the live node?
       if (isset($node->content_moderation['published']->vid) && $vid == $node->content_moderation['published']->vid) {
-        $text =  t('Live revision') . ' | ' . l(t('Unpublish'), "node/$nid/moderation/$vid/unpublish");
-        $class = 'revision-live';
+        if ($node->status) {
+          $text =  t('Live revision') . ' | ' . l(t('Unpublish'), "node/$nid/moderation/$vid/unpublish");
+          $class = 'revision-live';
+        }
+        else {
+          $text =  t('Live revision') . ' | ' . l(t('Publish'), "node/$nid/moderation/$vid/publish");
+          $class = 'revision-unpublished';
+        }
         $revision_id = t('Original revision: !old_vid <br />Live revision: !vid', array('!old_vid' => $vid, '!vid' =>$node->vid));
       }
       // Is this the current revision?
@@ -104,9 +110,8 @@ function workbench_moderation_node_history_view($node) {
     return theme('table', array('header' => $header, 'rows' => $rows));
   }
   // TODO: Return something useful or hide the tab.
-  return 'this';
+  return t('There are no revisions to review.');
 }
-
 
 /**
  * Unpublish the live revision
@@ -114,7 +119,7 @@ function workbench_moderation_node_history_view($node) {
  * @param $node
  * @param $vid
  */
-function workbench_moderation_node_unpublish_form($form, $form_state, $node, $vid) {
+function workbench_moderation_node_status_form($form, $form_state, $node, $vid) {
   // Ensure that this is the live revision
   if ($node->vid != $node->content_moderation['published']->vid) {
     drupal_set_message(t('This is not the live revision of this node.'), 'error');
@@ -128,21 +133,30 @@ function workbench_moderation_node_unpublish_form($form, $form_state, $node, $vi
   menu_set_active_item("node/{$node->nid}/moderation");
   $form = array();
 
-  $form['moderate'] = array(
+  // Make a new revision of the node.
+  $node->revision = TRUE;
+
+/*  $form['moderate'] = array(
     '#title' => t('Change modertation state'),
     '#type' => 'fieldset',
   );
-
+*/
+  $status = ($node->status) ? t('unpublish') : t('publish');
+  $state = ($node->status) ? workbench_moderation_state_none() : workbench_moderation_state_published();
+  $form['message'] = array(
+    '#markup' =>  '<p>'. t('Are you sure that you want to %status this revision? The live version of this content
+      will be set to moderation state: %state.', array('%status' => $status, '%state' => $state)) . '</p>',
+  );
   $form['node'] = array(
     '#value' => $node,
     '#type' => 'value'
   );
-
-  return confirm_form($form,
-    t('Are you sure that you want to unpublish the live
-      revision of this content? When you unpublish this revision, this revision
-      will be set to moderation state: !state. The current revision of this
-      content will remain the current one.', array('!state' => workbench_moderation_state_none())),
+  $form['status'] = array(
+    '#type' => 'value',
+    '#value' => !$node->status,
+  );
+  return confirm_form($form, 
+    t('!status "!title"?', array('!status' => ucwords($status), '!title' => $node->title)),
     "node/{$node->nid}/moderation"
   );
 }
@@ -153,31 +167,30 @@ function workbench_moderation_node_unpublish_form($form, $form_state, $node, $vi
  * @param $form
  * @param $form_state
  */
-function workbench_moderation_node_unpublish_form_submit($form, $form_state) {
+function workbench_moderation_node_status_form_submit($form, $form_state) {
   global $user;
   $node = $form_state['values']['node'];
-
+  $node->status = (int) $form_state['values']['status'];
+  $message = ($node->status) ? t('published') : t('unpublished');
+  $node->log = t('!message by @user', array('!message' => ucwords($message), '@user' => $user->name));
+  node_save($node);
   // Update the moderation history.
-  $data = array(
-    'hid' => $node->content_moderation['published']->hid,
-    'from_state' => workbench_moderation_state_none(),
-    'state' => workbench_moderation_state_none(),
-    'uid' => $user->uid,
-    'published' => 0,
-  );
-  drupal_write_record('workbench_moderation_node_history', $data, 'hid');
-
-  // Now update the node status to unpublished
+  // Set all versions to historic.
+  db_update('workbench_moderation_node_history')
+    ->fields(array('current' => 0, 'published' => 0))
+    ->condition('nid', $node->nid)
+    ->execute();
+  // Set new version to current.
   $data = array(
     'nid' => $node->nid,
-    'status' => 0,
-    'log' => t('Unpublished by moderation'),
+    'vid' => $node->vid,
+    'from_state' => $node->content_moderation['current']->state,
+    'state' => ($node->status) ? workbench_moderation_state_published() : workbench_moderation_state_none(),
+    'uid' => $user->uid,
+    'stamp' => $node->changed,
+    'published' => 1,
+    'current' => 1,
   );
-  drupal_write_record('node', $data, 'nid');
-
-  // Update the revision log.
-  $data['vid'] = $node->vid;
-  drupal_write_record('node_revison', $data, 'vid');
-
-  drupal_set_message(t('The live revision of this content has been unpublished.'));
+  drupal_write_record('workbench_moderation_node_history', $data);
+  drupal_set_message(t('The live revision of this content has been %message.', array('%message' => $message)));
 }
