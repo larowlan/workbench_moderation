@@ -172,7 +172,7 @@ function workbench_moderation_node_status_form_submit($form, $form_state) {
   $node = $form_state['values']['node'];
   $node->status = (int) $form_state['values']['status'];
   $message = ($node->status) ? t('published') : t('unpublished');
-  $node->log = t('!message by @user', array('!message' => ucwords($message), '@user' => $user->name));
+  $node->log = t('!message by @user.', array('!message' => ucwords($message), '@user' => $user->name));
   node_save($node);
   // Update the moderation history.
   // Set all versions to historic.

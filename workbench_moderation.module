@@ -209,6 +209,7 @@ function workbench_moderation_help($path, $arg) {
  * @param <type> $node
  */
 function workbench_moderation_node_presave(&$node) {
+  global $user;
   // Set the published status when a node is set to live
   // Is this a node that is controlled by content moderation?
   if (isset($node->workbench_moderation_state_new)) {
@@ -219,6 +220,9 @@ function workbench_moderation_node_presave(&$node) {
     else {
       $node->status = 0;
     }
+  }
+  if (workbench_moderation_node_type_moderated($node->type) && empty($node->log)) {
+    $node->log = t('Edited by @user.', array('@user' => $user->name));
   }
 }
 
