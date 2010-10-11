@@ -47,10 +47,10 @@ function workbench_moderation_menu() {
     'page callback' => 'workbench_moderation_node_history_view',
     'page arguments' => array(1),
     'theme callback' => '_node_custom_theme',
-    // 'access callback' => '_workbench_moderation_access',
-    //'access arguments' => array('view history', 1),
-    // @TODO fix this!
-    'access callback' => TRUE,
+    //'access callback' => 'node_access',
+    //'access arguments' => array('update', 1),
+    'access callback' => '_workbench_moderation_access',
+    'access arguments' => array('view history', 1),
     'file' => 'workbench_moderation.node.inc'
   );
   // Interface for unpublishing a live revision
@@ -61,20 +61,17 @@ function workbench_moderation_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('workbench_moderation_node_unpublish_form', 1, 3),
     'theme callback' => '_node_custom_theme',
-    //'access callback' => '_workbench_moderation_access',
-    // @TODO fix this!
-    'access callback' => TRUE,
-    //'access arguments' => array('view history', 1),
+    'access callback' => 'node_access',
+    'access arguments' => array('update', 1),
     'file' => 'workbench_moderation.node.inc'
   );
 
   $items["node/%node/current_revision"] = array(
     'page callback' => 'workbench_moderation_node_current_view',
     'page arguments' => array(1),
-    // @TODO fix this!
-    'access callback' => TRUE,
+    'access callback' => 'node_access',
+    'access arguments' => array('update', 1),
     'file' => 'workbench_moderation.node.inc'
-    //'access arguments' => array('view revision', 1),
   );
 
   $items["node/%node/moderation/%/change-state/%"] = array(
@@ -94,7 +91,7 @@ function workbench_moderation_menu() {
     'description' => 'Configure content moderation.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('workbench_moderation_admin_settings_states'),
-    'access arguments' => array('administer site configuration'),
+    'access arguments' => array('administer workbench moderation'),
     'file' => 'workbench_moderation.admin.inc',
   );
   $items['admin/config/content/content_moderation/general'] = array(
@@ -107,7 +104,7 @@ function workbench_moderation_menu() {
     'type' => MENU_LOCAL_TASK,
     'page callback' => 'drupal_get_form',
     'page arguments' => array('workbench_moderation_admin_settings_transitions'),
-    'access arguments' => array('administer site configuration'),
+    'access arguments' => array('administer workbench moderation'),
     'file' => 'workbench_moderation.admin.inc',
   );
 
@@ -120,9 +117,68 @@ function workbench_moderation_menu() {
 function workbench_moderation_menu_alter(&$items) {
   // Hijack the node/X/edit page to ensure that the right revision (most current)
   // is displayed.
-  $items['node/%node/edit']['page callback'] = 'workbench_moderation_node_edit_page_override';  
+  $items['node/%node/edit']['page callback'] = 'workbench_moderation_node_edit_page_override';
+  $items['node/%node/revisions']['access callback'] = 'workbench_moderation_revision_access';
 }
 
+/**
+ * Deny access for items we override.
+ */
+function workbench_moderation_deny_access($node, $op = 'view') {
+  if (workbench_moderation_node_type_moderated($node->type) === FALSE) {
+    return _node_revision_access($node, $op);
+  }
+  return FALSE;
+}
+
+/**
+ * Implements hook_node_access().
+ *
+ * Enforces our access rules when users try to edit/delete a node.
+ *
+ * @TODO: what about unpublished nodes?
+ */
+function workbench_moderation_node_access($node, $op, $account) {
+  #dsm($node);
+  if ($op != 'update') {
+    return NODE_ACCESS_IGNORE;
+  }
+}
+
+/**
+ * Provides a hook where modules can register there access handler.
+ * DEPRECATED FOR workbench_access().
+ * Example:
+ *
+ * function mymodul_workbench_moderation_access($op,$node) {
+ *  switch($op) {
+ *    case 'view history':
+ *      return node_acces($op,$node)
+ *    break;
+ *  }
+ * }
+ */
+function _workbench_moderation_access($op, $node) {
+dsm($node->type);
+  if (workbench_moderation_node_type_moderated($node->type) === FALSE) {
+    return FALSE;
+  }
+dsm($node);
+  if ($op == 'view history') {
+    if (empty($node->content_moderation['current'])) {
+      $access = FALSE;
+    }
+    else {
+      $access = workbench_moderation_node_type_moderated($node->type) && user_access("view $node->type moderation history");
+    }
+  }
+  if ($op == 'view revision') {
+    $access = node_access('view', $node);
+  }
+  drupal_alter('workbench_moderation_access', $access, $op, $node);
+
+  return $access;
+}
 
 /**
  * Implements hook_help().
@@ -325,50 +381,53 @@ function workbench_moderation_node_delete($node) {
  * Provides permissions for each state to state change
  */
 function workbench_moderation_permission() {
-  $rights = &drupal_static(__FUNCTION__);
+  // TODO: remove this.
+  $permissions = &drupal_static(__FUNCTION__);
 
-  if (!isset($rights)) {
+  if (!isset($permissions)) {
     // This user right is later used for granting the user the approval of pending version
     // making those version "live".
     $states = workbench_moderation_states_get();
     $types = workbench_moderation_moderate_node_types();
-    $rights = array();
+    $permissions = array();
     foreach ($types as $type) {
       foreach ($states as $from_state) {
         $to_states = workbench_moderation_states_next($from_state, NULL, $type);
         // values are translated
         $to_states = array_keys($to_states);
         foreach ($to_states as $to_state) {
-          $rights["moderate $type state $from_state to $to_state"] = array(
+          $permissions["moderate $type state $from_state to $to_state"] = array(
             'title' => t('Moderate from state !type to !to_state', array('!type' => $from_state, '!to_state' => $to_state)),
           );
         }
       }
-      $rights["view $type moderation history"] = array(
+      $permissions["view $type moderation history"] = array(
         'title' => t('View !type moderation history', array('!type' => $type)),
-        'description' => t('See the complete moderation history of !type content type')
+        'description' => t('See the complete moderation history of !type content type', array('@type' => $type))
       );
 
     }
 
-    $rights['view content moderation message'] = array(
+    $permissions['view content moderation message'] = array(
       'title' => t('View the moderation messages on a node')
     );
 
-    $rights['view content moderation message pending'] = array(
+    $permissions['view content moderation message pending'] = array(
       'title' => t('View the moderation messages on a node that is pending')
     );
 
-    $rights['view content moderation message not live yet'] = array(
+    $permissions['view content moderation message not live yet'] = array(
       'title' => t('View the moderation messages on a node that is not live yet')
     );
 
-    $rights['unpublish live version'] = array(
+    $permissions['unpublish live version'] = array(
       'title' => t('Unpublish the current live version')
     );
+    $permissions['administer workbench moderation'] = array(
+      'title' => t('Administer Workbench Moderation'),
+    );
   }
-
-  return $rights;
+  return $permissions;
 }
 
 
@@ -573,46 +632,6 @@ function workbench_moderation_moderate_node_types() {
 function workbench_moderation_state_allowed($user, $from_state, $to_state, $node_type) {
   return user_access("content moderation $node_type state $from_state to $to_state");
 }
-
-/**
- * Provides a hook where modules can register there access handler.
- *
- * Example:
- *
- * function mymodul_workbench_moderation_access($op,$node) {
- *  switch($op) {
- *    case 'view history':
- *      return node_acces($op,$node)
- *    break;
- *  }
- * }
- */
-function _workbench_moderation_access($op, $node) {
-  if (workbench_moderation_node_type_moderated($node->type) === FALSE) {
-    return FALSE;
-  }
-
-  $modules = module_implements('workbench_moderation_access');
-  if (count($modules) > 0) {
-    $grants = module_invoke_all('workbench_moderation_access', $op, $node);
-    $result = TRUE;
-    foreach ($grants as $bool) {
-      $return = $return && $bool;
-    }
-    return $result;
-  }
-
-  //else the default
-  switch ($op) {
-    case 'view history':
-      return workbench_moderation_node_type_moderated($node->type) && user_access("content moderation view {$node->type} moderation history");
-      break;
-    case 'view revision':
-      return node_access('view', $node);
-      break;
-  }
-}
-
 
 /**
  * Adds current and live revision data to a node

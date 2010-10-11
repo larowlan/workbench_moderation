@@ -42,9 +42,8 @@ function workbench_moderation_node_current_view($node) {
 function workbench_moderation_node_history_view($node) {
   drupal_add_css(drupal_get_path('module', 'workbench_moderation') . '/css/workbench_moderation.css');
   drupal_set_title(t('!title History', array('!title' => $node->title)));
-
   // Alert if there is no live node
-  if (! isset($node->content_moderation['published'])) {
+  if (!isset($node->content_moderation['published'])) {
     drupal_set_message(t('Currently there is no live (published) version of this node.'));
   }
 
@@ -104,6 +103,8 @@ function workbench_moderation_node_history_view($node) {
     $header = array(t('State change'), t('Date'), t('By'), t('Log'), t('Revision'), t('Status'));
     return theme('table', array('header' => $header, 'rows' => $rows));
   }
+  // TODO: Return something useful or hide the tab.
+  return 'this';
 }
 
 
