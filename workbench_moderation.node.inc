@@ -68,33 +68,39 @@ function workbench_moderation_node_history_view($node) {
       $operations = array();
       extract((array) $revision);
 
-      $text = l(t('view'),"node/$nid/revisions/$vid/view") . ' | ' .
-        // @TODO this should likely be permissioned
-        l(t('revert'), "node/$nid/revisions/$vid/revert");
-
+      foreach (array('view', 'revert', 'delete') as $perm) {
+        if (user_access("$perm revisions")) {
+          $operations[] =  l(t('!perm', array('!perm' => $perm)),"node/$nid/revisions/$vid/$perm");
+        }
+      }
+      $text = implode(' | ', $operations);
       $class = 'revision';
       $revision_id = $vid;
 
       // Is this the live node?
       if (isset($node->content_moderation['published']->vid) && $vid == $node->content_moderation['published']->vid) {
+        $text =  user_access('view revisions') ? l(t('Live revision'), "node/$nid/revisions/$vid/view") : t('Live revision');
         if ($node->status) {
-          $text =  t('Live revision') . ' | ' . l(t('Unpublish'), "node/$nid/moderation/$vid/unpublish");
+          $text .= user_access('unpublish live version') ? ' | ' . l(t('Unpublish'), "node/$nid/moderation/$vid/unpublish") : '';
           $class = 'revision-live';
         }
         else {
-          $text =  t('Live revision') . ' | ' . l(t('Publish'), "node/$nid/moderation/$vid/publish");
+          $text .= user_access('publish pending version') ? ' | ' . l(t('Publish'), "node/$nid/moderation/$vid/publish") : '';
           $class = 'revision-unpublished';
         }
-        $revision_id = t('Original revision: !old_vid <br />Live revision: !vid', array('!old_vid' => $vid, '!vid' =>$node->vid));
+        $revision_id = t('Original revision: @old_vid <br />Live revision: @vid', array('@old_vid' => $vid, '@vid' =>$node->vid));
       }
       // Is this the current revision?
       elseif ($vid == $node->content_moderation['current']->vid) {
         $text = t('Revision in moderation') . ' ' . $text . ' | ' . l(t('edit'), "node/{$node->nid}/edit");
         $class = 'revision-current';
       }
-   
-      $state_change = t('From !state --> !to_state', array('!state' => $from_state, '!to_state' => $state));
-
+      if ($from_state != $state) {
+        $state_change = t('From @state --> @to_state', array('@state' => $from_state, '@to_state' => $state));
+      }
+      else {
+        $state_change = t('@state state edited', array('@state' => $state));
+      }
       $row = array('data' => array(
         array('data' => $state_change, 'class' => $class),
         array('data' => l(format_date($timestamp, 'short'), "node/$node->nid/revisions/$vid/view"), 'class' => $class),

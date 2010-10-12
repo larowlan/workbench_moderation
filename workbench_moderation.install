@@ -68,8 +68,7 @@ function workbench_moderation_schema() {
  */
 function _workbench_moderation_insert_values() {
   $states[] = array('name' => workbench_moderation_state_none());
-  $states[] = array('name' => 'review');
-  $states[] = array('name' => 'approve');
+  $states[] = array('name' => 'Review');
   $states[] = array('name' => workbench_moderation_state_published());
   foreach ($states as $state) {
     // See http://drupal.org/node/568640 to change this after it's fixed.
@@ -77,22 +76,17 @@ function _workbench_moderation_insert_values() {
       ':state' => $state,
       ':description' => $state
     ));
-    //drupal_write_record('workbench_moderation_states', $state);
   }
 
   // Transitions.
   $transitions[] = array(workbench_moderation_state_none(), 'Review');
-  $transitions[] = array('Review', 'Approve');
-  $transitions[] = array('Approve', workbench_moderation_state_published());
-  $transitions[] = array(workbench_moderation_state_published(), 'review');
-  $transitions[] = array('Approve', 'Review');
-  $transitions[] = array('Approve', workbench_moderation_state_none(),);
+  $transitions[] = array('Review', workbench_moderation_state_published());
+  $transitions[] = array(workbench_moderation_state_published(), 'Review');
   foreach ($transitions as $transition) {
     // See http://drupal.org/node/568640 to change this after it's fixed.
     db_query('INSERT INTO {workbench_moderation_transitions} (from_name, to_name) VALUES(:from_name, :to_name)', array(
       ':from_name' => $transition[0],
       ':to_name' => $transition[1],
     ));
-    //drupal_write_record('workbench_moderation_transitions', $transition);
   }
 }
