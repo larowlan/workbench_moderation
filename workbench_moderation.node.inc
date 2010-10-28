@@ -61,7 +61,9 @@ function workbench_moderation_node_history_view($node) {
   foreach ($result as $revision) {
     $revisions[$revision->vid] = $revision;
   }
-
+  if (empty($revisions)) {
+    $revisions = array($node->vid => $node->content_moderation['current']);
+  }
   if ($revisions) {
     foreach ($revisions as $revision) {
       $row = array();
