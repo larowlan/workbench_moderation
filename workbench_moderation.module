@@ -235,6 +235,9 @@ function _workbench_moderation_access($op, $node) {
   if (workbench_moderation_node_type_moderated($node->type) === FALSE) {
     return FALSE;
   }
+  if (!node_access('update', $node)) {
+    return FALSE;
+  }
   if ($op == 'view history') {
     if (empty($node->content_moderation['current'])) {
       $access = FALSE;
