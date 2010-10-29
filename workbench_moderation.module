@@ -324,7 +324,7 @@ function workbench_moderation_node_update($node) {
           node_save($live_revision);
 
           // Now we have to update the revision state to get this new revision
-          drupal_set_message(t('Your content is now waiting for moderation.'));
+          drupal_set_message(t('Your content is now awaiting moderation.'), 'status', FALSE);
         }
       }
     }
@@ -356,21 +356,24 @@ function workbench_moderation_node_view(&$node, $view_mode = 'full') {
 
   // Is this the live version of this node?
   if ($live_node = workbench_moderation_node_live_load($node)) {
+    $has_revision = FALSE;
+    $status = 'status';
+    if ($live_node->vid != $node->vid) {
+      $has_revision = TRUE;
+      $status = 'warning';
+    }
     $node = $live_node;
     // Alert the user that there are moderated versions
-    // Only show this message on node/x
-    // @TODO permission this
+    // Only show this message on node/x   
     if (arg(0) == 'node' && is_numeric(arg(1)) && arg(2) == NULL) {
       // Only show the message once
       static $live_control = FALSE;
       if (!$live_control && user_access('view content moderation message')) {
-        drupal_set_message(t('This is the current live version of this !type. You
-          can view the more recent version in moderation !here.',
-          array(
-            '!type' => $node->type,
-            '!here' => l(t('here'), 'node/' . $node->nid . '/current_revision')
-          )
-        ));
+        $message = t('This is the live version of this !type.', array('!type' => $node->type));
+        if ($has_revision) {
+          $message .= ' ' . t('View the most recent version in moderation !here.', array('!here' => l(t('here'), 'node/' . $node->nid . '/current_revision')));
+        }
+        drupal_set_message($message, $status, FALSE);
         $live_control = TRUE;
       }
     }
@@ -383,7 +386,7 @@ function workbench_moderation_node_view(&$node, $view_mode = 'full') {
   if (arg(0) == 'node' && is_numeric(arg(1)) && arg(2) == NULL) {
     static $revision_control = FALSE;
     if (! $revision_control) {
-      drupal_set_message(t('The content of this document has not been approved yet. '), 'warning' );    
+      drupal_set_message(t('The content of this document has not been approved yet.'), 'warning', FALSE);
       $revision_control = TRUE;
     }    
   }
@@ -397,14 +400,7 @@ return;
   if (($live != NULL && $node->vid != $live->vid) && user_access('view content moderation message')) {
     // Get username for the revision rather than the original node.
     $revision_author = user_load_multiple($node->revision_uid);
-    drupal_set_message(
-          t('The revision of this node has been created on @date by !author.',
-            array(
-             '@date' => format_date($node->revision_timestamp, 'short'),
-             '!author' => theme('username', array('account' => $revision_author))
-            )
-          )
-        );
+    drupal_set_message(t('The revision of this node has been created on @date by !author.', array('@date' => format_date($node->revision_timestamp, 'short'), '!author' => theme('username', array('account' => $revision_author)))), 'status', FALSE);
   }
   // If we are showing the live revision of the node and there are any pending version. tell the user about that
   elseif (user_access('view content moderation message')) {
@@ -412,10 +408,10 @@ return;
     $count = count($pending_revisions);
 
     if ($count == 1) {
-      drupal_set_message(t('This document has 1 pending revision', array('@count' => $count)));
+      drupal_set_message(t('This document has 1 pending revision', array('@count' => $count)), 'status', FALSE);
     }
     elseif ($count > 1) {
-      drupal_set_message(t('This document has @count pending revisions', array('@count' => $count)));
+      drupal_set_message(t('This document has @count pending revisions', array('@count' => $count)), 'status', FALSE);
     }
   }
 }
@@ -492,7 +488,7 @@ function workbench_moderation_form_alter(&$form, $form_state, $form_id) {
   // revert back to the original node status.
   if ($moderation_state == workbench_moderation_state_published()) {
     $moderation_state = workbench_moderation_state_none();
-    drupal_set_message(t('%title is currently published to the site. If you edit this page, the new revision must undergo moderation before your changes go live.', array('%title' => $form['#node']->title)));
+    drupal_set_message(t('%title is currently published to the site. If you edit this page, the new revision must undergo moderation before your changes go live.', array('%title' => $form['#node']->title)), 'warning', FALSE);
   }
   // Get all the states *this* user can access. If states is false, this user
   // can not change the moderation state
@@ -564,7 +560,7 @@ function workbench_moderation_node_edit_page_override($node) {
       // Is this revision the same as the live revision?
       if (!isset($node->content_moderation['published']->vid) || $node->vid != $node->content_moderation['published']->vid) {
         // This revision is not live; alert the user
-        if (!user_access('bypass workbench moderation') && empty($_POST)) {
+        if (!user_access('bypass workbench moderation')) {
           drupal_set_message(t('You are editing the pending revision (@revision)
             and not the live version of this content. Your changes will be
             moderated before they are reflected.',
@@ -859,11 +855,11 @@ function workbench_moderation_moderate($node, $state) {
       node_save($node);
     }
     else {
-      drupal_set_message("You don't have permission to make this moderation transition.");
+      drupal_set_message("You don't have permission to make this moderation transition.", 'error', FALSE);
     }
   }
   else {
-    drupal_set_message("You can't moderate this revision.");
+    drupal_set_message("You can't moderate this revision.", 'error', FALSE);
   }
 
   drupal_goto(isset($_GET['destination']) ? $_GET['destination'] : 'node/' . $node->nid . '/moderation');
