@@ -871,7 +871,8 @@ function workbench_moderation_moderate($node, $state) {
 function workbench_moderation_get_moderation_links($nid, $destination = NULL) {
   global $user;
   $links = array();
-
+  // THIS MENU ITEM IS NOT CURRENTLY SUPPORTED.
+  return $links;
   $current = db_query("
     SELECT moderation.*, n.type AS node_type
     FROM {workbench_moderation_node_history} moderation
@@ -880,6 +881,9 @@ function workbench_moderation_get_moderation_links($nid, $destination = NULL) {
     ", array(':nid' => $nid))
     ->fetchObject();
   $next_states = workbench_moderation_states_next($current->state, $user, $current->node_type);
+  if (empty($next_states)) {
+    return array();
+  }
   $options = ($destination ? array('query' => array('destination' => $destination)) : array());
   foreach ($next_states as $state => $label) {
     $links[] = l($label, "node/{$current->nid}/moderation/{$current->vid}/change-state/{$state}", $options);
