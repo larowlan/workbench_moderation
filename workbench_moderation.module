@@ -83,6 +83,7 @@ function workbench_moderation_menu() {
 
   // NOT SURE THIS IS USED ANYWHERE, AND IT MAY BE
   // A SECURITY ISSUE.
+  // See workbench_moderation_get_moderation_links()
   /*
   $items["node/%node/moderation/%/change-state/%"] = array(
     'title' => 'Change Moderation State',
