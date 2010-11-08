@@ -367,13 +367,12 @@ function workbench_moderation_node_view(&$node, $view_mode = 'full') {
     // Alert the user that there are moderated versions
     // Only show this message on node/x   
     if (arg(0) == 'node' && is_numeric(arg(1)) && arg(2) == NULL) {
-      // Only show the message once
+      // Only show the message once and if there are subsequent revisions of
+      // this content
       static $live_control = FALSE;
-      if (!$live_control && user_access('view content moderation message')) {
+      if (!$live_control && $has_revision && user_access('view content moderation message')) {
         $message = t('This is the live version of this !type.', array('!type' => $node->type));
-        if ($has_revision) {
-          $message .= ' ' . t('View the most recent version in moderation !here.', array('!here' => l(t('here'), 'node/' . $node->nid . '/current_revision')));
-        }
+        $message .= ' ' . t('View the most recent version in moderation !here.', array('!here' => l(t('here'), 'node/' . $node->nid . '/current_revision')));        
         drupal_set_message($message, $status, FALSE);
         $live_control = TRUE;
       }
