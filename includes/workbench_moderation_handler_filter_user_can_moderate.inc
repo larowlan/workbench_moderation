@@ -1,6 +1,11 @@
 <?php
 
-// $Id$
+/**
+ * @file
+ *  Content moderation for Workbench.
+ *
+ * @copyright (C) Copyright 2010 Palantir.net
+ */
 
 /**
  * @file

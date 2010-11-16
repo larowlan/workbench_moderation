@@ -1,13 +1,11 @@
 <?php
 
-// $Id$
-
 /**
  * @file
- *
  * Provides node functions
+ *
+ * @copyright (C) Copyright 2010 Palantir.net
  */
-
 
 /**
  * Displays the current moderated version of the node

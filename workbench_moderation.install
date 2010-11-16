@@ -1,11 +1,10 @@
 <?php
 
-// $Id$
-
 /**
  * @file
  * Install file for the content moderation module.
  *
+ * @copyright (C) Copyright 2010 Palantir.net
  */
 
 /**
