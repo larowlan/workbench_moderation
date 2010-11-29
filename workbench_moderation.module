@@ -774,7 +774,7 @@ function workbench_moderation_transitions_get() {
 function workbench_moderation_states_get() {
   static $states = FALSE;
   if (!$states) {
-    $results = db_query('SELECT * FROM {workbench_moderation_states}');
+    $results = db_query('SELECT * FROM {workbench_moderation_states} ORDER BY weight ASC');
     $states = array();
     foreach ($results as $state) {
       $states[$state->name] = $state->description ? $state->description : $state->name;
