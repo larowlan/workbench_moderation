@@ -757,7 +757,11 @@ function workbench_moderation_node_is_current($node) {
 function workbench_moderation_transitions_get() {
   static $transitions = FALSE;
   if (! $transitions) {
-    $results = db_query('SELECT * FROM {workbench_moderation_transitions}');
+    $results = db_query("SELECT *
+                         FROM {workbench_moderation_transitions} transitions
+                           JOIN {workbench_moderation_states} states_from ON transitions.from_name = states_from.name
+                           JOIN {workbench_moderation_states} states_to ON transitions.to_name = states_to.name
+                         ORDER BY states_from.weight, states_to.weight");
     $transitions = array();
     foreach ($results as $transition) {
       $transinfo = $transition->from_name . '---' . $transition->to_name;
