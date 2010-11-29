@@ -162,7 +162,7 @@ function workbench_moderation_permission() {
   $permissions['bypass workbench moderation'] = array(
     'title' => t('Bypass moderation restrictions'),
   );
-  foreach ($states as $from_state) {
+  foreach (array_keys($states) as $from_state) {
     $to_states = workbench_moderation_states_next($from_state);
     // THIS FAILS IF NOT THREE STATES.
     // values are translated
