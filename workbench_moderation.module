@@ -151,10 +151,6 @@ function workbench_moderation_revision_access($node, $op = 'view') {
  * Provides permissions for each state to state change
  */
 function workbench_moderation_permission() {
-  // This user right is later used for granting the user the approval of pending version
-  // making those version "live".
-  $states = workbench_moderation_states_get();
-  $types = workbench_moderation_moderate_node_types();
   $permissions = array();
   $permissions['administer workbench moderation'] = array(
     'title' => t('Administer Workbench Moderation'),
@@ -162,23 +158,10 @@ function workbench_moderation_permission() {
   $permissions['bypass workbench moderation'] = array(
     'title' => t('Bypass moderation restrictions'),
   );
-  foreach (array_keys($states) as $from_state) {
-    $to_states = workbench_moderation_states_next($from_state);
-    // THIS FAILS IF NOT THREE STATES.
-    // values are translated
-    $to_states = array_keys($to_states);
-    $from_state = check_plain($from_state);
-    foreach ($to_states as $to_state) {
-      $to_state = check_plain($to_state);
-      $permissions["moderate state $from_state to $to_state"] = array(
-        'title' => t('Moderate from state !from_state to !to_state', array('!from_state' => $from_state, '!to_state' => $to_state)),
-      );
-    }
-  }
   $permissions['view moderation history'] = array(
     'title' => t('View moderation history'),
   );
-  $permissions['view content moderation message'] = array(
+  $permissions['view moderation messages'] = array(
     'title' => t('View the moderation messages on a node')
   );
   $permissions['publish pending version'] = array(
@@ -187,22 +170,25 @@ function workbench_moderation_permission() {
   $permissions['unpublish live version'] = array(
     'title' => t('Unpublish the current live version')
   );
-  /* OVERLY COMPLEX
-  foreach ($types as $type) {
-    $permissions["view $type moderation history"] = array(
-      'title' => t('View !type moderation history', array('!type' => $type)),
-      'description' => t('See the complete moderation history of !type content type', array('@type' => $type))
-    );
-  }*/
-  /**
-   * These don't appear to be useful.
-  $permissions['view content moderation message pending'] = array(
-    'title' => t('View the moderation messages on a node that is pending')
-  );
-  $permissions['view content moderation message not live yet'] = array(
-    'title' => t('View the moderation messages on a node that is not live yet')
-  );
-  */
+
+  // Per-node-type, per-transition permissions.
+  // @see workbench_moderation_state_allowed()
+  $node_types = workbench_moderation_moderate_node_types();
+  $states = workbench_moderation_states_get();
+  foreach ($node_types as $node_type) {
+    foreach (array_keys($states) as $from_state) {
+      if ($to_states = workbench_moderation_states_next($from_state)) {
+        $from_state = check_plain($from_state);
+        foreach (array_keys($to_states) as $to_state) {
+          $to_state = check_plain($to_state);
+          $permissions["moderate $node_type state from $from_state to $to_state"] = array(
+            'title' => t('Moderate !node_type state from !from_state to !to_state', array('!node_type' => $node_type, '!from_state' => $from_state, '!to_state' => $to_state)),
+          );
+        }
+      }
+    }
+  }
+
   return $permissions;
 }
 
@@ -628,11 +614,11 @@ function workbench_moderation_moderate_node_types() {
 
 
 /**
- * Checking, if the user has the proper rights to change the state of a node, so
- * checking the transition and node type.
+ * Check whether a user may change the state of a node, based on transition and node type.
+ * @see workbench_moderation_permission()
  */
-function workbench_moderation_state_allowed($user, $from_state, $to_state, $node_type) {
-  return user_access("content moderation $node_type state $from_state to $to_state");
+function workbench_moderation_state_allowed($account, $from_state, $to_state, $node_type) {
+  return user_access("moderate $node_type state from $from_state to $to_state", $account);
 }
 
 /**
