@@ -648,51 +648,93 @@ function workbench_moderation_state_allowed($account, $from_state, $to_state, $n
  *   Object, Drupal node object
  */
 function workbench_moderation_node_data(&$node) {
-  // Check to make sure that this node type is moderated
-  if (workbench_moderation_node_type_moderated($node->type) && isset($node->nid)) {
-    $current = db_query('SELECT cmnh.*, nr.title, nr.timestamp FROM {workbench_moderation_node_history} cmnh
-      LEFT JOIN {node_revision} nr ON nr.vid = cmnh.vid
-      WHERE cmnh.nid = :nid
-        AND cmnh.current = 1
-      ORDER BY cmnh.stamp DESC',
-      array(':nid' => $node->nid))
-      ->fetch();
-    // If $current returns FALSE, then no moderation exists for this node, and we
-    // must assume that the live revision is current.
-    // TODO: Just add this in hook_node_insert().
-    if ($current === FALSE) {
-      $current->vid = $node->vid;
-      $current->nid = $node->nid;
-      $current->uid = $node->uid;
-      $current->published = $node->status;
-      $current->current = 1;
-      $current->title = $node->title;
-      $current->from_state = workbench_moderation_state_none();
-      $current->timestamp = $node->changed;
-      $current->log = t('Initial version');
-      $current->state = ($node->status) ? workbench_moderation_state_published() : workbench_moderation_state_none();
-    }
-    $node->content_moderation['current'] = $current;
-    // Is this the live node as well?
-    if (!empty($current->published)) {
-      $node->content_moderation['published'] = $current;
-    }
-    else {
-      // If there is a published version, get that with that revisions title
-      $published = db_query('SELECT cmnh.*, nr.title, nr.timestamp FROM {workbench_moderation_node_history} cmnh
-        LEFT JOIN {node_revision} nr ON nr.vid = cmnh.vid
-        WHERE cmnh.nid = :nid
-          AND cmnh.state = :state
-        ORDER BY cmnh.stamp DESC',
-        array(
-          ':nid' => $node->nid,
-          ':state' => workbench_moderation_state_published()))
-        ->fetch();
-      if ($published) {
-        $node->content_moderation['published'] = $published;
-      }
+  // Make sure that this node type is moderated.
+  if (!workbench_moderation_node_type_moderated($node->type) || !isset($node->nid)) { return; }
+
+  $node->content_moderation = array();
+
+  // Fetch the current revision ("head").
+  $query = db_select('node_revision', 'r');
+  $query->addJoin('LEFT OUTER', 'workbench_moderation_node_history', 'moderation', 'r.vid = moderation.vid');
+  $query->condition('moderation.nid', $node->nid)
+    ->condition('moderation.current', 1)
+    ->fields('moderation')
+    ->fields('r', array('title', 'timestamp'));
+  $current = $query->execute()->fetchObject();
+
+  // Nodes will lack a workbench_moderation record if they were created before moderation was
+  // enabled for their node type. In this case, assume the node is at the current revision.
+  if (!$current) {
+    $current = (object) array(
+      'hid' => NULL,
+      'nid' => $node->nid,
+      'vid' => $node->vid,
+      'from_state' => workbench_moderation_state_none(),
+      'state' => ($node->status ? workbench_moderation_state_published() : workbench_moderation_state_none()),
+      'uid' => $node->uid,
+      'stamp' => $node->changed,
+      'published' => $node->status,
+      'current' => 1,
+    );
+  }
+
+  $node->content_moderation['current'] = $current;
+
+  // Fetch the published revision. There may not be a workbench_moderation record for some nodes,
+  // but in those cases if the node is published, $current->published will be TRUE.
+  if ($current->published) {
+    $published = $current;
+  }
+  else {
+    // Fetch the most recent published revision.
+    $query = db_select('node_revision', 'r');
+    $query->addJoin('LEFT OUTER', 'workbench_moderation_node_history', 'moderation', 'r.vid = moderation.vid');
+    $query->condition('moderation.nid', $node->nid)
+      ->condition('moderation.published', 1)
+      ->fields('moderation')
+      ->fields('r', array('title', 'timestamp'));
+    $published = $query->execute()->fetchObject();
+  }
+
+  if ($published) {
+    $node->content_moderation['published'] = $published;
+  }
+
+  // Fetch the workbench_moderation record for this node object's revision. If it is either the
+  // current or published version of the node, that data will be used.
+  if ($node->vid == $current->vid) {
+    $my_revision = $current;
+  }
+  elseif ($published && $node->vid == $published->vid) {
+    $my_revision = $published;
+  }
+  else {
+    $query = db_select('node_revision', 'r');
+    $query->addJoin('LEFT OUTER', 'workbench_moderation_node_history', 'moderation', 'r.vid = moderation.vid');
+    $query->condition('moderation.vid', $node->vid)
+      ->fields('moderation')
+      ->fields('r', array('title', 'timestamp'));
+    $my_revision = $query->execute()->fetchObject();
+
+    // This might happen if you're turning workbench_moderation on and off, but it should be really
+    // rare. Workbench_moderation must have recorded a current version, and then the node table must
+    // contain a different and unpublished version.
+    if (!$my_revision) {
+      $my_revision = (object) array(
+        'hid' => NULL,
+        'nid' => $node->nid,
+        'vid' => $node->vid,
+        'from_state' => workbench_moderation_state_none(),
+        'state' => workbench_moderation_state_none(),
+        'uid' => $node->uid,
+        'stamp' => $node->changed,
+        'published' => 0,
+        'current' => 0,
+      );
     }
   }
+
+  $node->content_moderation['my_revision'] = $my_revision;
 }
 
 
