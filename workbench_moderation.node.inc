@@ -42,83 +42,81 @@ function workbench_moderation_node_current_view($node) {
 function workbench_moderation_node_history_view($node) {
   drupal_add_css(drupal_get_path('module', 'workbench_moderation') . '/css/workbench_moderation.css');
   drupal_set_title(t('!title History', array('!title' => $node->title)));
+
   // Alert if there is no live node
   if (!isset($node->content_moderation['published'])) {
     drupal_set_message(t('Currently there is no live (published) version of this node.'));
   }
 
-  // Get all of the node revisions including state changes
-  $revisions = array();
-  $result = db_query('SELECT r.vid, r.title, r.log, r.uid, n.vid, n.nid AS current_vid, r.timestamp, u.name, cmnh.*
+  // Get all of the node revisions including state changes.
+  $result = db_query('SELECT r.vid, r.title, r.log, r.uid, n.nid, n.vid AS live_revision, r.timestamp, u.name, cmnh.*
     FROM {node_revision} r
-    LEFT JOIN {node} n ON n.vid = r.vid
+    LEFT JOIN {node} n ON n.nid = r.nid
     INNER JOIN {users} u ON u.uid = r.uid
     INNER JOIN {workbench_moderation_node_history} cmnh ON cmnh.vid = r.vid
     WHERE r.nid = :nid 
     ORDER BY r.vid DESC',
     array(':nid' => $node->nid));
-
+  $revisions = array();
   foreach ($result as $revision) {
     $revisions[$revision->vid] = $revision;
   }
+
   if (empty($revisions)) {
     $revisions = array($node->vid => $node->content_moderation['current']);
   }
-  if ($revisions) {
-    foreach ($revisions as $revision) {
-      $row = array();
-      $operations = array();
-      extract((array) $revision);
 
-      foreach (array('view', 'revert', 'delete') as $perm) {
-        if (user_access("$perm revisions")) {
-          $operations[] =  l(t('!perm', array('!perm' => $perm)),"node/$nid/revisions/$vid/$perm");
-        }
+  $rows = array();
+  foreach ($revisions as $revision) {
+    $operations = array();
+    foreach (array('view', 'revert', 'delete') as $perm) {
+      if (user_access("$perm revisions")) {
+        $operations[] =  l(t('!perm', array('!perm' => $perm)),"node/{$revision->nid}/revisions/{$revision->vid}/$perm", array('query' => array('destination' => $_GET['q'])));
       }
-      $text = implode(' | ', $operations);
-      $class = 'revision';
-      $revision_id = $vid;
+    }
+    $text = implode(' | ', $operations);
+    $class = 'revision';
+    $revision_id = $revision->vid;
 
-      // Is this the live node?
-      if (isset($node->content_moderation['published']->vid) && $vid == $node->content_moderation['published']->vid) {
-        $text =  user_access('view revisions') ? l(t('Live revision'), "node/$nid/revisions/$vid/view") : t('Live revision');
-        if ($node->status) {
-          $text .= user_access('unpublish live version') ? ' | ' . l(t('Unpublish'), "node/$nid/moderation/$vid/unpublish") : '';
-          $class = 'revision-live';
-        }
-        else {
-          $text .= user_access('publish pending version') ? ' | ' . l(t('Publish'), "node/$nid/moderation/$vid/publish") : '';
-          $class = 'revision-unpublished';
-        }
-        $revision_id = t('Original revision: @old_vid <br />Live revision: @vid', array('@old_vid' => $vid, '@vid' =>$node->vid));
-      }
-      // Is this the current revision?
-      elseif ($vid == $node->content_moderation['current']->vid) {
-        $text = t('Revision in moderation') . ' ' . $text . ' | ' . l(t('edit'), "node/{$node->nid}/edit");
-        $class = 'revision-current';
-      }
-      if ($from_state != $state) {
-        $state_change = t('From @state --> @to_state', array('@state' => $from_state, '@to_state' => $state));
+    // Is this the live node?
+    if (isset($node->content_moderation['published']->vid) && $revision->vid == $node->content_moderation['published']->vid) {
+      $text =  user_access('view revisions') ? l(t('Live revision'), "node/{$revision->nid}/moderation/{$revision->live_revision}/view") : t('Live revision');
+      if ($node->status) {
+        $text .= user_access('unpublish live version') ? ' | ' . l(t('Unpublish'), "node/{$revision->nid}/moderation/{$revision->live_revision}/unpublish") : '';
+        $class = 'revision-live';
       }
       else {
-        $state_change = t('@state state edited', array('@state' => $state));
+        $text .= user_access('publish pending version') ? ' | ' . l(t('Publish'), "node/{$revision->nid}/moderation/{$revision->vid}/publish") : '';
+        $class = 'revision-unpublished';
       }
-      $row = array('data' => array(
-        array('data' => $state_change, 'class' => $class),
-        array('data' => l(format_date($timestamp, 'short'), "node/$node->nid/revisions/$vid/view"), 'class' => $class),
-        array('data' => theme('username', array('account' => $revision)), 'class' => $class),
-        array('data' => '<p class="revision-log">' . filter_xss($log) . '</p>', 'class' => $class),
-        array('data' => $revision_id, 'class' => $class),
-        array('data' => $text, 'class' => $class)
-        )
-      );
-      $rows[] = $row; 
+      $revision_id = t('Original revision: @old_vid <br />Live revision: @vid', array('@old_vid' => $revision->vid, '@vid' => $revision->live_revision));
     }
-    $header = array(t('State change'), t('Date'), t('By'), t('Log'), t('Revision'), t('Status'));
-    return theme('table', array('header' => $header, 'rows' => $rows));
+    // Is this the current revision?
+    elseif ($revision->vid == $node->content_moderation['current']->vid) {
+      $text = t('Revision in moderation') . ' ' . $text . ' | ' . l(t('edit'), "node/{$node->nid}/edit");
+      $class = 'revision-current';
+    }
+    if ($revision->from_state != $revision->state) {
+      $state_change = t('From @state --> @to_state', array('@state' => $revision->from_state, '@to_state' => $revision->state));
+    }
+    else {
+      $state_change = t('@state state edited', array('@state' => $revision->state));
+    }
+
+    $rows[] = array('data' => array(
+      array('data' => $state_change, 'class' => $class),
+      array('data' => l(format_date($revision->timestamp, 'short'), "node/{$node->nid}/moderation/{$revision->vid}/view"), 'class' => $class),
+      array('data' => theme('username', array('account' => $revision)), 'class' => $class),
+      array('data' => '<p class="revision-log">' . filter_xss($revision->log) . '</p>', 'class' => $class),
+      array('data' => $revision_id, 'class' => $class),
+      array('data' => $text, 'class' => $class)
+      )
+    );
+
   }
-  // TODO: Return something useful or hide the tab.
-  return t('There are no revisions to review.');
+
+  $header = array(t('State change'), t('Date'), t('By'), t('Log'), t('Revision'), t('Status'));
+  return theme('table', array('header' => $header, 'rows' => $rows));
 }
 
 /**
@@ -131,7 +129,8 @@ function workbench_moderation_node_status_form($form, $form_state, $node, $vid) 
   // Ensure that this is the live revision
   if ($node->vid != $node->content_moderation['published']->vid) {
     drupal_set_message(t('This is not the live revision of this node.'), 'error');
-    drupal_goto(request_uri());
+    return '';
+//    drupal_goto(request_uri());
   }
 
   // Alert the user of what will happen
