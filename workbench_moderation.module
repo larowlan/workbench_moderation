@@ -136,6 +136,8 @@ function workbench_moderation_menu_alter(&$items) {
   // Hijack the node/X/edit page to ensure that the right revision (most current)
   // is displayed.
   $items['node/%node/edit']['page callback'] = 'workbench_moderation_node_edit_page_override';
+  $items['node/%node/edit']['module'] = 'workbench_moderation';
+  unset($items['node/%node/edit']['file']);
   $items['node/%node/revisions']['access callback'] = 'workbench_moderation_revision_access';
 }
 
@@ -372,14 +374,14 @@ function workbench_moderation_node_view(&$node, $view_mode = 'full') {
     }
     $node = $live_node;
     // Alert the user that there are moderated versions
-    // Only show this message on node/x   
+    // Only show this message on node/x
     if (arg(0) == 'node' && is_numeric(arg(1)) && arg(2) == NULL) {
       // Only show the message once and if there are subsequent revisions of
       // this content
       static $live_control = FALSE;
       if (!$live_control && $has_revision && user_access('view content moderation message')) {
         $message = t('This is the live version of this !type.', array('!type' => $node->type));
-        $message .= ' ' . t('View the most recent version in moderation !here.', array('!here' => l(t('here'), 'node/' . $node->nid . '/current_revision')));        
+        $message .= ' ' . t('View the most recent version in moderation !here.', array('!here' => l(t('here'), 'node/' . $node->nid . '/current_revision')));
         drupal_set_message($message, $status, FALSE);
         $live_control = TRUE;
       }
@@ -395,9 +397,9 @@ function workbench_moderation_node_view(&$node, $view_mode = 'full') {
     if (! $revision_control) {
       drupal_set_message(t('The content of this document has not been approved yet.'), 'warning', FALSE);
       $revision_control = TRUE;
-    }    
+    }
   }
- 
+
 
 return;
 
@@ -557,7 +559,7 @@ function workbench_moderation_views_api() {
  * Overrides the node/X/edit page to ensure the proper revision is shown
  */
 function workbench_moderation_node_edit_page_override($node) {
- // Check to see if this is an existing node
+  // Check to see if this is an existing node
   if (isset($node->nid)) {
     if (workbench_moderation_node_type_moderated($node->type)) {
       // Load the node moderation data
@@ -581,6 +583,7 @@ function workbench_moderation_node_edit_page_override($node) {
     }
   }
 
+  module_load_include('inc', 'node', 'node.pages');
   return node_page_edit($node);
 }
 
@@ -703,10 +706,10 @@ function workbench_moderation_node_data(&$node) {
 
 /**
  * Utility function to load the current version of a node.
- * 
+ *
  * This is used to load the current moderated version of a node not the live version.
  * This is needed because the live version of a node will have the
- *  
+ *
  * @param $node
  *   Object, Drupal node
  * @return Object, Drupal node of the current revision or
@@ -724,11 +727,11 @@ function workbench_moderation_node_current_load(&$node) {
 
 
 /**
- * Utility function to load the live version of a node. 
- * 
+ * Utility function to load the live version of a node.
+ *
  * This is encapsulated so that changes to how the moderation data is stored
  * will not impact the API.
- *  
+ *
  * @param $node
  *   Object, Drupal node
  * @return Object, Drupal node of the current revision or
