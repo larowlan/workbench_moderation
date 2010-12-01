@@ -134,13 +134,24 @@ function workbench_moderation_node_history_view($node) {
     $moderation_rows = array();
     $items = array();
     foreach ($moderations as $m) {
-      $items[] = t('From @from_state --> @to_state on %date by !user',
-                   array(
-                    '@from_state' => $m->from_state,
-                    '@to_state' => $m->state,
-                    '%date' => format_date($m->stamp, 'short'),
-                    '!user' => theme('username', array('account' => $m)),
-                  ));
+      if ($m->from_state) {
+        $items[] = t('From @from_state --> @to_state on %date by !user',
+                     array(
+                      '@from_state' => $m->from_state,
+                      '@to_state' => $m->state,
+                      '%date' => format_date($m->stamp, 'short'),
+                      '!user' => theme('username', array('account' => $m)),
+                    ));
+      }
+      else {
+        $items[] = t('Created as @to_state on %date by !user',
+                     array(
+                      '@from_state' => $m->from_state,
+                      '@to_state' => $m->state,
+                      '%date' => format_date($m->stamp, 'short'),
+                      '!user' => theme('username', array('account' => $m)),
+                    ));
+      }
     }
     $row['data']['moderation'] .= theme('item_list', array('items' => $items));
 
