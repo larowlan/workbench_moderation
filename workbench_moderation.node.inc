@@ -205,15 +205,13 @@ function workbench_moderation_node_unpublish_form_submit($form, $form_state) {
     ->condition('hid', $node->content_moderation['published']->hid)
     ->fields(array('published' => 0))
     ->execute();
-
-  // Save a new revision of the node.
-  $node->revision = TRUE;
-  $node->status = 0;
-  $node->log = t('Unpublished by @user.', array('@user' => $user->name));
-  $node->content_moderation['creating_new_revision'] = TRUE;
-  $node->workbench_moderation_state_current = $node->content_moderation['published']->state;
-  $node->workbench_moderation_state_new = variable_get('workbench_moderation_default_state_' . $node->type);
-  node_save($node);
+  
+  // Re-save the 'current' version.
+  $current_node = workbench_moderation_node_current_load($node);
+  $current_node->status = 0;
+  $current_node->revision = 0;
+  $current_node->content_moderation['updating_published_revision'] = TRUE;
+  node_save($current_node);
 
   drupal_set_message(t('The live revision of this content has been unpublished.'));
   drupal_goto("node/{$node->nid}/moderation");
