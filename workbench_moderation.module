@@ -75,20 +75,17 @@ function workbench_moderation_menu() {
     'file' => 'workbench_moderation.node.inc'
   );
 
-  // NOT SURE THIS IS USED ANYWHERE, AND IT MAY BE
-  // A SECURITY ISSUE.
-  // See workbench_moderation_get_moderation_links()
-  /*
+  // Change the moderation state of a node.
+  // @see workbench_moderation_get_moderation_links()
   $items["node/%node/moderation/%/change-state/%"] = array(
     'title' => 'Change Moderation State',
-    'load arguments' => array(3),
     'page callback' => 'workbench_moderation_moderate',
     'page arguments' => array(1, 5),
-    'theme callback' => '_node_custom_theme',
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 1),
+    'load arguments' => array(3),
+    'access callback' => '_workbench_moderation_moderate_access',
+    'access arguments' => array(1, 5),
     'type' => MENU_CALLBACK,
-  );*/
+  );
 
   // Module settings.
   $items["admin/config/workbench/moderation"] = array(
@@ -882,57 +879,53 @@ function workbench_moderation_states_next($current_state = FALSE, $account = FAL
 }
 
 /**
+ * Menu access callback to check whether a user may make a particular transition on a node.
+ */
+function _workbench_moderation_moderate_access($node, $state) {
+  global $user;
+
+  $my_revision = $node->content_moderation['my_revision'];
+  return node_access('update', $node, $user)                                                            // the user can edit the node
+          && $my_revision->current                                                                      // this is the current revision (no branching the revision history)
+          && ($next_states = workbench_moderation_states_next($my_revision->state, $user, $node->type)) // there are next states the user may transition to
+          && isset($next_states[$state]);                                                               // this state is in the available next states
+}
+
+/**
  * Menu callback to allow quick moderation of nodes. Access is controlled by the menu router.
+ * @see _workbench_moderation_moderate_access()
  * @see workbench_moderation_menu()
  */
 function workbench_moderation_moderate($node, $state) {
   global $user;
 
-  // Only allow moderation if this is the 'current' revision--which is different from the
-  // 'published' revision
-  if ($node->vid == $node->content_moderation['current']->vid) {
-    $current = $node->content_moderation['current'];
+  $my_revision = $node->content_moderation['my_revision'];
 
-    // Check that the user has permission to make this state transition.
-    $node->workbench_moderation_state_current = $current->state;
-    $next_states = workbench_moderation_states_next($current->state, $user, $node->type);
-    if (isset($next_states[$state])) {
-      $node->workbench_moderation_state_new = $state;
-      node_save($node);
-    }
-    else {
-      drupal_set_message("You don't have permission to make this moderation transition.", 'error', FALSE);
-    }
-  }
-  else {
-    drupal_set_message("You can't moderate this revision.", 'error', FALSE);
-  }
+  $node->revision = 1;
+  $node->workbench_moderation_state_current = $my_revision->state;
+  $node->workbench_moderation_state_new = $state;
+  $node->log = t('Moderated by @user', array('@user' => $user->name));
 
+  node_save($node);
   drupal_goto(isset($_GET['destination']) ? $_GET['destination'] : 'node/' . $node->nid . '/moderation');
 }
 
 /**
  * Generate a list of links to available moderation actions.
  */
-function workbench_moderation_get_moderation_links($nid, $destination = NULL) {
+function workbench_moderation_get_moderation_links($node, $url_options = array()) {
   global $user;
+
   $links = array();
-  // THIS MENU ITEM IS NOT CURRENTLY SUPPORTED.
-  return $links;
-  $current = db_query("
-    SELECT moderation.*, n.type AS node_type
-    FROM {workbench_moderation_node_history} moderation
-      JOIN {node} n ON moderation.nid = n.nid
-    WHERE moderation.nid = :nid AND moderation.current = 1
-    ", array(':nid' => $nid))
-    ->fetchObject();
-  $next_states = workbench_moderation_states_next($current->state, $user, $current->node_type);
-  if (empty($next_states)) {
-    return array();
-  }
-  $options = ($destination ? array('query' => array('destination' => $destination)) : array());
-  foreach ($next_states as $state => $label) {
-    $links[] = l($label, "node/{$current->nid}/moderation/{$current->vid}/change-state/{$state}", $options);
+  $my_revision = $node->content_moderation['my_revision'];
+  if ($my_revision->vid == $node->content_moderation['current']->vid
+      && $next_states = workbench_moderation_states_next($my_revision->state, $user, $node->type)) {
+    foreach ($next_states as $state => $label) {
+      $links[] = array_merge($url_options, array(
+        'title' => $state,
+        'href' => "node/{$node->nid}/moderation/{$node->vid}/change-state/{$state}",
+      ));
+    }
   }
 
   return $links;
