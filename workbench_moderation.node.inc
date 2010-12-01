@@ -70,7 +70,6 @@ function workbench_moderation_node_history_view($node) {
         'vid' => '',
         'info' => '',
         'date' => '',
-        'user' => '',
         'revision' => '',
         'moderation' => '',
       ),
@@ -91,9 +90,9 @@ function workbench_moderation_node_history_view($node) {
     // Row data.
     $row['data']['vid'] = $revision->vid;
     $row['data']['info'] = '<div class="revision-title">' . check_plain($revision->title) . '</div>'
-                         . '<div class="revision-log">' . filter_xss($revision->log) . '</div>';
+                         . '<div class="revision-log">' . filter_xss($revision->log) . '</div>'
+                         . '<div class="revision-user">' . t('Revised by !user', array('!user' => theme('username', array('account' => $revision)))) . '</div>';
     $row['data']['date'] = l(format_date($revision->timestamp, 'short'), "node/{$node->nid}/moderation/{$revision->vid}/view");
-    $row['data']['user'] = theme('username', array('account' => $revision));
 
     // Revision operations.
     $revision_operations = array();
@@ -124,9 +123,16 @@ function workbench_moderation_node_history_view($node) {
     }
 
     // If this is the current revision, provide moderation links.
-    if ($revision->vid == $node->content_moderation['current']->vid) {
+    if (!empty($node->content_moderation['published']) && $revision->vid == $node->content_moderation['published']->vid) {
+      $row['data']['moderation'] = '<div class="moderation-state"><strong>' . t('This is the published revision.') . '</strong></div>';
+      // Provide an unpublish link.
+      if (user_access('unpublish live version')) {
+        $row['data']['moderation'] .= '<div class="moderation-actions">' . l(t('Unpublish'), "node/{$revision->nid}/moderation/{$revision->live_revision}/unpublish") . '</div>';
+      }
+    }
+    elseif ($revision->vid == $node->content_moderation['current']->vid) {
       $node_current = workbench_moderation_node_current_load($node);
-      $row['data']['moderation'] = '<div class="moderation-state">' . t('Current state: %state', array('%state' => $node->content_moderation['current']->state)) . '</div>'
+      $row['data']['moderation'] = '<div class="moderation-state"><strong>' . t('This is the current revision. The current state is %state.', array('%state' => $node->content_moderation['current']->state)) . '</strong></div>'
                                  . '<div class="moderation-actions">' . theme('links', array('links' => workbench_moderation_get_moderation_links($node_current, array('query' => array('destination' => $_GET['q']))))) . '</div>';
     }
     
@@ -158,7 +164,7 @@ function workbench_moderation_node_history_view($node) {
     $rows[] = $row;
   }
 
-  $header = array(t('Revision'), t('Title'), t('Date'), t('By'), t('Revision Actions'), t('Moderation Actions'));
+  $header = array(t('Revision'), t('Title'), t('Date'), t('Revision Actions'), t('Moderation Actions'));
   return array('#markup' => theme('table', array('header' => $header, 'rows' => $rows)));
 }
 
