@@ -260,8 +260,12 @@ function workbench_moderation_node_insert(&$node) {
 function workbench_moderation_node_update($node) {
   global $user;
 
-  // Is moderation enabled for this content type?
-  if (!workbench_moderation_node_type_moderated($node->type)) { return; }
+  // Don't proceed if moderation is not enabled on this content type, or if we're replacing an
+  // already-published version.
+  if (!workbench_moderation_node_type_moderated($node->type) ||
+      (!empty($node->content_moderation['updating_published_revision']) && $node->content_moderation['updating_published_revision'])) {
+    return;
+  }
 
   // Set default moderation state values.
   if (!isset($node->workbench_moderation_state_current)) {
@@ -881,19 +885,16 @@ function workbench_moderation_moderate($node, $state) {
     'nid' => $node->nid,
     'vid' => $node->vid,
     'uid' => $user->uid,
-    'current' => $old_revision->current,
+    'current' => TRUE,
     'published' => ($state == workbench_moderation_state_published()),
     'stamp' => $_SERVER['REQUEST_TIME'],
   );
 
-  // If this is a new node, or if it is a revision of the current "head", it should become the new
-  // current version.
-  if ($new_revision->current) {
-    $query = db_update('workbench_moderation_node_history')
-      ->condition('nid', $new_revision->nid)
-      ->fields(array('current' => 0))
-      ->execute();
-  }
+  // Any time we create a moderation record, the revision should become 'current'.
+  $query = db_update('workbench_moderation_node_history')
+    ->condition('nid', $new_revision->nid)
+    ->fields(array('current' => 0))
+    ->execute();
   
   // If this revision is to be published, it should be the only revision flagged 'published' in
   // {workbench_moderation_node_history}.
@@ -907,13 +908,23 @@ function workbench_moderation_moderate($node, $state) {
   // Save the node history record.
   drupal_write_record('workbench_moderation_node_history', $new_revision);
 
+  // Update the node's content_moderation information so that we can publish it if necessary.
+  $node->content_moderation['current'] = $new_revision;
+  if ($new_revision->published) {
+    $node->content_moderation['published'] = $new_revision;
+    $node->content_moderation['my_revision'] = $new_revision;
+  }
+
   // If we're moderating an unpublished version and there is an existing published version, make
   // sure that the published version is live.
-  if (!$new_revision->published && !empty($node->content_moderation['published'])) {
+  if (!empty($node->content_moderation['published'])) {
     $live_revision = workbench_moderation_node_live_load($node);
-    $live_revision->revision = 0;
+    // Make sure we're published.
     $live_revision->status = 1;
-    $live_revision->workbench_moderation_state_new = $live_revision->workbench_moderation_state_current;
+    // Don't create a new revision.
+    $live_revision->revision = 0;
+    // Prevent another moderation record from being written.
+    $live_revision->content_moderation['updating_published_revision'] = TRUE;
     node_save($live_revision);
   }
 }
