@@ -50,91 +50,104 @@ function workbench_moderation_node_history_view($node) {
     drupal_set_message(t('Currently there is no live (published) version of this node.'));
   }
 
-  // Get all of the node revisions including state changes.
+  // Get all of the node revisions, each with its most recent moderation.
   $query = db_select('node', 'n');
   $query->leftJoin('node_revision', 'r', 'n.nid = r.nid');
   $query->leftJoin('users', 'u', 'r.uid = u.uid');
-  $query->leftJoin('workbench_moderation_node_history', 'moderation', 'r.vid = moderation.vid');
   $query->addField('n', 'vid', 'live_revision');
   $query->condition('n.nid', $node->nid)
-    ->orderBy('moderation.current', 'DESC')
     ->orderBy('r.vid', 'DESC')
     ->fields('r', array('nid', 'vid', 'title', 'log', 'uid', 'timestamp'))
-    ->fields('u', array('name'))
-    ->fields('moderation');
+    ->fields('u', array('name'));
 
   $revisions = $query->execute()
     ->fetchAllAssoc('vid');
 
-  if (empty($revisions)) {
-    $revisions = array($node->vid => $node->content_moderation['current']);
-  }
-
-  $node_current = $node;
-  if (!$node->content_moderation['my_revision']->current) {
-    $node_current = node_load($node->nid, $node->content_moderation['current']->vid);
-  }
-
   $rows = array();
   foreach ($revisions as $revision) {
-    $class = 'revision';
     $row = array(
-      'vid' => array('data' => $revision->vid),
-      'state' => array('data' => ''),
-      'date' => array('data' => ''),
-      'user' => array('data' => ''),
-      'moderation' => array('data' => ''),
-      'revision' => array('data' => ''),
+      'data' => array(
+        'vid' => '',
+        'info' => '',
+        'date' => '',
+        'user' => '',
+        'revision' => '',
+        'moderation' => '',
+      ),
+      'class' => array('revision'),
     );
-
-    // State and log information.
-    if ($revision->from_state != $revision->state) {
-      $state_change = t('From @state --> @to_state', array('@state' => $revision->from_state, '@to_state' => $revision->state));
+    
+    // Row classes.
+    if ($revision->vid == $node->content_moderation['current']->vid) {
+      $row['class'][] = 'current-revision';
+    }
+    if (isset($node->content_moderation['published']) && $revision->vid == $node->content_moderation['published']->vid) {
+      $row['class'][] = 'published-revision';
     }
     else {
-      $state_change = t('@state, edited', array('@state' => $revision->state));
-    }
-    $row['state']['data'] .= '<p class="workbench-moderation-transition">' . $state_change . '</p><p class="revision-log">' . filter_xss($revision->log) . '</p>';
-
-    // Revision date.
-    $row['date']['data'] = l(format_date($revision->timestamp, 'short'), "node/{$node->nid}/moderation/{$revision->vid}/view");
-
-    // Revision user.
-    $row['user']['data'] = theme('username', array('account' => $revision));
-
-    // Moderation links.
-    if ($revision->current) {
-      $row['moderation']['data'] = theme('links', array('links' => workbench_moderation_get_moderation_links($node_current, array('query' => array('destination' => $_GET['q'])))));
-      $class = 'revision-unpublished';
+      $row['class'][] = 'unpublished-revision';
     }
 
-    if ($revision->published) {
-      $row['vid']['data'] = t('Original revision: @old_vid <br />Live revision: @vid', array('@old_vid' => $revision->vid, '@vid' => $revision->live_revision));
-      $class = 'revision-live';
-
-      if (user_access('unpublish live version')) {
-        $row['moderation']['data'] .= l(t('Unpublish'), "node/{$revision->nid}/moderation/{$revision->live_revision}/unpublish");
-      }
-    }
+    // Row data.
+    $row['data']['vid'] = $revision->vid;
+    $row['data']['info'] = '<div class="revision-title">' . check_plain($revision->title) . '</div>'
+                         . '<div class="revision-log">' . filter_xss($revision->log) . '</div>';
+    $row['data']['date'] = l(format_date($revision->timestamp, 'short'), "node/{$node->nid}/moderation/{$revision->vid}/view");
+    $row['data']['user'] = theme('username', array('account' => $revision));
 
     // Revision operations.
-    $operations = array();
+    $revision_operations = array();
     foreach (array('view', 'revert', 'delete') as $perm) {
       if (user_access("$perm revisions")) {
-        $operations[] =  l(t('!perm', array('!perm' => $perm)),"node/{$revision->nid}/revisions/{$revision->vid}/$perm", array('query' => array('destination' => $_GET['q'])));
+        $revision_operations[] =  l(t('!perm', array('!perm' => $perm)), "node/{$revision->nid}/revisions/{$revision->vid}/$perm", array('query' => array('destination' => $_GET['q'])));
       }
     }
-    $row['revision']['data'] = implode(' | ', $operations);
-
-    foreach (array_keys($row) as $key) {
-      $row[$key]['class'] = $class;
+    $row['data']['revision'] = implode(' | ', $revision_operations);
+    
+    // Get the moderation history of this revision.
+    $query = db_select('workbench_moderation_node_history', 'm');
+    $query->leftJoin('users', 'u', 'm.uid = u.uid');
+    $query->condition('m.vid', $revision->vid)
+      ->orderBy('m.stamp', 'DESC')
+      ->fields('m')
+      ->fields('u', array('name'));
+    
+    $moderations = $query->execute()
+      ->fetchAllAssoc('hid');
+  
+    // Make sure it's an array.
+    if (empty($moderations)) {
+      $moderations = array();
+      if ($revision->vid == $node->content_moderation['current']->vid) {
+        $moderations = array($node->content_moderation['current']);
+      }
     }
+
+    // If this is the current revision, provide moderation links.
+    if ($revision->vid == $node->content_moderation['current']->vid) {
+      $node_current = workbench_moderation_node_current_load($node);
+      $row['data']['moderation'] = '<div class="moderation-state">' . t('Current state: %state', array('%state' => $node->content_moderation['current']->state)) . '</div>'
+                                 . '<div class="moderation-actions">' . theme('links', array('links' => workbench_moderation_get_moderation_links($node_current, array('query' => array('destination' => $_GET['q']))))) . '</div>';
+    }
+    
+    // Build a table of the moderation history.
+    $moderation_rows = array();
+    foreach ($moderations as $m) {
+      $moderation_rows[] = array(
+        'data' => array(
+          t('From @from_state --> @to_state', array('@from_state' => $m->from_state, '@to_state' => $m->state)),
+          format_date($m->stamp, 'short'),
+          theme('username', array('account' => $m)),
+        ),
+      );
+    }
+    $row['data']['moderation'] .= theme('table', array('rows' => $moderation_rows));
 
     $rows[] = $row;
   }
 
-  $header = array(t('Revision'), t('State change'), t('Date'), t('By'), t('Moderation Actions'), t('Revision Actions'));
-  return theme('table', array('header' => $header, 'rows' => $rows));
+  $header = array(t('Revision'), t('Title'), t('Date'), t('By'), t('Revision Actions'), t('Moderation Actions'));
+  return array('#markup' => theme('table', array('header' => $header, 'rows' => $rows)));
 }
 
 /**
