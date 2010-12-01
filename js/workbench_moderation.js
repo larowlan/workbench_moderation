@@ -26,7 +26,7 @@ Drupal.behaviors.contentModeration.attach = function(context) {
     $('#edit-node-options-revision').attr('disabled', true);
     $('.form-item-content-moderation-default-state').show();
   }
-  
+
   // On page load either show or uncheck the moderation options
   else {
     var checked = $('#edit-node-options-revisions').attr('checked');
@@ -39,7 +39,7 @@ Drupal.behaviors.contentModeration.attach = function(context) {
   }
 
   $('#edit-node-options-revision').bind('click', function () {
-    if ($(this).attr('checked')) {      
+    if ($(this).attr('checked')) {
       $('#edit-node-options-moderation').attr('disabled', false);
     }
     else {
@@ -49,7 +49,7 @@ Drupal.behaviors.contentModeration.attach = function(context) {
       $('.form-item-content-moderation-default-state').hide('slow');
     }
   });
-  
+
   $('#edit-node-options-moderation').bind('click', function () {
     if ($(this).attr('checked')) {
       // Ensure that revisions is checked and published is not
@@ -69,9 +69,9 @@ Drupal.behaviors.contentModeration.attach = function(context) {
       // Hide the moderation options
       $('.form-item-content-moderation-default-state').hide('slow');
     }
-      
+
   });
-  
+
 };
 
 

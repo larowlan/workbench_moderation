@@ -98,10 +98,10 @@ function workbench_moderation_node_history_view($node) {
 
     // Revision date.
     $row['date']['data'] = l(format_date($revision->timestamp, 'short'), "node/{$node->nid}/moderation/{$revision->vid}/view");
-    
+
     // Revision user.
     $row['user']['data'] = theme('username', array('account' => $revision));
-    
+
     // Moderation links.
     if ($revision->current) {
       $row['moderation']['data'] = theme('links', array('links' => workbench_moderation_get_moderation_links($node_current, array('query' => array('destination' => $_GET['q'])))));
@@ -125,11 +125,11 @@ function workbench_moderation_node_history_view($node) {
       }
     }
     $row['revision']['data'] = implode(' | ', $operations);
-    
+
     foreach (array_keys($row) as $key) {
       $row[$key]['class'] = $class;
     }
-    
+
     $rows[] = $row;
   }
 
@@ -163,7 +163,7 @@ function workbench_moderation_node_unpublish_form($form, $form_state, $node) {
 
 /**
  * Submit handler for unpublishing a live revision of a node.
- * 
+ *
  * @param $form
  * @param $form_state
  */
