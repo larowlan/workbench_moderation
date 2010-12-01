@@ -132,16 +132,17 @@ function workbench_moderation_node_history_view($node) {
     
     // Build a table of the moderation history.
     $moderation_rows = array();
+    $items = array();
     foreach ($moderations as $m) {
-      $moderation_rows[] = array(
-        'data' => array(
-          t('From @from_state --> @to_state', array('@from_state' => $m->from_state, '@to_state' => $m->state)),
-          format_date($m->stamp, 'short'),
-          theme('username', array('account' => $m)),
-        ),
-      );
+      $items[] = t('From @from_state --> @to_state on %date by !user',
+                   array(
+                    '@from_state' => $m->from_state,
+                    '@to_state' => $m->state,
+                    '%date' => format_date($m->stamp, 'short'),
+                    '!user' => theme('username', array('account' => $m)),
+                  ));
     }
-    $row['data']['moderation'] .= theme('table', array('rows' => $moderation_rows));
+    $row['data']['moderation'] .= theme('item_list', array('items' => $items));
 
     $rows[] = $row;
   }
