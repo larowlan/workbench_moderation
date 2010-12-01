@@ -120,6 +120,8 @@ function workbench_moderation_menu_alter(&$items) {
   // Hijack the node/X/edit page to ensure that the right revision (most current)
   // is displayed.
   $items['node/%node/edit']['page callback'] = 'workbench_moderation_node_edit_page_override';
+  $items['node/%node/edit']['module'] = 'workbench_moderation';
+  unset($items['node/%node/edit']['file']);
   $items['node/%node/revisions']['access callback'] = 'workbench_moderation_revision_access';
 }
 
@@ -546,30 +548,31 @@ function workbench_moderation_views_api() {
  * Overrides the node/X/edit page to ensure the proper revision is shown
  */
 function workbench_moderation_node_edit_page_override($node) {
-  if (!workbench_moderation_node_type_moderated($node->type)) { return; }
-
   // Check to see if this is an existing node
   if (isset($node->nid)) {
-    // Load the node moderation data
-    workbench_moderation_node_data($node);
-    // We ONLY edit the current revision
-    $node = workbench_moderation_node_current_load($node);
-    // Is this revision the same as the live revision?
-    if (!isset($node->content_moderation['published']->vid) || $node->vid != $node->content_moderation['published']->vid) {
-      // This revision is not live; alert the user
-      if (!user_access('bypass workbench moderation')) {
-        drupal_set_message(t('You are editing the pending revision (@revision)
-          and not the live version of this content. Your changes will be
-          moderated before they are reflected.',
-          array(
-            '@revision' => $node->vid
-            )
-          ), 'warning', FALSE
-        );
+    if (workbench_moderation_node_type_moderated($node->type)) {
+      // Load the node moderation data
+      workbench_moderation_node_data($node);
+      // We ONLY edit the current revision
+      $node = workbench_moderation_node_current_load($node);
+      // Is this revision the same as the live revision?
+      if (!isset($node->content_moderation['published']->vid) || $node->vid != $node->content_moderation['published']->vid) {
+        // This revision is not live; alert the user
+        if (!user_access('bypass workbench moderation')) {
+          drupal_set_message(t('You are editing the pending revision (@revision)
+            and not the live version of this content. Your changes will be
+            moderated before they are reflected.',
+            array(
+              '@revision' => $node->vid
+              )
+            ), 'warning', FALSE
+          );
+        }
       }
     }
   }
 
+  module_load_include('inc', 'node', 'node.pages');
   return node_page_edit($node);
 }
 
