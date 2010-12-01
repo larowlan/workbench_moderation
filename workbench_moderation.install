@@ -23,29 +23,88 @@ function workbench_moderation_install() {
 function workbench_moderation_schema() {
   $schema['workbench_moderation_states'] = array(
     'description' => 'Defines all possible states',
-    'fields'    => array(
-      'name'    => array('type' => 'varchar', 'length' => '255', 'not null' => FALSE),
-      'description'   => array('type' => 'varchar', 'length' => '255', 'not null' => FALSE),
-      'weight'  => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0, 'size' => 'small'),
+    'fields' => array(
+      'name' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'description' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'weight' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'small',
+      ),
     ),
     'unique keys' => array('name' => array('name'))
   );
 
   $schema['workbench_moderation_node_history'] = array(
     'fields' => array(
-      'hid' => array('type' => 'serial', 'not null' => TRUE),
-      'vid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0, 'disp-width' => '10'),
-      'nid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0, 'disp-width' => '10'),
-      'from_state' => array('type' => 'varchar', 'length' => '255', 'not null' => FALSE),
-      'state'=> array('type' => 'varchar', 'length' => '255', 'not null' => FALSE),
-      'uid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0, 'disp-width' => '10'),
-      'stamp' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0, 'disp-width' => '10'),
+      'hid' => array(
+        'type' => 'serial',
+        'not null' => TRUE
+      ),
+      'vid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '10',
+      ),
+      'nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '10',
+      ),
+      'from_state' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'state' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'uid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '10',
+      ),
+      'stamp' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '10',
+      ),
       'published' => array(
         'description' => 'Is this the live version?',
-        'type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0, 'disp-width' => '10'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '10',
+      ),
       'current' => array(
         'description' => 'Is this the current version?',
-        'type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0, 'disp-width' => '10'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '10',
+      ),
     ),
     'primary key' => array('hid'),
   );
@@ -53,9 +112,21 @@ function workbench_moderation_schema() {
   $schema['workbench_moderation_transitions'] = array(
     'description' => 'Defines the valid transitions for states',
     'fields' => array(
-      'from_name' => array('type' => 'varchar', 'length' => '255', 'not null' => FALSE),
-      'to_name'   => array('type' => 'varchar', 'length' => '255', 'not null' => FALSE),
-      'ntype'     => array('type' => 'varchar', 'length' => '40', 'default' => 'all'),
+      'from_name' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'to_name' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'ntype' => array(
+        'type' => 'varchar',
+        'length' => '40',
+        'default' => 'all',
+      ),
     ),
   );
 
