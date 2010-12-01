@@ -39,7 +39,8 @@
  */
 function workbench_moderation_menu() {
   $items = array();
-  // Display a nodes moderation history
+
+  // Display a node's moderation history
   $items["node/%node/moderation"] = array(
     'title' => 'Moderate',
     'description' => 'Show the content moderation history.',
@@ -51,33 +52,26 @@ function workbench_moderation_menu() {
     'access arguments' => array('view history', 1),
     'file' => 'workbench_moderation.node.inc'
   );
-  // Interface for unpublishing a live revision
-  $items["node/%node/moderation/%/unpublish"] = array(
-    'title' => 'Unpublish revision',
-    'description' => 'Unpublish the current live revision.',
-    'type' => MENU_CALLBACK,
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('workbench_moderation_node_status_form', 1, 3),
-    'theme callback' => '_node_custom_theme',
-    'access arguments' => array('unpublish live version'),
-    'file' => 'workbench_moderation.node.inc'
-  );
-  // Interface for publishing a live revision
-  $items["node/%node/moderation/%/publish"] = array(
-    'title' => 'Publish revision',
-    'description' => 'Publish the current live revision.',
-    'type' => MENU_CALLBACK,
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('workbench_moderation_node_status_form', 1, 3),
-    'theme callback' => '_node_custom_theme',
-    'access arguments' => array('publish pending version'),
-    'file' => 'workbench_moderation.node.inc'
-  );
+
+  // View the current revision of a node.
   $items["node/%node/current_revision"] = array(
     'page callback' => 'workbench_moderation_node_current_view',
     'page arguments' => array(1),
     'access callback' => '_workbench_moderation_access',
     'access arguments' => array('view revisions', 1),
+    'file' => 'workbench_moderation.node.inc'
+  );
+
+  // Unpublishing a live revision.
+  $items["node/%node/moderation/%/unpublish"] = array(
+    'title' => 'Unpublish revision',
+    'description' => 'Unpublish the current live revision.',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('workbench_moderation_node_unpublish_form', 1),
+    'load arguments' => array(3),
+    'theme callback' => '_node_custom_theme',
+    'access arguments' => array('unpublish live version'),
     'file' => 'workbench_moderation.node.inc'
   );
 

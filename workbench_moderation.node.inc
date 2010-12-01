@@ -125,47 +125,22 @@ function workbench_moderation_node_history_view($node) {
  * @param $node
  * @param $vid
  */
-function workbench_moderation_node_status_form($form, $form_state, $node, $vid) {
-  // Ensure that this is the live revision
+function workbench_moderation_node_unpublish_form($form, $form_state, $node) {
+  // Ensure that this is the live revision.
   if ($node->vid != $node->content_moderation['published']->vid) {
     drupal_set_message(t('This is not the live revision of this node.'), 'error');
-    return '';
-//    drupal_goto(request_uri());
+    drupal_goto("node/{$node->nid}/moderation");
   }
 
-  // Alert the user of what will happen
-  drupal_set_message();
-
-  // Set the context of the moderation operation
-  menu_set_active_item("node/{$node->nid}/moderation");
   $form = array();
-
-  // Make a new revision of the node.
-  $node->revision = TRUE;
-
-/*  $form['moderate'] = array(
-    '#title' => t('Change modertation state'),
-    '#type' => 'fieldset',
-  );
-*/
-  $status = ($node->status) ? t('unpublish') : t('publish');
-  $state = ($node->status) ? workbench_moderation_state_none() : workbench_moderation_state_published();
-  $form['message'] = array(
-    '#markup' =>  '<p>'. t('Are you sure that you want to %status this revision? The live version of this content
-      will be set to moderation state: %state.', array('%status' => $status, '%state' => $state)) . '</p>',
-  );
   $form['node'] = array(
     '#value' => $node,
     '#type' => 'value'
   );
-  $form['status'] = array(
-    '#type' => 'value',
-    '#value' => !$node->status,
+  $form['message'] = array(
+    '#markup' =>  '<p>'. t('Are you sure that you want to unpublish the live version of this content? The current live revision will be set to moderation state %state.', array('%state' => workbench_moderation_state_none())) . '</p>',
   );
-  return confirm_form($form, 
-    t('!status "!title"?', array('!status' => ucwords($status), '!title' => $node->title)),
-    "node/{$node->nid}/moderation"
-  );
+  return confirm_form($form, t('Unpublish "!title"?', array('!title' => $node->title)), "node/{$node->nid}/moderation");
 }
 
 /**
@@ -174,30 +149,25 @@ function workbench_moderation_node_status_form($form, $form_state, $node, $vid) 
  * @param $form
  * @param $form_state
  */
-function workbench_moderation_node_status_form_submit($form, $form_state) {
+function workbench_moderation_node_unpublish_form_submit($form, $form_state) {
   global $user;
-  $node = $form_state['values']['node'];
-  $node->status = (int) $form_state['values']['status'];
-  $message = ($node->status) ? t('published') : t('unpublished');
-  $node->log = t('!message by @user.', array('!message' => ucwords($message), '@user' => $user->name));
-  node_save($node);
-  // Update the moderation history.
-  // Set all versions to historic.
-  db_update('workbench_moderation_node_history')
-    ->fields(array('current' => 0, 'published' => 0))
-    ->condition('nid', $node->nid)
+  $node = $form['node']['#value'];
+
+  // Remove the moderation record's "published" flag.
+  $query = db_update('workbench_moderation_node_history')
+    ->condition('hid', $node->content_moderation['published']->hid)
+    ->fields(array('published' => 0))
     ->execute();
-  // Set new version to current.
-  $data = array(
-    'nid' => $node->nid,
-    'vid' => $node->vid,
-    'from_state' => $node->content_moderation['current']->state,
-    'state' => ($node->status) ? workbench_moderation_state_published() : workbench_moderation_state_none(),
-    'uid' => $user->uid,
-    'stamp' => $node->changed,
-    'published' => 1,
-    'current' => 1,
-  );
-  drupal_write_record('workbench_moderation_node_history', $data);
-  drupal_set_message(t('The live revision of this content has been %message.', array('%message' => $message)));
+
+  // Save a new revision of the node.
+  $node->revision = TRUE;
+  $node->status = 0;
+  $node->log = t('Unpublished by @user.', array('@user' => $user->name));
+  $node->content_moderation['creating_new_revision'] = TRUE;
+  $node->workbench_moderation_state_current = $node->content_moderation['published']->state;
+  $node->workbench_moderation_state_new = variable_get('workbench_moderation_default_state_' . $node->type);
+  node_save($node);
+
+  drupal_set_message(t('The live revision of this content has been unpublished.'));
+  drupal_goto("node/{$node->nid}/moderation");
 }
