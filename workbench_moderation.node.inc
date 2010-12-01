@@ -73,7 +73,7 @@ function workbench_moderation_node_history_view($node) {
       ),
       'class' => array('revision'),
     );
-    
+
     // Row classes.
     if ($revision->vid == $node->content_moderation['current']->vid) {
       $row['class'][] = 'current-revision';
@@ -100,7 +100,7 @@ function workbench_moderation_node_history_view($node) {
       }
     }
     $row['data']['revision'] = implode(' | ', $revision_operations);
-    
+
     // Get the moderation history of this revision.
     $query = db_select('workbench_moderation_node_history', 'm');
     $query->leftJoin('users', 'u', 'm.uid = u.uid');
@@ -108,10 +108,10 @@ function workbench_moderation_node_history_view($node) {
       ->orderBy('m.stamp', 'DESC')
       ->fields('m')
       ->fields('u', array('name'));
-    
+
     $moderations = $query->execute()
       ->fetchAllAssoc('hid');
-  
+
     // Make sure it's an array.
     if (empty($moderations)) {
       $moderations = array();
@@ -133,7 +133,7 @@ function workbench_moderation_node_history_view($node) {
       $row['data']['moderation'] = '<div class="moderation-state"><strong>' . t('This is the current revision. The current state is %state.', array('%state' => $node->content_moderation['current']->state)) . '</strong></div>'
                                  . '<div class="moderation-actions">' . theme('links', array('links' => workbench_moderation_get_moderation_links($node_current, array('query' => array('destination' => $_GET['q']))))) . '</div>';
     }
-    
+
     // Build a table of the moderation history.
     $moderation_rows = array();
     $items = array();
@@ -205,7 +205,7 @@ function workbench_moderation_node_unpublish_form_submit($form, $form_state) {
     ->condition('hid', $node->content_moderation['published']->hid)
     ->fields(array('published' => 0))
     ->execute();
-  
+
   // Re-save the 'current' version.
   $current_node = workbench_moderation_node_current_load($node);
   $current_node->status = 0;

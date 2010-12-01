@@ -281,7 +281,7 @@ function workbench_moderation_node_update($node) {
   if (!isset($node->workbench_moderation_state_new)) {
     $node->workbench_moderation_state_new = variable_get('workbench_moderation_default_state_' . $node->type);
   };
-  
+
   // If this is a new node, give it some information about 'my revision'.
   if (!isset($node->content_moderation)) {
     $node->content_moderation = array(
@@ -902,7 +902,7 @@ function workbench_moderation_moderate($node, $state) {
     ->condition('nid', $new_revision->nid)
     ->fields(array('current' => 0))
     ->execute();
-  
+
   // If this revision is to be published, it should be the only revision flagged 'published' in
   // {workbench_moderation_node_history}.
   if ($new_revision->published) {
