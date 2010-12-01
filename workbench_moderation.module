@@ -240,9 +240,6 @@ function workbench_moderation_node_presave(&$node) {
       $node->status = 0;
     }
   }
-  if (workbench_moderation_node_type_moderated($node->type) && empty($node->log)) {
-    $node->log = t('Edited by @user.', array('@user' => $user->name));
-  }
 }
 
 
