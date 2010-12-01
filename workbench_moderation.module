@@ -266,12 +266,10 @@ function workbench_moderation_node_update($node) {
 
   // Set default state values.
   if (!isset($node->workbench_moderation_state_current)) {
-    // $node->workbench_moderation_state_current = workbench_moderation_state_none();
-    $node->workbench_moderation_state_current = variable_get('workbench_moderation_default_state_' . $node->type);
+    $node->workbench_moderation_state_current = ($node->status ? workbench_moderation_state_published() : workbench_moderation_state_none());
   };
   if (!isset($node->workbench_moderation_state_new)) {
-    // $node->workbench_moderation_state_new = variable_get('workbench_moderation_default_state_' . $node->type);
-    $node->workbench_moderation_state_new = $node->workbench_moderation_state_current;
+    $node->workbench_moderation_state_new = variable_get('workbench_moderation_default_state_' . $node->type);
   };
 
   // Build a history record.
@@ -316,8 +314,9 @@ function workbench_moderation_node_update($node) {
     $live_revision = workbench_moderation_node_live_load($node);
     $live_revision->revision = 1;
     $live_revision->status = 1;
-    $live_revision->log = $node->log . '<br/>' . t('Last live revision was: !revision. This is now the current live revision', array('!revision' => $live_revision->vid));
+    $live_revision->log = $node->log . ' ' . t('Last live revision was: !revision. This is now the current live revision', array('!revision' => $live_revision->vid));
     $live_revision->content_moderation['creating_new_revision'] = TRUE;
+    $live_revision->workbench_moderation_state_new = $live_revision->workbench_moderation_state_current;
     node_save($live_revision);
   }
 
