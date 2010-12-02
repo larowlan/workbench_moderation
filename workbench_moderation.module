@@ -170,6 +170,12 @@ function workbench_moderation_permission() {
   $permissions['unpublish live version'] = array(
     'title' => t('Unpublish the current live version')
   );
+  $permissions['use workbench_moderation my drafts tab'] = array(
+    'title' => t('Use "My Drafts" workbench tab')
+  );
+  $permissions['use workbench_moderation needs review tab'] = array(
+    'title' => t('Use "Needs Review" workbench tab')
+  );
 
   // Per-node-type, per-transition permissions.
   // @see workbench_moderation_state_allowed()

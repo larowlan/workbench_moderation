@@ -220,6 +220,9 @@ function workbench_moderation_views_default_views() {
   $handler = $view->new_display('page', 'Drafts Page', 'drafts_page');
   $handler->display->display_options['defaults']['title'] = FALSE;
   $handler->display->display_options['title'] = 'My Drafts';
+  $handler->display->display_options['defaults']['access'] = FALSE;
+  $handler->display->display_options['access']['type'] = 'perm';
+  $handler->display->display_options['access']['perm'] = 'use workbench_moderation my drafts tab';
   $handler->display->display_options['defaults']['fields'] = FALSE;
   /* Field: Node: Nid */
   $handler->display->display_options['fields']['nid']['id'] = 'nid';
@@ -343,6 +346,9 @@ function workbench_moderation_views_default_views() {
   $handler = $view->new_display('page', 'Needs Review Page', 'needs_review_page');
   $handler->display->display_options['defaults']['title'] = FALSE;
   $handler->display->display_options['title'] = 'Needs Review';
+  $handler->display->display_options['defaults']['access'] = FALSE;
+  $handler->display->display_options['access']['type'] = 'perm';
+  $handler->display->display_options['access']['perm'] = 'use workbench_moderation needs review tab';
   $handler->display->display_options['defaults']['fields'] = FALSE;
   /* Field: Node: Nid */
   $handler->display->display_options['fields']['nid']['id'] = 'nid';
