@@ -288,7 +288,7 @@ function workbench_moderation_node_update($node) {
 
   // If this is a new node, give it some information about 'my revision'.
   if (!isset($node->content_moderation)) {
-    $node->content_moderation = array(
+    $node->content_moderation = (object) array(
       'my_revision' => array(
         'from_state' => workbench_moderation_state_none(),
         'state' => workbench_moderation_state_none(),
