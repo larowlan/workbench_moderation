@@ -127,8 +127,6 @@ function workbench_moderation_menu_alter(&$items) {
   // Hijack the node/X/edit page to ensure that the right revision (most current)
   // is displayed.
   $items['node/%node/edit']['page callback'] = 'workbench_moderation_node_edit_page_override';
-  $items['node/%node/edit']['module'] = 'workbench_moderation';
-  unset($items['node/%node/edit']['file']);
   $items['node/%node/revisions']['access callback'] = 'workbench_moderation_revision_access';
 }
 
