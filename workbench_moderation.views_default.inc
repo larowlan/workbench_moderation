@@ -7,9 +7,7 @@ function workbench_moderation_views_default_views() {
   $view->name = 'workbench_moderation';
   $view->description = 'Listing of content by moderation state.';
   $view->tag = 'Workbench';
-  $view->view_php = '';
   $view->base_table = 'node';
-  $view->is_cacheable = FALSE;
   $view->api_version = '3.0-alpha1';
   $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
 
@@ -483,7 +481,7 @@ function workbench_moderation_views_default_views() {
   $handler->display->display_options['filters']['state_1']['field'] = 'state';
   $handler->display->display_options['filters']['state_1']['operator'] = 'not in';
   $handler->display->display_options['filters']['state_1']['value'] = array(
-    'Published' => 'Published',
+    'Publish' => 'Publish',
   );
   /* Filter: Workbench Moderation: State */
   $handler->display->display_options['filters']['state']['id'] = 'state';
