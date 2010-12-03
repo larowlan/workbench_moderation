@@ -162,9 +162,6 @@ function workbench_moderation_permission() {
   $permissions['view moderation messages'] = array(
     'title' => t('View the moderation messages on a node')
   );
-  $permissions['publish pending version'] = array(
-    'title' => t('Publish the current pending version')
-  );
   $permissions['unpublish live version'] = array(
     'title' => t('Unpublish the current live version')
   );
