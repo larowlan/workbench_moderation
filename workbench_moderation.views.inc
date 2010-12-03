@@ -28,6 +28,23 @@ function workbench_moderation_views_data() {
     ),
   );
 
+  $data['workbench_moderation_node_history']['hid'] = array(
+    'title' => t('Moderation History ID'),
+    'help' => t('Content moderation history record ID.'),
+    'filter' => array(
+      'handler' => 'views_handler_filter',
+    ),
+    'field' => array(
+      'handler' => 'views_handler_field',
+      'click sortable' => TRUE,
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument',
+    ),
+  );
   $data['workbench_moderation_node_history']['state'] = array(
     'title' => t('State'),
     'help' => t('Content moderation state of the node revisision.'),
