@@ -153,8 +153,7 @@ function workbench_moderation_views_default_views() {
   $handler->display->display_options['fields']['title']['table'] = 'node_revision';
   $handler->display->display_options['fields']['title']['field'] = 'title';
   $handler->display->display_options['fields']['title']['alter']['alter_text'] = 1;
-  $handler->display->display_options['fields']['title']['alter']['text'] = '<div><a href="/node/[nid]/revision/[vid]">[title]</a></div>
-  <div>[log]</div>';
+  $handler->display->display_options['fields']['title']['alter']['text'] = '<div><a href="/node/[nid]/revision/[vid]">[title]</a></div><div>[log]</div>';
   $handler->display->display_options['fields']['title']['alter']['make_link'] = 0;
   $handler->display->display_options['fields']['title']['alter']['absolute'] = 0;
   $handler->display->display_options['fields']['title']['alter']['trim'] = 0;
@@ -183,8 +182,8 @@ function workbench_moderation_views_default_views() {
   $handler->display->display_options['fields']['stamp']['alter']['make_link'] = 0;
   $handler->display->display_options['fields']['stamp']['alter']['absolute'] = 0;
   $handler->display->display_options['fields']['stamp']['alter']['trim'] = 0;
-  $handler->display->display_options['fields']['stamp']['alter']['word_boundary'] = 1;
-  $handler->display->display_options['fields']['stamp']['alter']['ellipsis'] = 1;
+  $handler->display->display_options['fields']['stamp']['alter']['word_boundary'] = 0;
+  $handler->display->display_options['fields']['stamp']['alter']['ellipsis'] = 0;
   $handler->display->display_options['fields']['stamp']['alter']['strip_tags'] = 0;
   $handler->display->display_options['fields']['stamp']['alter']['html'] = 0;
   $handler->display->display_options['fields']['stamp']['hide_empty'] = 0;
@@ -210,11 +209,30 @@ function workbench_moderation_views_default_views() {
   $handler->display->display_options['sorts']['timestamp']['table'] = 'node_revision';
   $handler->display->display_options['sorts']['timestamp']['field'] = 'timestamp';
   $handler->display->display_options['sorts']['timestamp']['order'] = 'DESC';
-  /* Sort criterion: Workbench Moderation: Timestamp */
-  $handler->display->display_options['sorts']['stamp']['id'] = 'stamp';
-  $handler->display->display_options['sorts']['stamp']['table'] = 'workbench_moderation_node_history';
-  $handler->display->display_options['sorts']['stamp']['field'] = 'stamp';
-  $handler->display->display_options['sorts']['stamp']['order'] = 'DESC';
+  /* Filter: Workbench Moderation: Current */
+  $handler->display->display_options['filters']['current']['id'] = 'current';
+  $handler->display->display_options['filters']['current']['table'] = 'workbench_moderation_node_history';
+  $handler->display->display_options['filters']['current']['field'] = 'current';
+  $handler->display->display_options['filters']['current']['value'] = '1';
+  /* Filter: Workbench Moderation: Published */
+  $handler->display->display_options['filters']['published']['id'] = 'published';
+  $handler->display->display_options['filters']['published']['table'] = 'workbench_moderation_node_history';
+  $handler->display->display_options['filters']['published']['field'] = 'published';
+  /* Filter: Workbench Moderation: State */
+  $handler->display->display_options['filters']['state']['id'] = 'state';
+  $handler->display->display_options['filters']['state']['table'] = 'workbench_moderation_node_history';
+  $handler->display->display_options['filters']['state']['field'] = 'state';
+  $handler->display->display_options['filters']['state']['value'] = array(
+    'Draft' => 'Draft',
+    'Review' => 'Review',
+    'Approve' => 'Approve',
+  );
+  $handler->display->display_options['filters']['state']['exposed'] = TRUE;
+  $handler->display->display_options['filters']['state']['expose']['operator'] = 'state_op';
+  $handler->display->display_options['filters']['state']['expose']['label'] = 'Moderation State';
+  $handler->display->display_options['filters']['state']['expose']['use_operator'] = 0;
+  $handler->display->display_options['filters']['state']['expose']['identifier'] = 'state';
+  $handler->display->display_options['filters']['state']['expose']['reduce'] = 1;
 
   /* Display: Drafts Page */
   $handler = $view->new_display('page', 'Drafts Page', 'drafts_page');
@@ -279,8 +297,7 @@ function workbench_moderation_views_default_views() {
   $handler->display->display_options['fields']['title']['table'] = 'node_revision';
   $handler->display->display_options['fields']['title']['field'] = 'title';
   $handler->display->display_options['fields']['title']['alter']['alter_text'] = 1;
-  $handler->display->display_options['fields']['title']['alter']['text'] = '<div><a href="/node/[nid]/revision/[vid]">[title]</a></div>
-  <div>[log]</div>';
+  $handler->display->display_options['fields']['title']['alter']['text'] = '<div><a href="/node/[nid]/revision/[vid]">[title]</a></div><div>[log]</div>';
   $handler->display->display_options['fields']['title']['alter']['make_link'] = 0;
   $handler->display->display_options['fields']['title']['alter']['absolute'] = 0;
   $handler->display->display_options['fields']['title']['alter']['trim'] = 0;
@@ -405,8 +422,7 @@ function workbench_moderation_views_default_views() {
   $handler->display->display_options['fields']['title']['table'] = 'node_revision';
   $handler->display->display_options['fields']['title']['field'] = 'title';
   $handler->display->display_options['fields']['title']['alter']['alter_text'] = 1;
-  $handler->display->display_options['fields']['title']['alter']['text'] = '<div><a href="/node/[nid]/revision/[vid]">[title]</a></div>
-  <div>[log]</div>';
+  $handler->display->display_options['fields']['title']['alter']['text'] = '<div><a href="/node/[nid]/revision/[vid]">[title]</a></div><div>[log]</div>';
   $handler->display->display_options['fields']['title']['alter']['make_link'] = 0;
   $handler->display->display_options['fields']['title']['alter']['absolute'] = 0;
   $handler->display->display_options['fields']['title']['alter']['trim'] = 0;
@@ -475,32 +491,6 @@ function workbench_moderation_views_default_views() {
   $handler->display->display_options['fields']['moderation_actions']['alter']['html'] = 0;
   $handler->display->display_options['fields']['moderation_actions']['hide_empty'] = 0;
   $handler->display->display_options['fields']['moderation_actions']['empty_zero'] = 0;
-  $handler->display->display_options['defaults']['filters'] = FALSE;
-  /* Filter: Workbench Moderation: Current */
-  $handler->display->display_options['filters']['current']['id'] = 'current';
-  $handler->display->display_options['filters']['current']['table'] = 'workbench_moderation_node_history';
-  $handler->display->display_options['filters']['current']['field'] = 'current';
-  $handler->display->display_options['filters']['current']['value'] = '1';
-  /* Filter: Workbench Moderation: State */
-  $handler->display->display_options['filters']['state_1']['id'] = 'state_1';
-  $handler->display->display_options['filters']['state_1']['table'] = 'workbench_moderation_node_history';
-  $handler->display->display_options['filters']['state_1']['field'] = 'state';
-  $handler->display->display_options['filters']['state_1']['operator'] = 'not in';
-  $handler->display->display_options['filters']['state_1']['value'] = array(
-    'Publish' => 'Publish',
-  );
-  /* Filter: Workbench Moderation: State */
-  $handler->display->display_options['filters']['state']['id'] = 'state';
-  $handler->display->display_options['filters']['state']['table'] = 'workbench_moderation_node_history';
-  $handler->display->display_options['filters']['state']['field'] = 'state';
-  $handler->display->display_options['filters']['state']['exposed'] = TRUE;
-  $handler->display->display_options['filters']['state']['expose']['label'] = 'Moderation state';
-  $handler->display->display_options['filters']['state']['expose']['identifier'] = 'state';
-  $handler->display->display_options['filters']['state']['expose']['reduce'] = 0;
-  /* Filter: Workbench Moderation: User Can Moderate */
-  $handler->display->display_options['filters']['moderation_actions']['id'] = 'moderation_actions';
-  $handler->display->display_options['filters']['moderation_actions']['table'] = 'workbench_moderation_node_history';
-  $handler->display->display_options['filters']['moderation_actions']['field'] = 'moderation_actions';
   $handler->display->display_options['path'] = 'admin/config/workbench/page/needs-review';
   $handler->display->display_options['menu']['type'] = 'tab';
   $handler->display->display_options['menu']['title'] = 'Needs Review';
