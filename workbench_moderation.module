@@ -651,6 +651,7 @@ function workbench_moderation_node_data(&$node) {
   $query->addJoin('LEFT OUTER', 'workbench_moderation_node_history', 'm', 'r.vid = m.vid');
   $query->condition('r.nid', $node->nid)
     ->orderBy('r.vid', 'DESC')
+    ->orderBy('m.hid', 'DESC')
     ->fields('m')
     ->fields('r', array('title', 'timestamp'));
   $current = $query->execute()->fetchObject();
@@ -682,6 +683,7 @@ function workbench_moderation_node_data(&$node) {
     $query->addJoin('LEFT OUTER', 'workbench_moderation_node_history', 'm', 'r.vid = m.vid');
     $query->condition('n.nid', $node->nid)
       ->condition('n.status', 1)
+      ->orderBy('m.hid', 'DESC')
       ->fields('r', array('nid', 'vid', 'title', 'timestamp'))
       ->fields('m');
     $published = $query->execute()->fetchObject();
@@ -702,10 +704,11 @@ function workbench_moderation_node_data(&$node) {
   }
   else {
     $query = db_select('node_revision', 'r');
-    $query->addJoin('LEFT OUTER', 'workbench_moderation_node_history', 'moderation', 'r.vid = moderation.vid');
-    $query->condition('moderation.vid', $node->vid)
-      ->fields('moderation')
-      ->fields('r', array('title', 'timestamp'));
+    $query->addJoin('LEFT OUTER', 'workbench_moderation_node_history', 'm', 'r.vid = m.vid');
+    $query->condition('m.vid', $node->vid)
+      ->orderBy('m.hid', 'DESC')
+      ->fields('m')
+      ->fields('r', array('nid', 'vid', 'title', 'timestamp'));
     $my_revision = $query->execute()->fetchObject();
 
     // This might happen if you're turning workbench_moderation on and off, but it should be really
