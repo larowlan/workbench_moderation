@@ -143,7 +143,7 @@ function workbench_moderation_views_data() {
       'title' => t('Moderation Links'),
       'handler' => 'workbench_moderation_handler_field_links',
       'click sortable' => FALSE,
-      'additional fields' => array('nid', 'current'),
+      'additional fields' => array('nid', 'vid', 'current'),
     ),
     'filter' => array(
       'title' => t('User Can Moderate'),
