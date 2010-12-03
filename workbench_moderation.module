@@ -620,7 +620,7 @@ function workbench_moderation_state_allowed($account, $from_state, $to_state, $n
 }
 
 /**
- * Adds current and live revision data to a node
+ * Adds current and live revision data to a node.
  *
  * @param $node
  *   Object, Drupal node object
@@ -630,31 +630,45 @@ function workbench_moderation_node_data(&$node) {
   if (!workbench_moderation_node_type_moderated($node->type) || false) { return; }
   if (!isset($node->nid)) { dpm($node); return; }
 
+  // Build a default 'current' moderation record. Nodes will lack a workbench_moderation record if
+  // moderation was not enabled for their node type when they were created. In that case, assume the
+  // live node is at the current revision.
+  $defaults = array(
+    'hid' => NULL,
+    'nid' => $node->nid,
+    'vid' => $node->vid,
+    'from_state' => workbench_moderation_state_none(),
+    'state' => ($node->status ? workbench_moderation_state_published() : workbench_moderation_state_none()),
+    'uid' => $node->uid,
+    'stamp' => $node->changed,
+    'published' => $node->status,
+    'current' => 1,
+  );
+
+  // We'll store moderation state information in an array on the node.
   $node->content_moderation = array();
 
-  // Fetch the current revision ("head").
+  // Fetch the most recent revision from the {node_revision} table. This is the current revision
+  // ("head").
   $query = db_select('node_revision', 'r');
-  $query->addJoin('LEFT OUTER', 'workbench_moderation_node_history', 'moderation', 'r.vid = moderation.vid');
-  $query->condition('moderation.nid', $node->nid)
-    ->condition('moderation.current', 1)
-    ->fields('moderation')
+  $query->addJoin('LEFT OUTER', 'workbench_moderation_node_history', 'm', 'r.vid = m.vid');
+  $query->condition('r.nid', $node->nid)
+    ->orderBy('r.vid', 'DESC')
+    ->fields('m')
     ->fields('r', array('title', 'timestamp'));
   $current = $query->execute()->fetchObject();
 
-  // Nodes will lack a workbench_moderation record if they were created before moderation was
-  // enabled for their node type. In this case, assume the node is at the current revision.
   if (!$current) {
-    $current = (object) array(
-      'hid' => NULL,
-      'nid' => $node->nid,
-      'vid' => $node->vid,
-      'from_state' => workbench_moderation_state_none(),
-      'state' => ($node->status ? workbench_moderation_state_published() : workbench_moderation_state_none()),
-      'uid' => $node->uid,
-      'stamp' => $node->changed,
-      'published' => $node->status,
-      'current' => 1,
-    );
+    $current = (object) $defaults;
+  }
+  else {
+    // Fill in any defaults that are missing from the database record. We need to maintain false-y
+    // values except for NULL, so array_filter() + array_merge() wouldn't work here.
+    foreach (array_keys($defaults) as $key) {
+      if (is_null($current->$key)) {
+        $current->$key = $defaults[$key];
+      }
+    }
   }
 
   $node->content_moderation['current'] = $current;
@@ -666,16 +680,18 @@ function workbench_moderation_node_data(&$node) {
   }
   else {
     // Fetch the most recent published revision.
-    $query = db_select('node_revision', 'r');
-    $query->addJoin('LEFT OUTER', 'workbench_moderation_node_history', 'moderation', 'r.vid = moderation.vid');
-    $query->condition('moderation.nid', $node->nid)
-      ->condition('moderation.published', 1)
-      ->fields('moderation')
-      ->fields('r', array('title', 'timestamp'));
+    $query = db_select('node', 'n');
+    $query->addJoin('INNER', 'node_revision', 'r', 'n.vid = r.vid');
+    $query->addJoin('LEFT OUTER', 'workbench_moderation_node_history', 'm', 'r.vid = m.vid');
+    $query->condition('n.nid', $node->nid)
+      ->condition('n.status', 1)
+      ->fields('r', array('nid', 'vid', 'title', 'timestamp'))
+      ->fields('m');
     $published = $query->execute()->fetchObject();
   }
 
   if ($published) {
+    $published->state = workbench_moderation_state_published();
     $node->content_moderation['published'] = $published;
   }
 
