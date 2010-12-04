@@ -4,6 +4,7 @@ core = 7.x
 name = Workbench Moderation
 description = Provides content moderation services
 package = "Workbench"
+dependencies[] = workbench
 files[] = workbench_moderation.admin.inc
 files[] = workbench_moderation.install
 files[] = workbench_moderation.module
