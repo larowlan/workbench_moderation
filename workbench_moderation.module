@@ -285,17 +285,16 @@ function workbench_moderation_node_update($node) {
 
   // If this is a new node, give it some information about 'my revision'.
   if (!isset($node->content_moderation)) {
-    $node->content_moderation = array(
-      'my_revision' => (object) array(
-        'from_state' => workbench_moderation_state_none(),
-        'state' => workbench_moderation_state_none(),
-        'nid' => $node->nid,
-        'vid' => $node->vid,
-        'uid' => $user->uid,
-        'current' => TRUE,
-        'published' => FALSE,
-        'stamp' => $node->changed,
-      ),
+    $node->content_moderation = array();
+    $node->content_moderation['my_revision'] = $node->content_moderation['current'] = (object) array(
+      'from_state' => workbench_moderation_state_none(),
+      'state' => workbench_moderation_state_none(),
+      'nid' => $node->nid,
+      'vid' => $node->vid,
+      'uid' => $user->uid,
+      'current' => TRUE,
+      'published' => FALSE,
+      'stamp' => $node->changed,
     );
   }
 
