@@ -206,12 +206,15 @@ function workbench_moderation_node_unpublish_form_submit($form, $form_state) {
     ->fields(array('published' => 0))
     ->execute();
 
-  // Re-save the 'current' version.
-  $current_node = workbench_moderation_node_current_load($node);
-  $current_node->status = 0;
-  $current_node->revision = 0;
-  $current_node->content_moderation['updating_published_revision'] = TRUE;
-  node_save($current_node);
+  // Moderate the revision.
+  workbench_moderation_moderate($node, workbench_moderation_state_none());
+
+  // Make sure the 'current' version is the 'live' revision -- ie, the revision in {node}.
+  $live_revision = workbench_moderation_node_current_load($node);
+  $live_revision->status = 0;
+  $live_revision->revision = 0;
+  $live_revision->content_moderation['updating_live_revision'] = TRUE;
+  node_save($live_revision);
 
   drupal_set_message(t('The live revision of this content has been unpublished.'));
   drupal_goto("node/{$node->nid}/moderation");
