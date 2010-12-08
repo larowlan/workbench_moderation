@@ -271,7 +271,7 @@ function workbench_moderation_node_update($node) {
   // Don't proceed if moderation is not enabled on this content type, or if we're replacing an
   // already-published version.
   if (!workbench_moderation_node_type_moderated($node->type) ||
-      (!empty($node->content_moderation['updating_published_revision']) && $node->content_moderation['updating_published_revision'])) {
+      !empty($node->content_moderation['updating_live_revision'])) {
     return;
   }
 
@@ -951,7 +951,7 @@ function workbench_moderation_moderate($node, $state) {
     // Don't create a new revision.
     $live_revision->revision = 0;
     // Prevent another moderation record from being written.
-    $live_revision->content_moderation['updating_published_revision'] = TRUE;
+    $live_revision->content_moderation['updating_live_revision'] = TRUE;
     node_save($live_revision);
   }
 }
