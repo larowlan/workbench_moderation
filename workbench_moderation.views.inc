@@ -17,8 +17,8 @@ function workbench_moderation_views_data() {
   $data['workbench_moderation_node_history']['table']['join'] = array(
     'node' => array(
       'left_table' => 'node_revision',
-      'left_field' => 'nid',
-      'field' => 'nid',
+      'left_field' => 'vid',
+      'field' => 'vid',
       'type' => 'INNER',
     ),
     'node_revision' => array(
