@@ -161,7 +161,7 @@ function workbench_moderation_views_default_views() {
   $handler->display->display_options['fields']['title']['table'] = 'node_revision';
   $handler->display->display_options['fields']['title']['field'] = 'title';
   $handler->display->display_options['fields']['title']['alter']['alter_text'] = 1;
-  $handler->display->display_options['fields']['title']['alter']['text'] = '<div><a href="/node/[nid]/revision/[vid]">[title]</a></div><div>[log]</div>';
+  $handler->display->display_options['fields']['title']['alter']['text'] = '<div><a href="/node/[nid]/current-revision">[title]</a></div><div>[log]</div>';
   $handler->display->display_options['fields']['title']['alter']['make_link'] = 0;
   $handler->display->display_options['fields']['title']['alter']['absolute'] = 0;
   $handler->display->display_options['fields']['title']['alter']['trim'] = 0;
@@ -426,7 +426,7 @@ function workbench_moderation_views_default_views() {
   $handler->display->display_options['fields']['title']['table'] = 'node_revision';
   $handler->display->display_options['fields']['title']['field'] = 'title';
   $handler->display->display_options['fields']['title']['alter']['alter_text'] = 1;
-  $handler->display->display_options['fields']['title']['alter']['text'] = '<div><a href="/node/[nid]/revision/[vid]">[title]</a></div><div>[log]</div>';
+  $handler->display->display_options['fields']['title']['alter']['text'] = '<div><a href="/node/[nid]/current-revision">[title]</a></div><div>[log]</div>';
   $handler->display->display_options['fields']['title']['alter']['make_link'] = 0;
   $handler->display->display_options['fields']['title']['alter']['absolute'] = 0;
   $handler->display->display_options['fields']['title']['alter']['trim'] = 0;

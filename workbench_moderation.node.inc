@@ -94,9 +94,20 @@ function workbench_moderation_node_history_view($node) {
 
     // Revision operations.
     $revision_operations = array();
-    foreach (array('view', 'revert', 'delete') as $perm) {
-      if (user_access("$perm revisions")) {
-        $revision_operations[] =  l(t('!perm', array('!perm' => $perm)), "node/{$revision->nid}/revisions/{$revision->vid}/$perm", array('query' => array('destination' => $_GET['q'])));
+    if ($revision->vid == $node->content_moderation['current']->vid) {
+      $revision_operations = array(l(t('view'), "node/{$revision->nid}/current-revision"));
+    }
+    elseif (isset($node->content_moderation['published']) && $revision->vid == $node->content_moderation['published']->vid) {
+      $revision_operations = array(
+        l(t('view'), "node/{$revision->nid}"),
+        '<strike>revert</strike>', //@TODO make reverting to the published revision possible.
+      );
+    }
+    else {
+      foreach (array('view', 'revert', 'delete') as $perm) {
+        if (user_access("$perm revisions")) {
+          $revision_operations[] =  l(t('!perm', array('!perm' => $perm)), "node/{$revision->nid}/revisions/{$revision->vid}/$perm", array('query' => array('destination' => $_GET['q'])));
+        }
       }
     }
     $row['data']['revision'] = implode(' | ', $revision_operations);
