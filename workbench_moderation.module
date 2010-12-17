@@ -854,7 +854,7 @@ function workbench_moderation_states_next($current_state = FALSE, $account = FAL
     ->condition('transitions.ntype', array($node_type, 'all'))
     ->fields('transitions', array('to_name'))
     ->execute()
-    ->fetchCol();
+    ->fetchAllKeyed(0, 0);
 
   // Check whether the user has permission to make each transition. The 'bypass workbench
   // moderation' permission is accounted for in workbench_moderation_state_allowed().
