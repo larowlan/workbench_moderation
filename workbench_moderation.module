@@ -794,7 +794,8 @@ function workbench_moderation_node_is_current($node) {
 }
 
 /**
- * Return a list of transitions
+ * Return an array of transitions; the key is the 'from' state, the value is an array of possible
+ * 'to' states.
  */
 function workbench_moderation_transitions_get() {
   $transitions = array();

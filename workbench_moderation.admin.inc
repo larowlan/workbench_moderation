@@ -102,11 +102,18 @@ function workbench_moderation_admin_settings_transitions($form, &$form_state) {
     '#type' => 'fieldset',
     '#title' => 'Delete transitions',
   );
+
+  $options = array();
+  foreach (workbench_moderation_transitions_get() as $from_state => $states) {
+    foreach ($states as $to_state) {
+      $options[$from_state . '---' . $to_state] = $from_state . ' -> ' . $to_state;
+    }
+  }
   $form['delete']['delete_transitions'] = array(
     '#type' => 'checkboxes',
     '#title' => 'Delete existing transitions',
     '#default_value' => array(),
-    '#options' => workbench_moderation_transitions_get(),
+    '#options' => $options,
     '#description' => t('Select all states you want to delete <br/> Please note: deleting an existing transition will not have any impact on states involved.')
   );
   $form['delete']['delete'] = array(
