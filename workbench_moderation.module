@@ -175,17 +175,15 @@ function workbench_moderation_permission() {
   // Per-node-type, per-transition permissions.
   // @see workbench_moderation_state_allowed()
   $node_types = workbench_moderation_moderate_node_types();
-  $states = workbench_moderation_states_get();
+  $transitions = workbench_moderation_transitions_get();
   foreach ($node_types as $node_type) {
-    foreach (array_keys($states) as $from_state) {
-      if ($to_states = workbench_moderation_states_next($from_state)) {
-        $from_state = check_plain($from_state);
-        foreach (array_keys($to_states) as $to_state) {
-          $to_state = check_plain($to_state);
-          $permissions["moderate $node_type state from $from_state to $to_state"] = array(
-            'title' => t('Moderate !node_type state from !from_state to !to_state', array('!node_type' => $node_type, '!from_state' => $from_state, '!to_state' => $to_state)),
-          );
-        }
+    foreach ($transitions as $from_state => $states) {
+      $from_state = check_plain($from_state);
+      foreach ($states as $to_state) {
+        $to_state = check_plain($to_state);
+        $permissions["moderate $node_type state from $from_state to $to_state"] = array(
+          'title' => t('Moderate !node_type state from !from_state to !to_state', array('!node_type' => $node_type, '!from_state' => $from_state, '!to_state' => $to_state)),
+        );
       }
     }
   }
@@ -799,22 +797,22 @@ function workbench_moderation_node_is_current($node) {
  * Return a list of transitions
  */
 function workbench_moderation_transitions_get() {
-  static $transitions = FALSE;
-  if (! $transitions) {
-    $results = db_query("SELECT *
-                         FROM {workbench_moderation_transitions} transitions
-                           JOIN {workbench_moderation_states} states_from ON transitions.from_name = states_from.name
-                           JOIN {workbench_moderation_states} states_to ON transitions.to_name = states_to.name
-                         ORDER BY states_from.weight, states_to.weight");
-    $transitions = array();
-    foreach ($results as $transition) {
-      $transinfo = $transition->from_name . '---' . $transition->to_name;
-      $transitions[$transinfo] = $transition->from_name . ' -> ' . $transition->to_name;
-    }
-  }
-  return $transitions;
-}
+  $transitions = array();
 
+  $query = db_select('workbench_moderation_transitions', 't');
+  $alias_from = $query->addJoin('INNER', 'workbench_moderation_states', NULL, 't.from_name = %alias.name');
+  $alias_to = $query->addJoin('INNER', 'workbench_moderation_states', NULL, 't.to_name = %alias.name');
+  $result = $query->fields('t', array('from_name', 'to_name'))
+    ->orderBy("$alias_from.weight", 'ASC')
+    ->orderBy("$alias_to.weight", 'ASC')
+    ->execute();
+
+  while ($t = $result->fetchObject()) {
+    $transitions[$t->from_name][] = $t->to_name;
+  }
+
+ return $transitions;
+}
 
 /**
  * Return a list of all states in the system
