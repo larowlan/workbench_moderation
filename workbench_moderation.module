@@ -831,43 +831,51 @@ function workbench_moderation_states_get() {
 }
 
 /**
- * Provides a list of possible next states for this node.
+ * Provides a list of possible next states for this node. This function is used in permissions
+ * checks, so this should not ever return un-permission-checked transitions.
  *
  * @param $current_state
- *   String, current state, optional.
+ *   String, current state.
  * @param $account
- *   Object, Drupal user, optional. If this is omitted, all states are returned
+ *   Object, Drupal user.
  * @param $node_type
- *   String, node type
+ *   String, node type.
  * @return array or FALSE
  */
-function workbench_moderation_states_next($current_state = FALSE, $account = FALSE, $node_type = FALSE) {
+function workbench_moderation_states_next($current_state, $account, $node_type) {
   // Make sure we have a current state.
   if (! $current_state) {
     $current_state = workbench_moderation_state_none();
   }
 
-  // Get a list of possible transitions.
-  $states = db_select('workbench_moderation_transitions', 'transitions')
-    ->condition('transitions.from_name', $current_state)
-    ->condition('transitions.ntype', array($node_type, 'all'))
-    ->fields('transitions', array('to_name'))
-    ->execute()
-    ->fetchAllKeyed(0, 0);
-
-  // Check whether the user has permission to make each transition. The 'bypass workbench
-  // moderation' permission is accounted for in workbench_moderation_state_allowed().
-  if ($states && $account && $node_type) {
-    foreach ($states as $state) {
-      if (!workbench_moderation_state_allowed($account, $current_state, $state, $node_type)) {
-        unset($states[$state]);
-      }
-    }
+  if (!$account) {
+    $account = $user;
   }
 
-  // Some functions expect an array of $state => $state pairs.
-  if ($states) {
+  if (user_access('bypass workbench moderation', $account)) {
+    // Some functions expect an array of $state => $state pairs.
+    $states = array_keys(workbench_moderation_states_get());
     return array_combine($states, $states);
+  }
+  else {
+    // Get a list of possible transitions.
+    $states = db_select('workbench_moderation_transitions', 'transitions')
+      ->condition('transitions.from_name', $current_state)
+      ->condition('transitions.ntype', array($node_type, 'all'))
+      ->fields('transitions', array('to_name'))
+      ->execute()
+      ->fetchAllKeyed(0, 0);
+
+    // Check whether the user has permission to make each transition. The 'bypass workbench
+    // moderation' permission is accounted for in workbench_moderation_state_allowed().
+    if ($states) {
+      foreach ($states as $state) {
+        if (!workbench_moderation_state_allowed($account, $current_state, $state, $node_type)) {
+          unset($states[$state]);
+        }
+      }
+      return $states;
+    }
   }
 
   return FALSE;
