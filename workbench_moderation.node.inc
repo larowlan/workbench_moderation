@@ -22,7 +22,7 @@ function workbench_moderation_node_current_view($node) {
       !type. This is currently in state: !state.',
       array(
         '!type' => $node->type,
-        '!state' => $current_node->content_moderation['current']->state
+        '!state' => $current_node->workbench_moderation['current']->state
       )
     ));
     menu_set_active_item("node/{$current_node->nid}/moderation");
@@ -44,7 +44,7 @@ function workbench_moderation_node_history_view($node) {
   drupal_set_title(t('!title History', array('!title' => $node->title)));
 
   // Alert if there is no live node
-  if (!isset($node->content_moderation['published'])) {
+  if (!isset($node->workbench_moderation['published'])) {
     drupal_set_message(t('Currently there is no live (published) version of this node.'));
   }
 
@@ -75,10 +75,10 @@ function workbench_moderation_node_history_view($node) {
     );
 
     // Row classes.
-    if ($revision->vid == $node->content_moderation['current']->vid) {
+    if ($revision->vid == $node->workbench_moderation['current']->vid) {
       $row['class'][] = 'current-revision';
     }
-    if (isset($node->content_moderation['published']) && $revision->vid == $node->content_moderation['published']->vid) {
+    if (isset($node->workbench_moderation['published']) && $revision->vid == $node->workbench_moderation['published']->vid) {
       $row['class'][] = 'published-revision';
     }
     else {
@@ -94,10 +94,10 @@ function workbench_moderation_node_history_view($node) {
 
     // Revision operations.
     $revision_operations = array();
-    if ($revision->vid == $node->content_moderation['current']->vid) {
+    if ($revision->vid == $node->workbench_moderation['current']->vid) {
       $revision_operations = array(l(t('view'), "node/{$revision->nid}/current-revision"));
     }
-    elseif (isset($node->content_moderation['published']) && $revision->vid == $node->content_moderation['published']->vid) {
+    elseif (isset($node->workbench_moderation['published']) && $revision->vid == $node->workbench_moderation['published']->vid) {
       $revision_operations = array(
         l(t('view'), "node/{$revision->nid}"),
         '<strike>revert</strike>', //@TODO make reverting to the published revision possible.
@@ -126,22 +126,22 @@ function workbench_moderation_node_history_view($node) {
     // Make sure it's an array.
     if (empty($moderations)) {
       $moderations = array();
-      if ($revision->vid == $node->content_moderation['current']->vid) {
-        $moderations = array($node->content_moderation['current']);
+      if ($revision->vid == $node->workbench_moderation['current']->vid) {
+        $moderations = array($node->workbench_moderation['current']);
       }
     }
 
     // If this is the current revision, provide moderation links.
-    if (!empty($node->content_moderation['published']) && $revision->vid == $node->content_moderation['published']->vid) {
+    if (!empty($node->workbench_moderation['published']) && $revision->vid == $node->workbench_moderation['published']->vid) {
       $row['data']['moderation'] = '<div class="moderation-state"><strong>' . t('This is the published revision.') . '</strong></div>';
       // Provide an unpublish link.
       if (user_access('unpublish live version')) {
         $row['data']['moderation'] .= '<div class="moderation-actions">' . l(t('Unpublish'), "node/{$revision->nid}/moderation/{$revision->live_revision}/unpublish") . '</div>';
       }
     }
-    elseif ($revision->vid == $node->content_moderation['current']->vid) {
+    elseif ($revision->vid == $node->workbench_moderation['current']->vid) {
       $node_current = workbench_moderation_node_current_load($node);
-      $row['data']['moderation'] = '<div class="moderation-state"><strong>' . t('This is the current revision. The current state is %state.', array('%state' => $node->content_moderation['current']->state)) . '</strong></div>'
+      $row['data']['moderation'] = '<div class="moderation-state"><strong>' . t('This is the current revision. The current state is %state.', array('%state' => $node->workbench_moderation['current']->state)) . '</strong></div>'
                                  . '<div class="moderation-actions">' . theme('links', array('links' => workbench_moderation_get_moderation_links($node_current, array('query' => array('destination' => $_GET['q']))))) . '</div>';
     }
 
@@ -185,7 +185,7 @@ function workbench_moderation_node_history_view($node) {
  */
 function workbench_moderation_node_unpublish_form($form, $form_state, $node) {
   // Ensure that this is the live revision.
-  if ($node->vid != $node->content_moderation['published']->vid) {
+  if ($node->vid != $node->workbench_moderation['published']->vid) {
     drupal_set_message(t('This is not the live revision of this node.'), 'error');
     drupal_goto("node/{$node->nid}/moderation");
   }
@@ -213,7 +213,7 @@ function workbench_moderation_node_unpublish_form_submit($form, $form_state) {
 
   // Remove the moderation record's "published" flag.
   $query = db_update('workbench_moderation_node_history')
-    ->condition('hid', $node->content_moderation['published']->hid)
+    ->condition('hid', $node->workbench_moderation['published']->hid)
     ->fields(array('published' => 0))
     ->execute();
 
@@ -224,7 +224,7 @@ function workbench_moderation_node_unpublish_form_submit($form, $form_state) {
   $live_revision = workbench_moderation_node_current_load($node);
   $live_revision->status = 0;
   $live_revision->revision = 0;
-  $live_revision->content_moderation['updating_live_revision'] = TRUE;
+  $live_revision->workbench_moderation['updating_live_revision'] = TRUE;
   node_save($live_revision);
 
   drupal_set_message(t('The live revision of this content has been unpublished.'));

@@ -5,9 +5,7 @@
  * Provides javascript services
  */
 
-
 (function ($) {
-
 
 /**
  * Handle moderation settings
@@ -73,6 +71,5 @@ Drupal.behaviors.contentModeration.attach = function(context) {
   });
 
 };
-
 
 })(jQuery);
