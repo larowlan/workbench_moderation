@@ -1,8 +1,9 @@
 <?php
+// $Id$
 
 /**
  * @file
- * Install file for the content moderation module.
+ * Install file for the workbench moderation module.
  *
  * @copyright (C) Copyright 2010 Palantir.net
  */
@@ -13,7 +14,10 @@
 function workbench_moderation_install() {
   // Create tables.
   _workbench_moderation_insert_values();
-  db_query("UPDATE {system} SET weight = 5 WHERE name = 'workbench_moderation'");
+  db_update('system')
+    ->fields(array('weight' => 5))
+    ->condition('name', 'workbench_moderation')
+    ->execute();
 }
 
 /**
@@ -24,16 +28,19 @@ function workbench_moderation_schema() {
     'description' => 'Defines all possible states',
     'fields' => array(
       'name' => array(
+        'description' => 'The name of the moderation state.',
         'type' => 'varchar',
         'length' => '255',
         'not null' => FALSE,
       ),
       'description' => array(
+        'description' => 'A description of the moderation state.',
         'type' => 'varchar',
         'length' => '255',
         'not null' => FALSE,
       ),
       'weight' => array(
+        'description' => 'Sort weight for the moderation state.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -47,10 +54,12 @@ function workbench_moderation_schema() {
   $schema['workbench_moderation_node_history'] = array(
     'fields' => array(
       'hid' => array(
+        'description' => 'Node history entry key.',
         'type' => 'serial',
         'not null' => TRUE
       ),
       'vid' => array(
+        'description' => 'Node version id. Foreign key to {node_revision}',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -58,6 +67,7 @@ function workbench_moderation_schema() {
         'disp-width' => '10',
       ),
       'nid' => array(
+        'description' => 'Node id. Foreign key to {node}',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -65,16 +75,19 @@ function workbench_moderation_schema() {
         'disp-width' => '10',
       ),
       'from_state' => array(
+        'description' => 'The old moderation state of the node',
         'type' => 'varchar',
         'length' => '255',
         'not null' => FALSE,
       ),
       'state' => array(
+        'description' => 'The current moderation state of the node.',
         'type' => 'varchar',
         'length' => '255',
         'not null' => FALSE,
       ),
       'uid' => array(
+        'description' => 'The user id of the moderator who made the change. Foreign key to {users}.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -82,6 +95,7 @@ function workbench_moderation_schema() {
         'disp-width' => '10',
       ),
       'stamp' => array(
+        'description' => 'The timestamp of the change.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -89,7 +103,7 @@ function workbench_moderation_schema() {
         'disp-width' => '10',
       ),
       'published' => array(
-        'description' => 'Is this the live version?',
+        'description' => 'Indicated the live version of a node.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -97,7 +111,7 @@ function workbench_moderation_schema() {
         'disp-width' => '10',
       ),
       'current' => array(
-        'description' => 'Is this the current version?',
+        'description' => 'Indicated the current version of a node.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -106,22 +120,34 @@ function workbench_moderation_schema() {
       ),
     ),
     'primary key' => array('hid'),
+    'indexes' => array(
+      'nid' => array('nid'),
+      'vid' => array('vid'),
+    ),
+    'foreign_keys' => array(
+      'nid' => array('node' => 'nid'),
+      'vid' => array('node_revision' => 'vid'),
+      'uid' => array('users' => 'uid'),
+    ),
   );
 
   $schema['workbench_moderation_transitions'] = array(
     'description' => 'Defines the valid transitions for states',
     'fields' => array(
       'from_name' => array(
+        'description' => 'The starting moderation state.',
         'type' => 'varchar',
         'length' => '255',
         'not null' => FALSE,
       ),
       'to_name' => array(
+        'description' => 'The ending moderation state.',
         'type' => 'varchar',
         'length' => '255',
         'not null' => FALSE,
       ),
       'ntype' => array(
+        'description' => 'Node types to apply to. Currently not used.',
         'type' => 'varchar',
         'length' => '40',
         'default' => 'all',
@@ -140,12 +166,15 @@ function _workbench_moderation_insert_values() {
   $states[] = array('name' => workbench_moderation_state_none());
   $states[] = array('name' => 'Review');
   $states[] = array('name' => workbench_moderation_state_published());
+  $weight = 0;
   foreach ($states as $state) {
-    // See http://drupal.org/node/568640 to change this after it's fixed.
-    db_query('INSERT INTO {workbench_moderation_states} (name, description) VALUES(:state, :description)', array(
-      ':state' => $state,
-      ':description' => $state
-    ));
+    db_insert('workbench_moderation_states')
+      ->fields(array(
+          'name' => $state,
+          'description' => $state,
+          'weight' => $weight++,
+      ))
+      ->execute();
   }
 
   // Transitions.
@@ -153,10 +182,11 @@ function _workbench_moderation_insert_values() {
   $transitions[] = array('Review', workbench_moderation_state_published());
   $transitions[] = array(workbench_moderation_state_published(), 'Review');
   foreach ($transitions as $transition) {
-    // See http://drupal.org/node/568640 to change this after it's fixed.
-    db_query('INSERT INTO {workbench_moderation_transitions} (from_name, to_name) VALUES(:from_name, :to_name)', array(
-      ':from_name' => $transition[0],
-      ':to_name' => $transition[1],
-    ));
+    db_insert('workbench_moderation_transitions')
+      ->fields(array(
+          'from_name' => $transition[0],
+          'to_name' => $transition[1],
+      ))
+      ->execute();
   }
 }
