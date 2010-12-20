@@ -172,22 +172,31 @@ function workbench_moderation_permission() {
     'title' => t('Use "Needs Review" workbench tab')
   );
 
-  // Per-node-type, per-transition permissions.
   // @see workbench_moderation_state_allowed()
+  // Per-node-type, per-transition permissions.
   $node_types = workbench_moderation_moderate_node_types();
   $transitions = workbench_moderation_transitions_get();
-  foreach ($node_types as $node_type) {
-    foreach ($transitions as $from_state => $states) {
-      $from_state = check_plain($from_state);
-      foreach ($states as $to_state) {
-        $to_state = check_plain($to_state);
-        $permissions["moderate $node_type state from $from_state to $to_state"] = array(
-          'title' => t('Moderate !node_type state from !from_state to !to_state', array('!node_type' => $node_type, '!from_state' => $from_state, '!to_state' => $to_state)),
-        );
+  foreach ($transitions as $from_state => $states) {
+    $from_state = check_plain($from_state);
+    foreach ($states as $to_state) {
+      $to_state = check_plain($to_state);
+      // Always set a permission to perform all moderation states.
+      $permissions["moderate content from $from_state to $to_state"] = array(
+        'title' => t('Moderate all content from !from_state to !to_state', array('!from_state' => $from_state, '!to_state' => $to_state)),
+      );
+      // Per-node type permissions are very complex, and should only be used if
+      // absolutely needed. For right now, this is hardcoded to OFF. To enable it,
+      // Add this line to settings.php and then reset permissions.
+      //   $conf['workbench_moderation_per_node_type'] = TRUE;
+      if (variable_get('workbench_moderation_per_node_type', FALSE)) {
+        foreach ($node_types as $node_type) {
+          $permissions["moderate $node_type state from $from_state to $to_state"] = array(
+            'title' => t('Moderate @node_type state from !from_state to !to_state', array('@node_type' => node_type_get_name($node_type), '!from_state' => $from_state, '!to_state' => $to_state)),
+          );
+        }
       }
     }
   }
-
   return $permissions;
 }
 
@@ -238,8 +247,9 @@ function workbench_moderation_node_presave(&$node) {
   // Set the published status when a node is set to live
   // Is this a node that is controlled by content moderation?
   if (isset($node->workbench_moderation_state_new)) {
-    // Is the new state live?
-    if ($node->workbench_moderation_state_new == workbench_moderation_state_published()) {
+    // Is the new state live or is there an existing published version?
+    if ($node->workbench_moderation_state_new == workbench_moderation_state_published() ||
+       !empty($node->content_moderation['published']->nid)) {
       $node->status = 1;
     }
     else {
@@ -606,13 +616,30 @@ function workbench_moderation_moderate_node_types() {
 
 
 /**
- * Check whether a user may change the state of a node, based on transition and node type. Users
+ * Check whether a user may change the state of a node.
+ *
+ * This check is based on transition and node type. Users
  * with the 'bypass workbench moderation' permission may make any state transition.
  * @see workbench_moderation_permission()
  */
 function workbench_moderation_state_allowed($account, $from_state, $to_state, $node_type) {
-  return user_access("moderate $node_type state from $from_state to $to_state", $account)
-         || user_access("bypass workbench moderation", $account);
+  // Allow super-users to moderate all content.
+  if (user_access("bypass workbench moderation", $account)) {
+    return TRUE;
+  }
+
+  // Can this user moderate all content for this transition?
+  if (user_access("moderate content from $from_state to $to_state", $account)) {
+    return TRUE;
+  }
+
+  // Are we using complex node type rules for this transition?
+  if (variable_get('workbench_moderation_per_node_type', FALSE) && user_access("moderate $node_type state from $from_state to $to_state", $account)) {
+    return TRUE;
+  }
+
+  // Default return.
+  return FALSE;
 }
 
 /**
@@ -623,8 +650,9 @@ function workbench_moderation_state_allowed($account, $from_state, $to_state, $n
  */
 function workbench_moderation_node_data(&$node) {
   // Make sure that this node type is moderated.
-  if (!workbench_moderation_node_type_moderated($node->type) || false) { return; }
-  if (!isset($node->nid)) { dpm($node); return; }
+  if (!workbench_moderation_node_type_moderated($node->type)) {
+    return;
+  }
 
   // Build a default 'current' moderation record. Nodes will lack a workbench_moderation record if
   // moderation was not enabled for their node type when they were created. In that case, assume the
@@ -794,8 +822,9 @@ function workbench_moderation_node_is_current($node) {
 }
 
 /**
- * Return an array of transitions; the key is the 'from' state, the value is an array of possible
- * 'to' states.
+ * Return an array of transitions.
+ *
+ * The key is the 'from' state, the value is an array of possible 'to' states.
  */
 function workbench_moderation_transitions_get() {
   $transitions = array();
@@ -831,8 +860,10 @@ function workbench_moderation_states_get() {
 }
 
 /**
- * Provides a list of possible next states for this node. This function is used in permissions
- * checks, so this should not ever return un-permission-checked transitions.
+ * Provides a list of possible next states for this node.
+ *
+ * This function is used in permissions checks, so this should not ever return
+ * un-permission-checked transitions.
  *
  * @param $current_state
  *   String, current state.
@@ -844,7 +875,7 @@ function workbench_moderation_states_get() {
  */
 function workbench_moderation_states_next($current_state, $account, $node_type) {
   // Make sure we have a current state.
-  if (! $current_state) {
+  if (!$current_state) {
     $current_state = workbench_moderation_state_none();
   }
 
