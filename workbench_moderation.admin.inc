@@ -1,16 +1,18 @@
 <?php
-
+// $Id$
 /**
  * @file
- *  Content moderation for Workbench.
+ *  Administrative functions for content moderation for Workbench.
  *
  * @copyright (C) Copyright 2010 Palantir.net
  */
 
 /**
- * Form builder function for module settings.
+ * Form builder function for moderation states.
  *
- * Defining states
+ * @TODO
+ *  Clean this up and make a stronger interface for states and settings.
+ *  Note that we need weighting of states and transitions.
  */
 function workbench_moderation_admin_settings_states($form, &$form_state) {
   $form['new'] = array(
@@ -55,7 +57,7 @@ function workbench_moderation_admin_settings_states($form, &$form_state) {
    // Live and none states can not be deleted
     if ($state == workbench_moderation_state_published() || $state == workbench_moderation_state_none()) {
       $form['delete']['states'][$state]['#disabled'] = TRUE;
-      $form['delete']['states'][$state]['#title'] .= t(' (This state can not be deleted.)');
+      $form['delete']['states'][$state]['#title'] .= t('(This state cannot be deleted.)');
     }
   }
 
@@ -69,9 +71,10 @@ function workbench_moderation_admin_settings_states($form, &$form_state) {
 
 
 /**
- * Form builder function for module settings.
+ * Form builder function for module transition settings.
  *
- * Defining transitions
+ *@TODO
+ *  Provide weighting of transition states.
  */
 function workbench_moderation_admin_settings_transitions($form, &$form_state) {
   $form['new'] = array(
@@ -114,7 +117,7 @@ function workbench_moderation_admin_settings_transitions($form, &$form_state) {
     '#title' => 'Delete existing transitions',
     '#default_value' => array(),
     '#options' => $options,
-    '#description' => t('Select all states you want to delete <br/> Please note: deleting an existing transition will not have any impact on states involved.')
+    '#description' => t('Select all states you want to delete.<br/> Please note: deleting an existing transition will not have any impact on states involved.')
   );
   $form['delete']['delete'] = array(
     '#type' => 'submit',
@@ -124,41 +127,62 @@ function workbench_moderation_admin_settings_transitions($form, &$form_state) {
   return $form;
 }
 
-
+/**
+ * Form submit handler for moderation states.
+ *
+ * @TODO:
+ *  Proper cleanup when states are deleted.
+ */
 function workbench_moderation_admin_settings_states_submit($form, &$form_state) {
   // Delete any selected states
-  foreach ($form_state['values']['delete']['states'] as $state => $action ) {
+  foreach ($form_state['values']['delete']['states'] as $state => $action) {
     // @TODO nodes that are in these moderated states need to be updated to the
-    //       previous state? Need to figure this one out- probably can just be
-    //       handled by an alert to the user
+    // previous state? Need to figure this one out -- probably can just be
+    // handled by an alert to the user or a re-assignment form confirmation step.
     if ($action) {
-      // Remove the moderation state
-      db_query("DELETE FROM {workbench_moderation_states} WHERE name = :name", array(':name' => $state));
-      // Remove this state from transitions
-      db_query("DELETE FROM {workbench_moderation_transitions} WHERE from_name = :name OR to_name = :name", array(':name' => $state));
+      // Remove the moderation state.
+      db_delete('workbench_moderation_states')
+        ->condition('name', $state)
+        ->execute();
+      // Remove this state from transitions.
+      $or = db_or()
+        ->condition('from_name', $state)
+        ->condition('to_name', $state);
+      db_delete('workbench_moderation_transitions')
+        ->condition($or)
+        ->execute();
     }
   }
-  // Add a new step
+  // Add a new state.
   if ($form_state['values']['new_state_name']) {
     $new_state = (object) NULL;
     $new_state->name = $form_state['values']['new_state_name'];
     $new_state->description = isset($form_state['values']['new_state_description']) ? $form_state['values']['new_state_description'] : $new_state->name;
     drupal_write_record('workbench_moderation_states', $new_state);
   }
+  // Return a message.
   drupal_set_message(t('Your settings have been saved.'));
 }
 
+/**
+ * Form submit handler for moderation transitions.
+ *
+ * @TODO:
+ *  Proper cleanup when transitions are deleted.
+ */
 function workbench_moderation_admin_settings_transitions_submit($form, &$form_state) {
   $form_values = $form_state['values'];
-  foreach ( $form_values['delete_transitions'] as $transition => $action ) {
-    if ( is_string($action) ) {
+  foreach ($form_values['delete_transitions'] as $transition => $action) {
+    // Check for a valid action and delete as needed.
+    if (is_string($action)) {
       $transinfo = explode('---', $transition);
-      db_query("DELETE FROM {workbench_moderation_transitions} WHERE from_name = :from_name AND to_name = :to_name", array(
-        ':from_name' => $transinfo[0],
-        ':to_name' => $transinfo[1],
-      ));
+      db_delete('workbench_moderation_transitions')
+        ->condition('from_name', $transinfo[0])
+        ->condition('to_name', $transinfo[1])
+        ->execute();
     }
   }
+  // Check for the creation of new transitions.
   if ($form_values['new_transition_from'] != '0' && $form_values['new_transition_to'] != '0' ) {
     $new_transition = (object) NULL;
     $new_transition->from_name = $form_values['new_transition_from'];
@@ -166,5 +190,6 @@ function workbench_moderation_admin_settings_transitions_submit($form, &$form_st
     $new_transition->ntype = 'all';
     drupal_write_record('workbench_moderation_transitions', $new_transition);
   }
+  // Return a message.
   drupal_set_message(t('Your settings have been saved.'));
 }
