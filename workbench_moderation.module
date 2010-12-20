@@ -752,11 +752,6 @@ function workbench_moderation_node_data($node) {
   $node->workbench_moderation['my_revision'] = $my_revision;
 }
 
-
-/* **************************************** */
-/* Utility functions                        */
-/* **************************************** */
-
 /**
  * Utility function to load the current version of a node.
  *
@@ -764,8 +759,10 @@ function workbench_moderation_node_data($node) {
  * This is needed because the live version of a node will have the
  *
  * @param $node
- *   Object, Drupal node
- * @return Object, Drupal node of the current revision or
+ *   The node being acted upon.
+ *
+ * @return
+ *   The current node according to moderation.
  */
 function workbench_moderation_node_current_load($node) {
   // Is there a current revision?
@@ -786,8 +783,10 @@ function workbench_moderation_node_current_load($node) {
  * will not impact the API.
  *
  * @param $node
- *   Object, Drupal node
- * @return Object, Drupal node of the current revision or
+ *   The node being acted upon.
+ *
+ * @return
+ *   The node object of the live revision.
  */
 function workbench_moderation_node_live_load($node) {
   // Is there a live revision of this node?
@@ -804,7 +803,14 @@ function workbench_moderation_node_live_load($node) {
 
 /**
  * Utility function to determine if this node is in the live state
- * @param <type> $node
+ *
+ * @param $node
+ *   The node being acted upon.
+ *
+ * @return
+ *   Boolean TRUE if this is the current revision. Nothing if not.
+ *
+ * @TODO: change to FALSE if not.
  */
 function workbench_moderation_node_is_current($node) {
   if (isset($node->workbench_moderation['published']->vid)) {
@@ -817,7 +823,9 @@ function workbench_moderation_node_is_current($node) {
 /**
  * Return an array of transitions.
  *
- * The key is the 'from' state, the value is an array of possible 'to' states.
+ * @return
+ *   An associative array where rhe key is the 'from' state and the value
+ *   is an array of possible 'to' states.
  */
 function workbench_moderation_transitions_get() {
   $transitions = array();
@@ -838,7 +846,10 @@ function workbench_moderation_transitions_get() {
 }
 
 /**
- * Return a list of all states in the system
+ * Return a list of all states in the system.
+ *
+ * @return
+ *   An associative array in the format $state[NAME OF STATE] => DESCRIPTION.
  */
 function workbench_moderation_states_get() {
   static $states = FALSE;
@@ -859,12 +870,15 @@ function workbench_moderation_states_get() {
  * un-permission-checked transitions.
  *
  * @param $current_state
- *   String, current state.
+ *   The current moderation state.
  * @param $account
- *   Object, Drupal user.
+ *   The user object being checked.
  * @param $node_type
- *   String, node type.
- * @return array or FALSE
+ *   The node type being acted upon.
+ *
+ * @return
+ *   If the user may moderate a change, return an array of possible state changes.
+ *   Otherwise, return FALSE.
  */
 function workbench_moderation_states_next($current_state, $account, $node_type) {
   // Make sure we have a current state.
@@ -907,21 +921,40 @@ function workbench_moderation_states_next($current_state, $account, $node_type) 
 
 /**
  * Menu access callback to check whether a user may make a particular transition on a node.
+ *
+ * @param $node
+ *   The node being acted upon.
+ * @param $state
+ *   The new moderation state.
+ *
+ * @return
+ *   Booelan TRUE or FALSE.
  */
 function _workbench_moderation_moderate_access($node, $state) {
   global $user;
 
   $my_revision = $node->workbench_moderation['my_revision'];
-  return node_access('update', $node, $user)                                                            // the user can edit the node
-          && $my_revision->current                                                                      // this is the current revision (no branching the revision history)
-          && ($next_states = workbench_moderation_states_next($my_revision->state, $user, $node->type)) // there are next states the user may transition to
-          && isset($next_states[$state]);                                                               // this state is in the available next states
+  $next = workbench_moderation_states_next($my_revision->state, $user, $node->type);
+  return node_access('update', $node, $user)   // the user can edit the node
+          && $my_revision->current                   // this is the current revision (no branching the revision history)
+          && ($next_states = $next)                  // there are next states the user may transition to
+          && isset($next_states[$state]);           // this state is in the available next states
 }
 
 /**
- * Provide quick moderation of nodes. Access is controlled by the menu router.
+ * Provide quick moderation of nodes. 
+ *
+ * Access is controlled by the menu router to these pseudo-form callbacks.
+ * This function is also abstracted so that it can be called from any node context.
+ *
  * @see _workbench_moderation_moderate_access()
  * @see workbench_moderation_menu()
+ * @see workbench_moderation_node_update()
+ *
+ * @param $node
+ *   The node being acted upon.
+ * @param $state
+ *   The new moderation state requested.
  */
 function workbench_moderation_moderate($node, $state) {
   global $user;
@@ -984,6 +1017,14 @@ function workbench_moderation_moderate($node, $state) {
   }
 }
 
+/**
+ * Helper function to redirect after a state change submission.
+ *
+ * @param $node
+ *   The node being acted upon.
+ * @param $state
+ *   The new moderation state requested.
+ */
 function workbench_moderation_moderate_callback($node, $state) {
   workbench_moderation_moderate($node, $state);
   drupal_goto(isset($_GET['destination']) ? $_GET['destination'] : 'node/' . $node->nid . '/moderation');
@@ -991,6 +1032,14 @@ function workbench_moderation_moderate_callback($node, $state) {
 
 /**
  * Generate a list of links to available moderation actions.
+ *
+ * @param $node
+ *   The node being acted upon.
+ * @param $url_options
+ *   An array of options to pass, following the url() function syntax.
+ *
+ * @return
+ *   A list of links to display with the revision.
  */
 function workbench_moderation_get_moderation_links($node, $url_options = array()) {
   global $user;
