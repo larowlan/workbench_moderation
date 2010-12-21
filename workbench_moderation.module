@@ -808,16 +808,17 @@ function workbench_moderation_node_live_load($node) {
  *   The node being acted upon.
  *
  * @return
- *   Boolean TRUE if this is the current revision. Nothing if not.
- *
- * @TODO: change to FALSE if not.
+ *   Boolean TRUE if this is the current revision. FALSE if not.
  */
 function workbench_moderation_node_is_current($node) {
-  if (isset($node->workbench_moderation['published']->vid)) {
-    if ($node->workbench_moderation['published']->vid == $node->vid) {
+  if (isset($node->workbench_moderation['published']->vid) && isset($node->workbench_moderation['current']->vid)) {
+    if ($node->workbench_moderation['published']->vid == $node->workbench_moderation['current']->vid) {
       return TRUE;
     }
+    return FALSE;
   }
+  // If not set, then TRUE.
+  return TRUE;
 }
 
 /**
@@ -1013,6 +1014,7 @@ function workbench_moderation_moderate($node, $state) {
     $live_revision->revision = 0;
     // Prevent another moderation record from being written.
     $live_revision->workbench_moderation['updating_live_revision'] = TRUE;
+    // @TODO: do we trust node_save() here?
     node_save($live_revision);
   }
 }

@@ -1,45 +1,56 @@
 <?php
+// $Id$
 
 /**
  * @file
- * Provides node functions
+ * Provides node functions for Workbench Moderation.
  *
  * @copyright (C) Copyright 2010 Palantir.net
  */
 
 /**
- * Displays the current moderated version of the node
+ * Displays the current moderated version of the node.
  *
  * @param $node
- *   Object, Drupal node object
- * @return html
+ *   The node being acted upon.
+ *
+ * @return
+ *   A fully themed node page.
  */
 function workbench_moderation_node_current_view($node) {
-  if (! workbench_moderation_node_is_current($node)) {
-    // Load the current node
-    $current_node = workbench_moderation_node_current_load($node);
-    drupal_set_message(t('You are viewing the current moderated version of this
-      !type. This is currently in state: !state.',
-      array(
-        '!type' => $node->type,
-        '!state' => $current_node->workbench_moderation['current']->state
-      )
-    ));
-    menu_set_active_item("node/{$current_node->nid}/moderation");
-    return node_page_view($current_node);
+  // Check to see if this is the current version. If so, redirect with a message.
+  if (workbench_moderation_node_is_current($node)) {
+    drupal_set_message(t('This revision is the live version of this @type.', array('@type' => node_type_get_name($node->type))));
+    drupal_goto('node/' . $node->nid);
   }
-  // Node is current redirect and alert user
-  drupal_set_message(t('This !type is the current version.', array('!type' => $node->type)));
-  drupal_goto('node/' . $node->nid);
+  // Load the current node.
+  $current_node = workbench_moderation_node_current_load($node);
+  // Set a warning to the user.
+  drupal_set_message(t('You are viewing the current, moderated version of this
+    @type. Its moderation state is %state.',
+    array(
+      '@type' => node_type_get_name($node->type),
+      '%state' => $current_node->workbench_moderation['current']->state
+     )
+  ));
+  // Set the menu correctly.
+  menu_set_active_item("node/{$current_node->nid}/moderation");
+  return node_page_view($current_node);
 }
 
-
 /**
- * Display a node's moderation history
+ * Display a node's moderation history.
+ *
+ * @param $node
+ *   The node being acted upon.
+ *
+ * @return
+ *   A themed table of data and links for node moderation actions.
  */
 function workbench_moderation_node_history_view($node) {
   global $user;
 
+  // Load our css. @todo: change loading pattern?
   drupal_add_css(drupal_get_path('module', 'workbench_moderation') . '/css/workbench_moderation.css');
   drupal_set_title(t('!title History', array('!title' => $node->title)));
 
@@ -61,6 +72,7 @@ function workbench_moderation_node_history_view($node) {
   $revisions = $query->execute()
     ->fetchAllAssoc('vid');
 
+  // Build the table rows.
   $rows = array();
   foreach ($revisions as $revision) {
     $row = array(
@@ -74,7 +86,7 @@ function workbench_moderation_node_history_view($node) {
       'class' => array('revision'),
     );
 
-    // Row classes.
+    // Add row classes.
     if ($revision->vid == $node->workbench_moderation['current']->vid) {
       $row['class'][] = 'current-revision';
     }
@@ -85,11 +97,11 @@ function workbench_moderation_node_history_view($node) {
       $row['class'][] = 'unpublished-revision';
     }
 
-    // Row data.
+    // Add row data.
     $row['data']['vid'] = $revision->vid;
-    $row['data']['info'] = '<div class="revision-title">' . check_plain($revision->title) . '</div>'
-                         . '<div class="revision-log">' . filter_xss($revision->log) . '</div>'
-                         . '<div class="revision-user">' . t('Revised by !user', array('!user' => theme('username', array('account' => $revision)))) . '</div>';
+    $row['data']['info'] .= '<div class="revision-title">' . check_plain($revision->title) . '</div>';
+    $row['data']['info'] .= '<div class="revision-log">' . filter_xss($revision->log) . '</div>';
+    $row['data']['info'] .= '<div class="revision-user">' . t('Revised by !user', array('!user' => theme('username', array('account' => $revision)))) . '</div>';
     $row['data']['date'] = l(format_date($revision->timestamp, 'short'), "node/{$node->nid}/moderation/{$revision->vid}/view");
 
     // Revision operations.
@@ -141,31 +153,33 @@ function workbench_moderation_node_history_view($node) {
     }
     elseif ($revision->vid == $node->workbench_moderation['current']->vid) {
       $node_current = workbench_moderation_node_current_load($node);
-      $row['data']['moderation'] = '<div class="moderation-state"><strong>' . t('This is the current revision. The current state is %state.', array('%state' => $node->workbench_moderation['current']->state)) . '</strong></div>'
-                                 . '<div class="moderation-actions">' . theme('links', array('links' => workbench_moderation_get_moderation_links($node_current, array('query' => array('destination' => $_GET['q']))))) . '</div>';
+      $row['data']['moderation'] = '<div class="moderation-state"><strong>' . t('This is the current revision. The current state is %state.', array('%state' => $node->workbench_moderation['current']->state)) . '</strong></div>';
+      $row['data']['moderation'] .= '<div class="moderation-actions">' . theme('links', array('links' => workbench_moderation_get_moderation_links($node_current, array('query' => array('destination' => $_GET['q']))))) . '</div>';
     }
 
     // Build a table of the moderation history.
     $moderation_rows = array();
     $items = array();
-    foreach ($moderations as $m) {
-      if ($m->from_state) {
+    foreach ($moderations as $moderation) {
+      if ($moderation->from_state) {
         $items[] = t('From @from_state --> @to_state on %date by !user',
-                     array(
-                      '@from_state' => $m->from_state,
-                      '@to_state' => $m->state,
-                      '%date' => format_date($m->stamp, 'short'),
-                      '!user' => theme('username', array('account' => $m)),
-                    ));
+          array(
+            '@from_state' => $moderation->from_state,
+            '@to_state' => $moderation->state,
+            '%date' => format_date($moderation->stamp, 'short'),
+            '!user' => theme('username', array('account' => $moderation)),
+          )
+        );
       }
       else {
         $items[] = t('Created as @to_state on %date by !user',
-                     array(
-                      '@from_state' => $m->from_state,
-                      '@to_state' => $m->state,
-                      '%date' => format_date($m->stamp, 'short'),
-                      '!user' => theme('username', array('account' => $m)),
-                    ));
+          array(
+            '@from_state' => $moderation->from_state,
+            '@to_state' => $moderation->state,
+            '%date' => format_date($moderation->stamp, 'short'),
+            '!user' => theme('username', array('account' => $moderation)),
+          )
+        );
       }
     }
     $row['data']['moderation'] .= theme('item_list', array('items' => $items));
@@ -173,19 +187,25 @@ function workbench_moderation_node_history_view($node) {
     $rows[] = $row;
   }
 
+  // Set the table header.
   $header = array(t('Revision'), t('Title'), t('Date'), t('Revision Actions'), t('Moderation Actions'));
+
+  // Return properly styled output.
   return array('#markup' => theme('table', array('header' => $header, 'rows' => $rows)));
 }
 
 /**
- * Unpublish the live revision
+ * Form to unpublish the live revision.
  *
  * @param $node
- * @param $vid
+ *   The node being acted upon.
+ *
+ * @return
+ *   A Drupal confirmation form to unpublish the live revision.
  */
-function workbench_moderation_node_unpublish_form($form, $form_state, $node) {
+function workbench_moderation_node_unpublish_form($form, &$form_state, $node) {
   // Ensure that this is the live revision.
-  if ($node->vid != $node->workbench_moderation['published']->vid) {
+  if (isset($node->workbench_moderation['published']->vid) && $node->vid != $node->workbench_moderation['published']->vid) {
     drupal_set_message(t('This is not the live revision of this node.'), 'error');
     drupal_goto("node/{$node->nid}/moderation");
   }
@@ -203,11 +223,8 @@ function workbench_moderation_node_unpublish_form($form, $form_state, $node) {
 
 /**
  * Submit handler for unpublishing a live revision of a node.
- *
- * @param $form
- * @param $form_state
  */
-function workbench_moderation_node_unpublish_form_submit($form, $form_state) {
+function workbench_moderation_node_unpublish_form_submit($form, &$form_state) {
   global $user;
   $node = $form['node']['#value'];
 
@@ -225,8 +242,9 @@ function workbench_moderation_node_unpublish_form_submit($form, $form_state) {
   $live_revision->status = 0;
   $live_revision->revision = 0;
   $live_revision->workbench_moderation['updating_live_revision'] = TRUE;
+  // @TODO: do we trust node_save() here?
   node_save($live_revision);
 
   drupal_set_message(t('The live revision of this content has been unpublished.'));
-  drupal_goto("node/{$node->nid}/moderation");
+  $form_state['redirect'] ="node/{$node->nid}/moderation";
 }
