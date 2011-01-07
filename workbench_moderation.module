@@ -1014,6 +1014,11 @@ function workbench_moderation_moderate($node, $state) {
     $live_revision->revision = 0;
     // Prevent another moderation record from being written.
     $live_revision->workbench_moderation['updating_live_revision'] = TRUE;
+
+    // Reset flag from taxonomy_field_update() so that {taxonomy_index} values aren't written twice.
+    $taxonomy_index_flag = &drupal_static('taxonomy_field_update', array());
+    unset($taxonomy_index_flag[$node->nid]);
+
     // @TODO: do we trust node_save() here?
     node_save($live_revision);
   }
