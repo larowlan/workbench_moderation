@@ -573,7 +573,8 @@ function workbench_moderation_state_none() {
  */
 function workbench_moderation_node_type_moderated($type) {
   // Is this content even in moderatation?
-  if (in_array('moderation', variable_get("node_options_$type", array()))) {
+  $options = variable_get("node_options_$type", array());
+  if (in_array('revisions', $options) && in_array('moderation', $options)) {
     return TRUE;
   }
   return FALSE;
