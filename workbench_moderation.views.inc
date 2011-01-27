@@ -152,5 +152,18 @@ function workbench_moderation_views_data() {
     ),
   );
 
+  // Declare a virtual field on the {node} table.
+  $data['node']['workbench_moderation_moderated_type'] = array(
+    'group' => t('Workbench Moderation'),
+    'title' => t('Type is moderated'),
+    'help' => t('Whether the content type is moderated.'),
+    'real field' => 'type',
+    'filter' => array(
+      'handler' => 'workbench_moderation_handler_filter_moderated_type',
+      'label' => t('Type is moderated'),
+      'type' => 'yes-no',
+    ),
+  );
+
   return $data;
 }
