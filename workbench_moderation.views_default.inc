@@ -8,6 +8,8 @@ function workbench_moderation_views_default_views() {
   $view->description = 'Listing of content by moderation state.';
   $view->tag = 'Workbench';
   $view->base_table = 'node';
+  $view->human_name = '';
+  $view->core = 0;
   $view->api_version = '3.0-alpha1';
   $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
 
@@ -257,6 +259,11 @@ function workbench_moderation_views_default_views() {
   $handler->display->display_options['sorts']['vid']['table'] = 'node_revision';
   $handler->display->display_options['sorts']['vid']['field'] = 'vid';
   $handler->display->display_options['sorts']['vid']['order'] = 'DESC';
+  /* Filter: Workbench Moderation: Type is moderated */
+  $handler->display->display_options['filters']['workbench_moderation_moderated_type']['id'] = 'workbench_moderation_moderated_type';
+  $handler->display->display_options['filters']['workbench_moderation_moderated_type']['table'] = 'node';
+  $handler->display->display_options['filters']['workbench_moderation_moderated_type']['field'] = 'workbench_moderation_moderated_type';
+  $handler->display->display_options['filters']['workbench_moderation_moderated_type']['value'] = '1';
   /* Filter: Workbench Moderation: Current */
   $handler->display->display_options['filters']['current']['id'] = 'current';
   $handler->display->display_options['filters']['current']['table'] = 'workbench_moderation_node_history';
@@ -508,6 +515,11 @@ function workbench_moderation_views_default_views() {
   $handler->display->display_options['fields']['moderation_actions']['hide_empty'] = 0;
   $handler->display->display_options['fields']['moderation_actions']['empty_zero'] = 0;
   $handler->display->display_options['defaults']['filters'] = FALSE;
+  /* Filter: Workbench Moderation: Type is moderated */
+  $handler->display->display_options['filters']['workbench_moderation_moderated_type']['id'] = 'workbench_moderation_moderated_type';
+  $handler->display->display_options['filters']['workbench_moderation_moderated_type']['table'] = 'node';
+  $handler->display->display_options['filters']['workbench_moderation_moderated_type']['field'] = 'workbench_moderation_moderated_type';
+  $handler->display->display_options['filters']['workbench_moderation_moderated_type']['value'] = '1';
   /* Filter: Workbench Moderation: Current */
   $handler->display->display_options['filters']['current']['id'] = 'current';
   $handler->display->display_options['filters']['current']['table'] = 'workbench_moderation_node_history';
@@ -542,6 +554,43 @@ function workbench_moderation_views_default_views() {
   $handler->display->display_options['menu']['type'] = 'tab';
   $handler->display->display_options['menu']['title'] = 'My Drafts';
   $handler->display->display_options['menu']['weight'] = '98';
+  $translatables['workbench_moderation'] = array(
+    t('Defaults'),
+    t('more'),
+    t('Apply'),
+    t('Reset'),
+    t('Sort By'),
+    t('Asc'),
+    t('Desc'),
+    t('Items per page'),
+    t('- All -'),
+    t('Offset'),
+    t('revision user'),
+    t('moderator user'),
+    t('Nid'),
+    t('Log message'),
+    t('State'),
+    t('Version'),
+    t('Title'),
+    t('<div><a href="/node/[nid]/current-revision">[title]</a></div><div>[log]</div>'),
+    t('Type'),
+    t('Revision Author'),
+    t('Created date'),
+    t('Current'),
+    t('Last moderated'),
+    t('Moderation Link'),
+    t('View moderations'),
+    t('node/[nid]/moderation'),
+    t('Moderation Actions'),
+    t('<div>[moderation_actions]</div><div>[nothing]</div>'),
+    t('Moderation State'),
+    t('Needs Review Page'),
+    t('Needs Review'),
+    t('Drafts Page'),
+    t('My Drafts'),
+    t('Update State'),
+    t('Moderation state'),
+  );
   $views[$view->name] = $view;
 
   return $views;
