@@ -588,7 +588,7 @@ function workbench_moderation_moderate_node_types() {
   $result = array();
   foreach ($types as $type) {
     // Is this content even in moderatation?
-    if ( workbench_moderation_node_type_moderated($type->type)) {
+    if (workbench_moderation_node_type_moderated($type->type)) {
       $result[] = $type->type;
     }
   }
@@ -943,7 +943,7 @@ function _workbench_moderation_moderate_access($node, $state) {
 }
 
 /**
- * Provide quick moderation of nodes. 
+ * Provide quick moderation of nodes.
  *
  * Access is controlled by the menu router to these pseudo-form callbacks.
  * This function is also abstracted so that it can be called from any node context.
