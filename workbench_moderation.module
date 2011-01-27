@@ -436,7 +436,7 @@ function workbench_moderation_node_type_form_validate($from, &$form_state) {
   // Ensure that revisions are enabled if moderation is.
   if ($form_state['values']['node_options']['moderation']) {
     $form_state['values']['node_options']['status'] = 0;
-    $form_state['values']['node_options']['revisions'] = 1;
+    $form_state['values']['node_options']['revision'] = 1;
   }
 }
 
@@ -574,7 +574,7 @@ function workbench_moderation_state_none() {
 function workbench_moderation_node_type_moderated($type) {
   // Is this content even in moderatation?
   $options = variable_get("node_options_$type", array());
-  if (in_array('revisions', $options) && in_array('moderation', $options)) {
+  if (in_array('revision', $options) && in_array('moderation', $options)) {
     return TRUE;
   }
   return FALSE;
