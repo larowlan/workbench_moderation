@@ -1051,6 +1051,12 @@ function workbench_moderation_moderate_callback($node, $state) {
 function workbench_moderation_get_moderation_links($node, $url_options = array()) {
   global $user;
 
+  // Make sure that this node type is moderated.
+  if (!workbench_moderation_node_type_moderated($node->type)) {
+    return;
+  }
+
+  // Build links to available moderation states.
   $links = array();
   $my_revision = $node->workbench_moderation['my_revision'];
   if ($my_revision->vid == $node->workbench_moderation['current']->vid
