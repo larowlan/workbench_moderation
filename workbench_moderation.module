@@ -303,7 +303,7 @@ function workbench_moderation_node_update($node) {
   }
 
   // Apply moderation changes if this is a new revision or if the moderation state has changed.
-  if ($node->revision || $node->workbench_moderation_state_current != $node->workbench_moderation_state_new) {
+  if (!empty($node->revision) || $node->workbench_moderation_state_current != $node->workbench_moderation_state_new) {
     workbench_moderation_moderate($node, $node->workbench_moderation_state_new);
   }
 
