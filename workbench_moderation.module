@@ -406,7 +406,7 @@ function workbench_moderation_node_update($node) {
  *
  * Load moderation history and status on a node.
  */
-function workbench_moderation_node_load($nodes) {
+function workbench_moderation_node_load($nodes, $types) {
   foreach ($nodes as $node) {
     // Add the node history
     workbench_moderation_node_data($node);
