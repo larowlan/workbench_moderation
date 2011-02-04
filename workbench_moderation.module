@@ -309,6 +309,14 @@ function workbench_moderation_views_api() {
 }
 
 /**
+ * Implementation of hook_views_default_views().
+ */
+function workbench_moderation_views_default_views() {
+  return workbench_load_all_exports('workbench_moderation', 'views', 'view.inc', 'view');
+}
+
+
+/**
  * Implements hook_node_presave().
  *
  * Ensure that a node in moderation has the proper publication status.
