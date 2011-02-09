@@ -13,7 +13,6 @@ $view->disabled = FALSE; /* Edit this to true to make a default view disabled in
 
 /* Display: Defaults */
 $handler = $view->new_display('default', 'Defaults', 'default');
-$handler->display->display_options['use_ajax'] = FALSE;
 $handler->display->display_options['access']['type'] = 'perm';
 $handler->display->display_options['access']['perm'] = 'access workbench';
 $handler->display->display_options['cache']['type'] = 'none';
@@ -171,12 +170,34 @@ $handler->display->display_options['fields']['vid']['alter']['strip_tags'] = 0;
 $handler->display->display_options['fields']['vid']['alter']['html'] = 0;
 $handler->display->display_options['fields']['vid']['hide_empty'] = 0;
 $handler->display->display_options['fields']['vid']['empty_zero'] = 0;
-/* Field: Node revision: Title */
+/* Field: Node Revision - Linked Title */
+$handler->display->display_options['fields']['title_1']['id'] = 'title_1';
+$handler->display->display_options['fields']['title_1']['table'] = 'node_revision';
+$handler->display->display_options['fields']['title_1']['field'] = 'title';
+$handler->display->display_options['fields']['title_1']['ui_name'] = 'Node Revision - Linked Title';
+$handler->display->display_options['fields']['title_1']['exclude'] = TRUE;
+$handler->display->display_options['fields']['title_1']['alter']['alter_text'] = 0;
+$handler->display->display_options['fields']['title_1']['alter']['make_link'] = 1;
+$handler->display->display_options['fields']['title_1']['alter']['path'] = 'node/[nid]/current-revision';
+$handler->display->display_options['fields']['title_1']['alter']['absolute'] = 0;
+$handler->display->display_options['fields']['title_1']['alter']['trim'] = 0;
+$handler->display->display_options['fields']['title_1']['alter']['word_boundary'] = 1;
+$handler->display->display_options['fields']['title_1']['alter']['ellipsis'] = 1;
+$handler->display->display_options['fields']['title_1']['alter']['strip_tags'] = 0;
+$handler->display->display_options['fields']['title_1']['alter']['html'] = 0;
+$handler->display->display_options['fields']['title_1']['element_label_colon'] = 1;
+$handler->display->display_options['fields']['title_1']['element_default_classes'] = 1;
+$handler->display->display_options['fields']['title_1']['hide_empty'] = 0;
+$handler->display->display_options['fields']['title_1']['empty_zero'] = 0;
+$handler->display->display_options['fields']['title_1']['link_to_node'] = 0;
+$handler->display->display_options['fields']['title_1']['link_to_node_revision'] = 0;
+/* Field: Node Revision - Title and Log Message */
 $handler->display->display_options['fields']['title']['id'] = 'title';
 $handler->display->display_options['fields']['title']['table'] = 'node_revision';
 $handler->display->display_options['fields']['title']['field'] = 'title';
+$handler->display->display_options['fields']['title']['ui_name'] = 'Node Revision - Title and Log Message';
 $handler->display->display_options['fields']['title']['alter']['alter_text'] = 1;
-$handler->display->display_options['fields']['title']['alter']['text'] = '<div><a href="/node/[nid]/current-revision">[title]</a></div><div>[log]</div>';
+$handler->display->display_options['fields']['title']['alter']['text'] = '<div>[title_1]</div><div>[log]</div>';
 $handler->display->display_options['fields']['title']['alter']['make_link'] = 0;
 $handler->display->display_options['fields']['title']['alter']['absolute'] = 0;
 $handler->display->display_options['fields']['title']['alter']['trim'] = 0;
@@ -184,6 +205,8 @@ $handler->display->display_options['fields']['title']['alter']['word_boundary'] 
 $handler->display->display_options['fields']['title']['alter']['ellipsis'] = 1;
 $handler->display->display_options['fields']['title']['alter']['strip_tags'] = 0;
 $handler->display->display_options['fields']['title']['alter']['html'] = 0;
+$handler->display->display_options['fields']['title']['element_label_colon'] = 1;
+$handler->display->display_options['fields']['title']['element_default_classes'] = 1;
 $handler->display->display_options['fields']['title']['hide_empty'] = 0;
 $handler->display->display_options['fields']['title']['empty_zero'] = 0;
 $handler->display->display_options['fields']['title']['link_to_node'] = 0;
@@ -455,12 +478,34 @@ $handler->display->display_options['fields']['vid']['alter']['strip_tags'] = 0;
 $handler->display->display_options['fields']['vid']['alter']['html'] = 0;
 $handler->display->display_options['fields']['vid']['hide_empty'] = 0;
 $handler->display->display_options['fields']['vid']['empty_zero'] = 0;
-/* Field: Node revision: Title */
+/* Field: Node Revision - Linked Title */
+$handler->display->display_options['fields']['title_1']['id'] = 'title_1';
+$handler->display->display_options['fields']['title_1']['table'] = 'node_revision';
+$handler->display->display_options['fields']['title_1']['field'] = 'title';
+$handler->display->display_options['fields']['title_1']['ui_name'] = 'Node Revision - Linked Title';
+$handler->display->display_options['fields']['title_1']['exclude'] = TRUE;
+$handler->display->display_options['fields']['title_1']['alter']['alter_text'] = 0;
+$handler->display->display_options['fields']['title_1']['alter']['make_link'] = 1;
+$handler->display->display_options['fields']['title_1']['alter']['path'] = 'node/[nid]/current-revision';
+$handler->display->display_options['fields']['title_1']['alter']['absolute'] = 0;
+$handler->display->display_options['fields']['title_1']['alter']['trim'] = 0;
+$handler->display->display_options['fields']['title_1']['alter']['word_boundary'] = 1;
+$handler->display->display_options['fields']['title_1']['alter']['ellipsis'] = 1;
+$handler->display->display_options['fields']['title_1']['alter']['strip_tags'] = 0;
+$handler->display->display_options['fields']['title_1']['alter']['html'] = 0;
+$handler->display->display_options['fields']['title_1']['element_label_colon'] = 1;
+$handler->display->display_options['fields']['title_1']['element_default_classes'] = 1;
+$handler->display->display_options['fields']['title_1']['hide_empty'] = 0;
+$handler->display->display_options['fields']['title_1']['empty_zero'] = 0;
+$handler->display->display_options['fields']['title_1']['link_to_node'] = 0;
+$handler->display->display_options['fields']['title_1']['link_to_node_revision'] = 0;
+/* Field: Node Revision - Title and Log Message */
 $handler->display->display_options['fields']['title']['id'] = 'title';
 $handler->display->display_options['fields']['title']['table'] = 'node_revision';
 $handler->display->display_options['fields']['title']['field'] = 'title';
+$handler->display->display_options['fields']['title']['ui_name'] = 'Node Revision - Title and Log Message';
 $handler->display->display_options['fields']['title']['alter']['alter_text'] = 1;
-$handler->display->display_options['fields']['title']['alter']['text'] = '<div><a href="/node/[nid]/current-revision">[title]</a></div><div>[log]</div>';
+$handler->display->display_options['fields']['title']['alter']['text'] = '<div>[title_1]</div><div>[log]</div>';
 $handler->display->display_options['fields']['title']['alter']['make_link'] = 0;
 $handler->display->display_options['fields']['title']['alter']['absolute'] = 0;
 $handler->display->display_options['fields']['title']['alter']['trim'] = 0;
@@ -468,6 +513,8 @@ $handler->display->display_options['fields']['title']['alter']['word_boundary'] 
 $handler->display->display_options['fields']['title']['alter']['ellipsis'] = 1;
 $handler->display->display_options['fields']['title']['alter']['strip_tags'] = 0;
 $handler->display->display_options['fields']['title']['alter']['html'] = 0;
+$handler->display->display_options['fields']['title']['element_label_colon'] = 1;
+$handler->display->display_options['fields']['title']['element_default_classes'] = 1;
 $handler->display->display_options['fields']['title']['hide_empty'] = 0;
 $handler->display->display_options['fields']['title']['empty_zero'] = 0;
 $handler->display->display_options['fields']['title']['link_to_node'] = 0;
@@ -618,7 +665,8 @@ $translatables['workbench_moderation'] = array(
   t('State'),
   t('Version'),
   t('Title'),
-  t('<div><a href="/node/[nid]/current-revision">[title]</a></div><div>[log]</div>'),
+  t('node/[nid]/current-revision'),
+  t('<div>[title_1]</div><div>[log]</div>'),
   t('Type'),
   t('Revision Author'),
   t('Created date'),
