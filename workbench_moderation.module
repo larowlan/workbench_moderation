@@ -933,10 +933,49 @@ function workbench_moderation_transitions_get() {
 }
 
 /**
+ * Get a list of all moderation states.
+ *
+ * @return
+ *   An array of state objects. Each state object has a name, description, and weight property.
+ *
+ * @TODO This should replace workbench_moderation_states_get().
+ */
+function workbench_moderation_states() {
+  static $states;
+  if (!isset($states)) {
+    $states = db_select('workbench_moderation_states', 'states')
+      ->fields('states', array('name', 'description', 'weight'))
+      ->orderBy('states.weight', 'ASC')
+      ->execute()
+      ->fetchAll();
+  }
+  return $states;
+}
+
+function workbench_moderation_state_save($state) {
+  return db_merge('workbench_moderation_states')
+    ->key(array('name' => $state->name))
+    ->fields((array) $state)
+    ->execute();
+}
+
+function workbench_moderation_state_delete($state) {
+  db_delete('workbench_moderation_states')
+    ->condition('name', $state->name)
+    ->execute();
+
+  db_delete('workbench_moderation_transitions')
+    ->condition(db_or()->condition('from_name', $state->name)->condition('to_name', $state->name))
+    ->execute();
+}
+
+/**
  * Return a list of all states in the system.
  *
  * @return
  *   An associative array in the format $state[NAME OF STATE] => DESCRIPTION.
+ *
+ * @TODO This should be deprecated by workbench_moderation_states().
  */
 function workbench_moderation_states_get() {
   static $states = FALSE;
