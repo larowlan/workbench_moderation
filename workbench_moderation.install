@@ -42,10 +42,7 @@ function workbench_moderation_schema() {
       'weight' => array(
         'description' => 'Sort weight for the moderation state.',
         'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
         'default' => 0,
-        'size' => 'small',
       ),
     ),
     'unique keys' => array('name' => array('name'))
@@ -189,4 +186,18 @@ function _workbench_moderation_insert_values() {
       ))
       ->execute();
   }
+}
+
+/**
+ * Update the 'weight' field on the workbench_moderation_states table so that it can accept standard
+ * Drupal weight values.
+ */
+function workbench_moderation_update_7001() {
+  db_change_field('workbench_moderation_states', 'weight', 'weight', array(
+    'description' => 'Sort weight for the moderation state.',
+    'type' => 'int',
+    'default' => 0,
+  ));
+
+  return t('Updated the weight field on the moderation states table.');
 }
