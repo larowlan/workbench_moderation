@@ -8,67 +8,131 @@
  */
 
 /**
- * Form builder function for moderation states.
- *
- * @TODO
- *  Clean this up and make a stronger interface for states and settings.
- *  Note that we need weighting of states and transitions.
+ * Administration form for states. Administrators can use this form to add, delete, reorder, and
+ * update the description for states.
  */
-function workbench_moderation_admin_settings_states($form, &$form_state) {
-  $form['new'] = array(
-    '#type' => 'fieldset',
-    '#title' => 'Create new',
-  );
-  $form['new']['new_state_name'] = array(
-    '#type' => 'textfield',
-    '#title' => 'Create new state',
-    '#size' => 60,
-    '#maxlength' => 255,
-    '#description' => t('Enter name of new state.')
-  );
-
-  $form['new']['new_state_description'] = array(
-    '#type' => 'textarea',
-    '#description' => 'Enter an optional description of new state.'
-  );
-
-  $form['new']['submit_states'] = array(
-    '#type' => 'submit',
-    '#value' => t('Create')
-  );
-  $form['delete'] = array(
-    '#type' => 'fieldset',
-    '#title' => 'Delete state',
+function workbench_moderation_admin_states_form($form, &$form_state) {
+  $form['states'] = array(
     '#tree' => TRUE,
-    '#description' => 'Select all states you want to delete <br/> Please note:
-      when deleting an existing state all transitions involving this state
-      will also be deleted.'
   );
 
-  $states = workbench_moderation_states_get();
-  foreach ($states as $state => $state_description) {
-
-    $form['delete']['states'][$state] = array(
+  // List existing states.
+  $states = workbench_moderation_states();
+  foreach ($states as $i => $state) {
+    $form['states'][$state->name]['state'] = array(
+      '#type' => 'value',
+      '#value' => $state,
+    );
+    $form['states'][$state->name]['name'] = array(
+      '#type' => 'value',
+      '#value' => $state->name,
+    );
+    $form['states'][$state->name]['label'] = array(
+      '#markup' => $state->name,
+    );
+    $form['states'][$state->name]['description'] = array(
+      '#type' => 'textfield',
+      '#default_value' => $state->description,
+    );
+    $form['states'][$state->name]['weight'] = array(
+      '#type' => 'weight',
+      '#default_value' => $state->weight,
+    );
+    $form['states'][$state->name]['delete'] = array(
       '#type' => 'checkbox',
-      '#title' => $state,
-      '#description' => ($state_description != $state) ? $state_description : '',
+      '#title' => t('Delete'),
       '#default_value' => FALSE,
-   );
-   // Live and none states can not be deleted
-    if ($state == workbench_moderation_state_published() || $state == workbench_moderation_state_none()) {
-      $form['delete']['states'][$state]['#disabled'] = TRUE;
-      $form['delete']['states'][$state]['#title'] .= t('(This state cannot be deleted.)');
+    );
+    if ($state->name == workbench_moderation_state_published() || $state == workbench_moderation_state_none()) {
+      $form['states'][$state->name]['delete']['#disabled'] = TRUE;
     }
   }
 
-  $form['delete']['submit_states'] = array(
+  // Provide fields to create a new state.
+  $new_state['name'] = array(
+    '#type' => 'textfield',
+    '#size' => 30,
+    '#maxlength' => 255,
+    '#description' => t('Enter name of the new state.')
+  );
+  $new_state['description'] = array(
+    '#type' => 'textfield',
+    '#maxlength' => 255,
+    '#description' => 'Enter a description of the new state.'
+  );
+  $new_state['weight'] = array(
+    '#type' => 'weight',
+  );
+  $form['states'][] = $new_state;
+
+  $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Delete')
+    '#value' => t('Save'),
   );
 
   return $form;
 }
 
+/**
+ * Theme function to transform the states administration form into a reorderable table.
+ */
+function theme_workbench_moderation_admin_states_form($variables) {
+  $form = $variables['form'];
+
+  drupal_add_tabledrag('workbench-moderation-states', 'order', 'sibling', 'workbench-moderation-state-weight');
+
+  $header = array(
+    t('Name'),
+    t('Description'),
+    array('data' => t('Delete'), 'class' => array('checkbox')),
+    t('Weight'),
+  );
+
+  $rows = array();
+  foreach (element_children($form['states']) as $key) {
+    $element = &$form['states'][$key];
+
+    $row = array(
+      'data' => array(),
+      'class' => array('draggable'),
+    );
+    $row['data']['name'] = drupal_render($element['name']) . drupal_render($element['label']);
+    $row['data']['description'] = drupal_render($element['description']);
+    $row['data']['delete'] = drupal_render($element['delete']);
+
+    $element['weight']['#attributes']['class'] = array('workbench-moderation-state-weight');
+    $row['data']['weight'] = drupal_render($element['weight']);
+
+    $rows[] = $row;
+  }
+
+  $output = theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'workbench-moderation-states')));
+  $output .= drupal_render_children($form);
+
+  return $output;
+}
+
+/**
+ * Form submit handler for moderation state administration.
+ */
+function workbench_moderation_admin_states_form_submit($form, &$form_state) {
+  foreach ($form_state['values']['states'] as $key => $info) {
+    if (!empty($info['delete'])) {
+      workbench_moderation_state_delete($info['state']);
+      drupal_set_message(t('%state has been deleted.', array('%state' => $key)));
+    }
+    elseif (!empty($info['name'])) {
+      $state = (object) array(
+        'name' => $info['name'],
+        'description' => $info['description'],
+        'weight' => $info['weight'],
+      );
+      workbench_moderation_state_save($state);
+    }
+  }
+
+  drupal_set_message(t('Your settings have been saved.'));
+}
 
 /**
  * Form builder function for module transition settings.
@@ -125,43 +189,6 @@ function workbench_moderation_admin_settings_transitions($form, &$form_state) {
   );
 
   return $form;
-}
-
-/**
- * Form submit handler for moderation states.
- *
- * @TODO:
- *  Proper cleanup when states are deleted.
- */
-function workbench_moderation_admin_settings_states_submit($form, &$form_state) {
-  // Delete any selected states
-  foreach ($form_state['values']['delete']['states'] as $state => $action) {
-    // @TODO nodes that are in these moderated states need to be updated to the
-    // previous state? Need to figure this one out -- probably can just be
-    // handled by an alert to the user or a re-assignment form confirmation step.
-    if ($action) {
-      // Remove the moderation state.
-      db_delete('workbench_moderation_states')
-        ->condition('name', $state)
-        ->execute();
-      // Remove this state from transitions.
-      $or = db_or()
-        ->condition('from_name', $state)
-        ->condition('to_name', $state);
-      db_delete('workbench_moderation_transitions')
-        ->condition($or)
-        ->execute();
-    }
-  }
-  // Add a new state.
-  if ($form_state['values']['new_state_name']) {
-    $new_state = (object) NULL;
-    $new_state->name = $form_state['values']['new_state_name'];
-    $new_state->description = isset($form_state['values']['new_state_description']) ? $form_state['values']['new_state_description'] : $new_state->name;
-    drupal_write_record('workbench_moderation_states', $new_state);
-  }
-  // Return a message.
-  drupal_set_message(t('Your settings have been saved.'));
 }
 
 /**
