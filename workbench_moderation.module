@@ -246,25 +246,24 @@ function workbench_moderation_permission() {
   // @see workbench_moderation_state_allowed()
   // Per-node-type, per-transition permissions.
   $node_types = workbench_moderation_moderate_node_types();
-  $transitions = workbench_moderation_transitions_get();
-  foreach ($transitions as $from_state => $states) {
-    $from_state = check_plain($from_state);
-    foreach ($states as $to_state) {
-      $to_state = check_plain($to_state);
-      // Always set a permission to perform all moderation states.
-      $permissions["moderate content from $from_state to $to_state"] = array(
-        'title' => t('Moderate all content from !from_state to !to_state', array('!from_state' => $from_state, '!to_state' => $to_state)),
-      );
-      // Per-node type permissions are very complex, and should only be used if
-      // absolutely needed. For right now, this is hardcoded to OFF. To enable it,
-      // Add this line to settings.php and then reset permissions.
-      //   $conf['workbench_moderation_per_node_type'] = TRUE;
-      if (variable_get('workbench_moderation_per_node_type', FALSE)) {
-        foreach ($node_types as $node_type) {
-          $permissions["moderate $node_type state from $from_state to $to_state"] = array(
-            'title' => t('Moderate @node_type state from !from_state to !to_state', array('@node_type' => node_type_get_name($node_type), '!from_state' => $from_state, '!to_state' => $to_state)),
-          );
-        }
+  $transitions = workbench_moderation_transitions();
+  foreach ($transitions as $t) {
+    $from_state = check_plain($t->from_name);
+    $to_state = check_plain($t->to_name);
+
+    // Always set a permission to perform all moderation states.
+    $permissions["moderate content from $from_state to $to_state"] = array(
+      'title' => t('Moderate all content from !from_state to !to_state', array('!from_state' => $from_state, '!to_state' => $to_state)),
+    );
+    // Per-node type permissions are very complex, and should only be used if
+    // absolutely needed. For right now, this is hardcoded to OFF. To enable it,
+    // Add this line to settings.php and then reset permissions.
+    //   $conf['workbench_moderation_per_node_type'] = TRUE;
+    if (variable_get('workbench_moderation_per_node_type', FALSE)) {
+      foreach ($node_types as $node_type) {
+        $permissions["moderate $node_type state from $from_state to $to_state"] = array(
+          'title' => t('Moderate @node_type state from !from_state to !to_state', array('@node_type' => node_type_get_name($node_type), '!from_state' => $from_state, '!to_state' => $to_state)),
+        );
       }
     }
   }
@@ -921,31 +920,6 @@ function workbench_moderation_node_is_current($node) {
   }
   // If not set, then TRUE.
   return TRUE;
-}
-
-/**
- * Return an array of transitions.
- *
- * @return
- *   An associative array where rhe key is the 'from' state and the value
- *   is an array of possible 'to' states.
- */
-function workbench_moderation_transitions_get() {
-  $transitions = array();
-
-  $query = db_select('workbench_moderation_transitions', 't');
-  $alias_from = $query->addJoin('INNER', 'workbench_moderation_states', NULL, 't.from_name = %alias.name');
-  $alias_to = $query->addJoin('INNER', 'workbench_moderation_states', NULL, 't.to_name = %alias.name');
-  $result = $query->fields('t', array('from_name', 'to_name'))
-    ->orderBy("$alias_from.weight", 'ASC')
-    ->orderBy("$alias_to.weight", 'ASC')
-    ->execute();
-
-  while ($t = $result->fetchObject()) {
-    $transitions[$t->from_name][] = $t->to_name;
-  }
-
- return $transitions;
 }
 
 /**
