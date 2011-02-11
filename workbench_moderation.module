@@ -98,6 +98,10 @@ function workbench_moderation_menu_alter(&$items) {
   $items['node/%node/edit']['title callback'] = 'workbench_moderation_edit_tab_title';
   $items['node/%node/edit']['title arguments'] = array(1);
 
+  // Override the node view menu item title.
+  $items['node/%node/view']['title callback'] = 'workbench_moderation_view_tab_title';
+  $items['node/%node/view']['title arguments'] = array(1);
+
   $items['node/%node/revisions']['access callback'] = 'workbench_moderation_revision_access';
 }
 
@@ -129,6 +133,31 @@ function workbench_moderation_edit_tab_title($node) {
   // The latest draft is not published.
   return t('Edit draft');
 }
+
+/**
+ * Change the name of the node view tab, conditionally.
+ *
+ * - Don't change the title if the content is not under moderation.
+ *
+ * - If a piece of content has a published version, the "View" tab should be
+ *   titled "View published".
+ *
+ * - Otherwise, it should be titled "View draft".
+ */
+function workbench_moderation_view_tab_title($node) {
+  // Use the normal tab title if the node type is not under moderation.
+  if (!workbench_moderation_node_type_moderated($node->type)) {
+    return t('View');
+  }
+
+  // Is there a published version?
+  $state = $node->workbench_moderation;
+  if (!empty($state['published'])) {
+    return t('View published');
+  }
+  return t('View draft');
+}
+
 
 /**
  * Implements hook_admin_paths().
