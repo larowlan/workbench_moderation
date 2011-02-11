@@ -79,7 +79,7 @@ function workbench_moderation_menu() {
     'title' => 'Transitions',
     'type' => MENU_LOCAL_TASK,
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('workbench_moderation_admin_settings_transitions'),
+    'page arguments' => array('workbench_moderation_admin_transitions_form'),
     'access arguments' => array('administer workbench moderation'),
     'file' => 'workbench_moderation.admin.inc',
   );
@@ -181,6 +181,10 @@ function workbench_moderation_menu_local_tasks_alter(&$data, $router_item, $root
 function workbench_moderation_theme() {
   return array(
     'workbench_moderation_admin_states_form' => array(
+      'file' => 'workbench_moderation.admin.inc',
+      'render element' => 'form',
+    ),
+    'workbench_moderation_admin_transitions_form' => array(
       'file' => 'workbench_moderation.admin.inc',
       'render element' => 'form',
     ),
@@ -978,6 +982,38 @@ function workbench_moderation_state_delete($state) {
 
   db_delete('workbench_moderation_transitions')
     ->condition(db_or()->condition('from_name', $state->name)->condition('to_name', $state->name))
+    ->execute();
+}
+
+function workbench_moderation_transitions() {
+  static $transitions;
+  if (!isset($transitions)) {
+    $query = db_select('workbench_moderation_transitions', 't')
+      ->fields('t', array('from_name', 'to_name'));
+
+    $alias_from = $query->addJoin('INNER', 'workbench_moderation_states', NULL, 't.from_name = %alias.name');
+    $alias_to = $query->addJoin('INNER', 'workbench_moderation_states', NULL, 't.to_name = %alias.name');
+
+    $query
+      ->orderBy("$alias_from.weight", 'ASC')
+      ->orderBy("$alias_to.weight", 'ASC');
+
+    $transitions = $query->execute()->fetchAll();
+  }
+  return $transitions;
+}
+
+function workbench_moderation_transition_save($transition) {
+  return db_merge('workbench_moderation_transitions')
+    ->key(array('from_name' => $transition->from_name, 'to_name' => $transition->to_name))
+    ->fields((array) $transition)
+    ->execute();
+}
+
+function workbench_moderation_transition_delete($transition) {
+  db_delete('workbench_moderation_transitions')
+    ->condition('from_name', $transition->from_name)
+    ->condition('to_name', $transition->to_name)
     ->execute();
 }
 

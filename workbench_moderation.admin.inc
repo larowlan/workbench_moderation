@@ -135,88 +135,127 @@ function workbench_moderation_admin_states_form_submit($form, &$form_state) {
 }
 
 /**
- * Form builder function for module transition settings.
- *
- *@TODO
- *  Provide weighting of transition states.
+ * Administration form to create and delete moderation transitions. Transition ordering is based on
+ * state ordering.
  */
-function workbench_moderation_admin_settings_transitions($form, &$form_state) {
-  $form['new'] = array(
-    '#type' => 'fieldset',
-    '#title' => 'Create new',
+function workbench_moderation_admin_transitions_form($form, &$form_state) {
+  $form['transitions'] = array(
+    '#tree' => TRUE,
   );
 
-  $form['new']['new_transition_from'] = array(
-    '#type' => 'select',
-    '#title' => 'New transition from',
-    '#default_value' => array(),
-    '#options' => array_merge(array(0 => t('Choose a state')), workbench_moderation_states_get()),
-  );
+  // List existing states.
+  $transitions = workbench_moderation_transitions();
+  foreach ($transitions as $transition) {
+    $element = array();
 
-  $form['new']['new_transition_to'] = array(
-    '#type' => 'select',
-    '#title' => 'to',
-    '#default_value' => array(),
-    '#options' => array_merge(array(0 => t('Choose a state')), workbench_moderation_states_get()),
-  );
+    $element['transition'] = array(
+      '#type' => 'value',
+      '#value' => $transition,
+    );
+    $element['from_name'] = array(
+      '#markup' => check_plain($transition->from_name),
+    );
+    $element['to_name'] = array(
+      '#markup' => check_plain($transition->to_name),
+    );
+    $element['delete'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Delete'),
+      '#title_display' => 'invisible',
+      '#default_value' => FALSE,
+    );
 
-  $form['new']['submit_transitions'] = array(
-    '#type' => 'submit',
-    '#value' => t('Create')
-  );
-
-  $form['delete'] = array(
-    '#type' => 'fieldset',
-    '#title' => 'Delete transitions',
-  );
-
-  $options = array();
-  foreach (workbench_moderation_transitions_get() as $from_state => $states) {
-    foreach ($states as $to_state) {
-      $options[$from_state . '---' . $to_state] = $from_state . ' -> ' . $to_state;
-    }
+    $form['transitions'][] = $element;
   }
-  $form['delete']['delete_transitions'] = array(
-    '#type' => 'checkboxes',
-    '#title' => 'Delete existing transitions',
-    '#default_value' => array(),
+
+  // Provide fields to create a new transition.
+  $options = drupal_map_assoc(array_keys(workbench_moderation_states()));
+  array_unshift($options, t('- Choose state -'));
+  $element = array();
+  $element['from_name'] = array(
+    '#type' => 'select',
+    '#title' => t('New transition'),
     '#options' => $options,
-    '#description' => t('Select all states you want to delete.<br/> Please note: deleting an existing transition will not have any impact on states involved.')
   );
-  $form['delete']['delete'] = array(
+  $element['to_name'] = array(
+    '#type' => 'select',
+    '#title' => '&nbsp;',
+    '#options' => $options,
+  );
+  $form['transitions']['new'] = $element;
+
+  $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Delete')
+    '#value' => t('Save'),
   );
 
   return $form;
 }
 
 /**
- * Form submit handler for moderation transitions.
- *
- * @TODO:
- *  Proper cleanup when transitions are deleted.
+ * Theme function to transform the transitions administration form into a table.
  */
-function workbench_moderation_admin_settings_transitions_submit($form, &$form_state) {
-  $form_values = $form_state['values'];
-  foreach ($form_values['delete_transitions'] as $transition => $action) {
-    // Check for a valid action and delete as needed.
-    if (is_string($action)) {
-      $transinfo = explode('---', $transition);
-      db_delete('workbench_moderation_transitions')
-        ->condition('from_name', $transinfo[0])
-        ->condition('to_name', $transinfo[1])
-        ->execute();
+function theme_workbench_moderation_admin_transitions_form($variables) {
+  $form = $variables['form'];
+
+  $header = array(
+    t('From'),
+    '',
+    t('To'),
+    array('data' => t('Delete'), 'class' => array('checkbox')),
+  );
+
+  $rows = array();
+  foreach (element_children($form['transitions']) as $key) {
+    $element = &$form['transitions'][$key];
+    $row = array('data' => array());
+    $row['data']['from'] = drupal_render($element['from_name']);
+    $row['data'][] = '--&gt;';
+    $row['data']['to'] = drupal_render($element['to_name']);
+    $row['data']['delete'] = drupal_render($element['delete']);
+    $rows[] = $row;
+  }
+
+  drupal_add_css(drupal_get_path('module', 'workbench_moderation') . '/css/workbench_moderation.css');
+  $output = theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('class' => array('width-auto'))));
+  $output .= drupal_render_children($form);
+
+  return $output;
+}
+
+function workbench_moderation_admin_transitions_form_validate($form, &$form_state) {
+  $new = $form_state['values']['transitions']['new'];
+  if (!empty($new['from_name']) && !empty($new['to_name'])) {
+    if ($new['from_name'] == $new['to_name']) {
+      form_set_error('transitions][new', t('To and from states of a new transition must be different.'));
+    }
+    else {
+      foreach (workbench_moderation_transitions() as $t) {
+        if ($new['from_name'] == $t->from_name && $new['to_name'] == $t->to_name) {
+          form_set_error('transitions][new', t('This transition already exists.'));
+          break;
+        }
+      }
     }
   }
-  // Check for the creation of new transitions.
-  if ($form_values['new_transition_from'] != '0' && $form_values['new_transition_to'] != '0' ) {
-    $new_transition = (object) NULL;
-    $new_transition->from_name = $form_values['new_transition_from'];
-    $new_transition->to_name = $form_values['new_transition_to'];
-    $new_transition->ntype = 'all';
-    drupal_write_record('workbench_moderation_transitions', $new_transition);
+}
+
+/**
+ * Form submit handler for moderation transitions.
+ */
+function workbench_moderation_admin_transitions_form_submit($form, &$form_state) {
+  foreach ($form_state['values']['transitions'] as $transition) {
+    if (!empty($transition['delete'])) {
+      workbench_moderation_transition_delete($transition['transition']);
+      drupal_set_message(t('%from --&gt; %to has been deleted.', array('%from' => $transition['transition']->from_name, '%to' => $transition['transition']->to_name)));
+    }
+    elseif (!empty($transition['from_name']) && !empty($transition['to_name'])) {
+      $new_transition = (object) array(
+        'from_name' => $transition['from_name'],
+        'to_name' => $transition['to_name'],
+      );
+      workbench_moderation_transition_save($new_transition);
+      drupal_set_message(t('%from --&gt; %to has been created.', array('%from' => $new_transition->from_name, '%to' => $new_transition->to_name)));
+    }
   }
-  // Return a message.
-  drupal_set_message(t('Your settings have been saved.'));
 }
