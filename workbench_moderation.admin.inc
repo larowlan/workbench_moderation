@@ -18,7 +18,7 @@ function workbench_moderation_admin_states_form($form, &$form_state) {
 
   // List existing states.
   $states = workbench_moderation_states();
-  foreach ($states as $i => $state) {
+  foreach ($states as $state) {
     $form['states'][$state->name]['state'] = array(
       '#type' => 'value',
       '#value' => $state,
@@ -41,6 +41,7 @@ function workbench_moderation_admin_states_form($form, &$form_state) {
     $form['states'][$state->name]['delete'] = array(
       '#type' => 'checkbox',
       '#title' => t('Delete'),
+      '#title_display' => 'invisible',
       '#default_value' => FALSE,
     );
     if ($state->name == workbench_moderation_state_published() || $state == workbench_moderation_state_none()) {
@@ -53,11 +54,13 @@ function workbench_moderation_admin_states_form($form, &$form_state) {
     '#type' => 'textfield',
     '#size' => 30,
     '#maxlength' => 255,
+    '#title' => t('New state'),
     '#description' => t('Enter name of the new state.')
   );
   $new_state['description'] = array(
     '#type' => 'textfield',
     '#maxlength' => 255,
+    '#title' => '&nbsp;',
     '#description' => 'Enter a description of the new state.'
   );
   $new_state['weight'] = array(

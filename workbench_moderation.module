@@ -963,7 +963,7 @@ function workbench_moderation_states() {
       ->fields('states', array('name', 'description', 'weight'))
       ->orderBy('states.weight', 'ASC')
       ->execute()
-      ->fetchAll();
+      ->fetchAllAssoc('name');
   }
   return $states;
 }
