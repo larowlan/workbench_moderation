@@ -316,7 +316,7 @@ function _workbench_moderation_access($op, $node) {
 function _workbench_moderation_access_current_draft($node) {
   $state = $node->workbench_moderation;
   return (_workbench_moderation_access('view revisions', $node)
-      && !empty($state['published'])
+      && empty($state['published'])
       && $state['published']->vid != $state['current']->vid);
 }
 
