@@ -143,12 +143,6 @@ function workbench_moderation_schema() {
         'length' => '255',
         'not null' => FALSE,
       ),
-      'ntype' => array(
-        'description' => 'Node types to apply to. Currently not used.',
-        'type' => 'varchar',
-        'length' => '40',
-        'default' => 'all',
-      ),
     ),
   );
 
@@ -189,8 +183,8 @@ function _workbench_moderation_insert_values() {
 }
 
 /**
- * Update the 'weight' field on the workbench_moderation_states table so that it can accept standard
- * Drupal weight values.
+ * Update the 'weight' field on the {workbench_moderation_states} table so that it can accept
+ * standard Drupal weight values.
  */
 function workbench_moderation_update_7001() {
   db_change_field('workbench_moderation_states', 'weight', 'weight', array(
@@ -200,4 +194,12 @@ function workbench_moderation_update_7001() {
   ));
 
   return t('Updated the weight field on the moderation states table.');
+}
+
+/**
+ * Drop the unused 'ntypes' field from workbench_moderation_transitions.
+ */
+function workbench_moderation_update_7002() {
+  db_drop_field('workbench_moderation_transitions', 'ntype');
+  return t('Dropped unused field from the moderation transitions table.');
 }
