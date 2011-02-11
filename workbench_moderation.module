@@ -27,15 +27,6 @@ function workbench_moderation_menu() {
     'file' => 'workbench_moderation.node.inc'
   );
 
-  // View the current revision of a node.
-  $items["node/%node/current-revision"] = array(
-    'page callback' => 'workbench_moderation_node_current_view',
-    'page arguments' => array(1),
-    'access callback' => '_workbench_moderation_access',
-    'access arguments' => array('view revisions', 1),
-    'file' => 'workbench_moderation.node.inc'
-  );
-
   // Unpublishing a live revision.
   $items["node/%node/moderation/%/unpublish"] = array(
     'title' => 'Unpublish revision',
@@ -59,6 +50,15 @@ function workbench_moderation_menu() {
     'access callback' => '_workbench_moderation_moderate_access',
     'access arguments' => array(1, 5),
     'type' => MENU_CALLBACK,
+  );
+
+  // View the current revision of a node.
+  $items["node/%node/current-revision"] = array(
+    'page callback' => 'workbench_moderation_node_current_view',
+    'page arguments' => array(1),
+    'access callback' => '_workbench_moderation_access',
+    'access arguments' => array('view revisions', 1),
+    'file' => 'workbench_moderation.node.inc'
   );
 
   // Module settings.
