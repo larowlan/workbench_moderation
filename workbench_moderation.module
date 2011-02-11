@@ -52,13 +52,26 @@ function workbench_moderation_menu() {
     'type' => MENU_CALLBACK,
   );
 
-  // View the current revision of a node.
+  // View the current revision of a node. Redirects to node/%node if the current revision is
+  // published, and to node/%node/draft if the current revision is a draft.
   $items["node/%node/current-revision"] = array(
     'page callback' => 'workbench_moderation_node_current_view',
     'page arguments' => array(1),
     'access callback' => '_workbench_moderation_access',
     'access arguments' => array('view revisions', 1),
-    'file' => 'workbench_moderation.node.inc'
+    'file' => 'workbench_moderation.node.inc',
+  );
+
+  // View the current draft of a node.
+  $items["node/%node/draft"] = array(
+    'title' => 'View draft',
+    'page callback' => 'workbench_moderation_node_view_draft',
+    'page arguments' => array(1),
+    'access callback' => '_workbench_moderation_access_current_draft',
+    'access arguments' => array(1),
+    'file' => 'workbench_moderation.node.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -9,
   );
 
   // Module settings.
@@ -298,6 +311,13 @@ function _workbench_moderation_access($op, $node) {
   drupal_alter('workbench_moderation_access', $access, $op, $node);
 
   return $access;
+}
+
+function _workbench_moderation_access_current_draft($node) {
+  $state = $node->workbench_moderation;
+  return (_workbench_moderation_access('view revisions', $node)
+      && !empty($state['published'])
+      && $state['published']->vid != $state['current']->vid);
 }
 
 /**

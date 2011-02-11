@@ -9,7 +9,19 @@
  */
 
 /**
- * Displays the current moderated version of the node.
+ * Menu callback. Redirect the user to the current version of the node, which is either the 'draft'
+ * page or the regular node view page.
+ */
+function workbench_moderation_node_current_view($node) {
+  $state = $node->workbench_moderation;
+  if (_workbench_moderation_access_current_draft($node)) {
+    drupal_goto('node/' . $node->nid . '/draft');
+  }
+  drupal_goto('node/' . $node->nid);
+}
+
+/**
+ * Displays the current draft the node, if it is not published.
  *
  * @param $node
  *   The node being acted upon.
@@ -17,24 +29,12 @@
  * @return
  *   A fully themed node page.
  */
-function workbench_moderation_node_current_view($node) {
-  // Check to see if this is the current version. If so, redirect with a message.
-  if (workbench_moderation_node_is_current($node)) {
-    drupal_set_message(t('This revision is the live version of this @type.', array('@type' => node_type_get_name($node->type))));
-    drupal_goto('node/' . $node->nid);
-  }
-  // Load the current node.
+function workbench_moderation_node_view_draft($node) {
   $current_node = workbench_moderation_node_current_load($node);
-  // Set a warning to the user.
-  drupal_set_message(t('You are viewing the current, moderated version of this
-    @type. Its moderation state is %state.',
-    array(
-      '@type' => node_type_get_name($node->type),
-      '%state' => $current_node->workbench_moderation['current']->state
-     )
-  ));
-  // Set the menu correctly.
-  menu_set_active_item("node/{$current_node->nid}/moderation");
+  drupal_set_message(t('There is a published version of this @type. This draft is awaiting moderation. Its moderation state is %state.', array(
+    '@type' => node_type_get_name($node->type),
+    '%state' => $current_node->workbench_moderation['current']->state
+  )), 'warning');
   return node_page_view($current_node);
 }
 
