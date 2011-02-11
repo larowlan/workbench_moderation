@@ -952,7 +952,8 @@ function workbench_moderation_transitions_get() {
  * Get a list of all moderation states.
  *
  * @return
- *   An array of state objects. Each state object has a name, description, and weight property.
+ *   An array of state objects, keyed by state name and ordered by weight. Each state object has
+ *   name, description, and weight properties.
  *
  * @TODO This should replace workbench_moderation_states_get().
  */
@@ -968,6 +969,13 @@ function workbench_moderation_states() {
   return $states;
 }
 
+/**
+ * Save a new or existing moderation state. Moderation state names must be unique, so saving a state
+ * object with a non-unique name updates the existing state.
+ *
+ * @param $state
+ *   An object with name, description, and weight properties.
+ */
 function workbench_moderation_state_save($state) {
   return db_merge('workbench_moderation_states')
     ->key(array('name' => $state->name))
@@ -975,6 +983,14 @@ function workbench_moderation_state_save($state) {
     ->execute();
 }
 
+/**
+ * Delete a moderation state. This also deletes any transitions that reference the deleted
+ * moderation state.
+ *
+ * @param $state
+ *   An object with at least a name property.
+ *
+ */
 function workbench_moderation_state_delete($state) {
   db_delete('workbench_moderation_states')
     ->condition('name', $state->name)
@@ -985,6 +1001,14 @@ function workbench_moderation_state_delete($state) {
     ->execute();
 }
 
+/**
+ * Get a list of all moderation state transitions.
+ *
+ * @return
+ *   An array of transition objects, each with from_name and to_name properties that reference
+ *   moderation states. The array is ordered by the weight of the 'from' states, then by the weight
+ *   of the 'to' states.
+ */
 function workbench_moderation_transitions() {
   static $transitions;
   if (!isset($transitions)) {
@@ -1003,6 +1027,12 @@ function workbench_moderation_transitions() {
   return $transitions;
 }
 
+/**
+ * Save a moderation state transition.
+ *
+ * @param $transition
+ *   An object with from_name and to_name properties that reference moderation states.
+ */
 function workbench_moderation_transition_save($transition) {
   return db_merge('workbench_moderation_transitions')
     ->key(array('from_name' => $transition->from_name, 'to_name' => $transition->to_name))
@@ -1010,6 +1040,12 @@ function workbench_moderation_transition_save($transition) {
     ->execute();
 }
 
+/**
+ * Delete a moderation state transition.
+ *
+ * @param $transition
+ *   An object with from_name and to_name properties that reference moderation states.
+ */
 function workbench_moderation_transition_delete($transition) {
   db_delete('workbench_moderation_transitions')
     ->condition('from_name', $transition->from_name)
