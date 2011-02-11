@@ -28,7 +28,7 @@ function workbench_moderation_admin_states_form($form, &$form_state) {
       '#value' => $state->name,
     );
     $form['states'][$state->name]['label'] = array(
-      '#markup' => $state->name,
+      '#markup' => check_plain($state->name),
     );
     $form['states'][$state->name]['description'] = array(
       '#type' => 'textfield',
