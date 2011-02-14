@@ -336,7 +336,6 @@ function workbench_moderation_help($path, $arg) {
         On this screen you may create, delete and re-order states. Additional states might include
         'Legal Review,' 'PR Review,' or any or state your site may need.") . '</p>';
 
-
     case 'admin/config/workbench/moderation/transitions':
       return '<p>' . t("The Workbench Moderation module keeeps track of when a node moves from one state to
         another. By default, nodes begin in the 'Draft' state and end in the 'Published' state. The transitions
