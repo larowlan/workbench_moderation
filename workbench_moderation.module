@@ -329,6 +329,19 @@ function workbench_moderation_help($path, $arg) {
       return '<p>' . t("Enables you to control node display with a moderation
         workflow. You can have a 'Live version' for all visitors and pending
         revisions which need to be approved to become the new 'Live Version.'") . '</p>';
+
+    case 'admin/config/workbench/moderation':
+      return '<p>' . t("These are the states through which a node passes in order to become published. By
+        default, the Workbench Moderation module provides the states 'Draft,' 'Review,' and 'Published.'
+        On this screen you may create, delete and re-order states. Additional states might include
+        'Legal Review,' 'PR Review,' or any or state your site may need.") . '</p>';
+
+
+    case 'admin/config/workbench/moderation/transitions':
+      return '<p>' . t("The Workbench Moderation module keeeps track of when a node moves from one state to
+        another. By default, nodes begin in the 'Draft' state and end in the 'Published' state. The transitions
+        on this page control how nodes move from state to state.") . ' ' . l(t('Permission to perform these transitions
+        is controlled on a role-by-role basis.'), 'admin/people/permissions', array('fragment' => 'module-workbench_moderation')) . '</p>';
   }
 }
 
