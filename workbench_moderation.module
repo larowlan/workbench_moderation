@@ -545,12 +545,18 @@ function workbench_moderation_form_node_type_form_alter(&$form, $form_state) {
   // Add JS which handles hiding and showing of these options.
   $form['#attached']['js'][] = drupal_get_path('module', 'workbench_moderation') . '/js/workbench_moderation.js';
   // What states can this node start out in?
+  
+  $options = array();
+  foreach (workbench_moderation_states() as $key => $state) {
+    $options[$key] = check_plain($key . ': ' . $state->description);
+  }
+
   $form['workflow']['node_options']['#options']['moderation'] = t('Enable moderation of revisions');
   $form['workflow']['node_options']['#description'] .= '<p>' . t('Revisions must be enabled for moderation');
   $form['workflow']['workbench_moderation_default_state'] = array(
     '#title' => t('Default moderation state'),
     '#type' => 'select',
-    '#options' => workbench_moderation_states_get(),
+    '#options' => $options,
     '#default_value' => variable_get('workbench_moderation_default_state_' . $form['#node_type']->type),
     '#description' => t('Set the default workflow state for this content.
       If a user has additional moderation rights they will be able to change it
@@ -957,8 +963,6 @@ function workbench_moderation_node_is_current($node) {
  * @return
  *   An array of state objects, keyed by state name and ordered by weight. Each state object has
  *   name, description, and weight properties.
- *
- * @TODO This should replace workbench_moderation_states_get().
  */
 function workbench_moderation_states() {
   static $states;
@@ -1057,26 +1061,6 @@ function workbench_moderation_transition_delete($transition) {
 }
 
 /**
- * Return a list of all states in the system.
- *
- * @return
- *   An associative array in the format $state[NAME OF STATE] => DESCRIPTION.
- *
- * @TODO This should be deprecated by workbench_moderation_states().
- */
-function workbench_moderation_states_get() {
-  static $states = FALSE;
-  if (!$states) {
-    $results = db_query('SELECT * FROM {workbench_moderation_states} ORDER BY weight ASC');
-    $states = array();
-    foreach ($results as $state) {
-      $states[$state->name] = $state->description ? $state->description : $state->name;
-    }
-  }
-  return $states;
-}
-
-/**
  * Provides a list of possible next states for this node.
  *
  * This function is used in permissions checks, so this should not ever return
@@ -1105,7 +1089,7 @@ function workbench_moderation_states_next($current_state, $account, $node_type) 
 
   if (user_access('bypass workbench moderation', $account)) {
     // Some functions expect an array of $state => $state pairs.
-    $states = array_keys(workbench_moderation_states_get());
+    $states = array_keys(workbench_moderation_states());
     return array_combine($states, $states);
   }
   else {
