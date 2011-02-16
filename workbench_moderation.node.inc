@@ -13,7 +13,6 @@
  * page or the regular node view page.
  */
 function workbench_moderation_node_current_view($node) {
-  $node = node_load($node->nid, $node->vid, TRUE);
   if (_workbench_moderation_access_current_draft($node)) {
     drupal_goto('node/' . $node->nid . '/draft');
   }
