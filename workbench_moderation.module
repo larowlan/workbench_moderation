@@ -1203,6 +1203,49 @@ function workbench_moderation_get_moderation_links($node, $url_options = array()
   return $links;
 }
 
+function workbench_moderation_moderate_form($form, &$form_state, $node) {
+  global $user;
+
+  // Make sure that this node type is moderated.
+  if (!workbench_moderation_node_type_moderated($node->type)) {
+    return;
+  }
+
+  $form = array();
+
+  // Build links to available moderation states.
+  $links = array();
+  $my_revision = $node->workbench_moderation['my_revision'];
+  if ($my_revision->vid == $node->workbench_moderation['current']->vid
+      && $next_states = workbench_moderation_states_next($my_revision->state, $user, $node->type)) {
+    $form['node'] = array(
+      '#type' => 'value',
+      '#value' => $node,
+    );
+    $form['#attributes']['class'][] = 'workbench-moderation-moderate-form';
+    $form['#attached']['css'][] = drupal_get_path('module', 'workbench_moderation') . '/css/workbench_moderation.css';
+    $form['state'] = array(
+      '#type' => 'select',
+      '#title' => t('Moderate:'),
+      '#options' => $next_states,
+      '#default_value' => $node->workbench_moderation['current']->state,
+    );
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Apply'),
+    );
+  }
+
+  return $form;
+}
+
+function workbench_moderation_moderate_form_submit($form, $form_state) {
+  if (_workbench_moderation_moderate_access($form_state['values']['node'], $form_state['values']['state'])) {
+    workbench_moderation_moderate($form_state['values']['node'], $form_state['values']['state']);
+  }
+  $form_state['redirect'] = array('node/' . $form_state['values']['node']->nid . '/current-revision');
+}
+
 /**
  * Set status messages for a node.
  *
@@ -1235,17 +1278,13 @@ function workbench_moderation_messages($context, $node = NULL) {
 
   if ($context == 'view') {
     if ($revision_published && $revision_current) {
-      drupal_set_message('This is the current, published version of this content.', FALSE);
+      drupal_set_message('This is the current, published version of this content.', 'status', FALSE);
     }
     elseif ($revision_published && !$revision_current) {
       drupal_set_message('An updated version of this content exists and is awaiting moderation. You are viewing the published version.', 'warning', FALSE);
     }
     elseif ($revision_current && $node_published) {
       drupal_set_message(t('There is a published version of this content. This version is awaiting moderation; its moderation state is %state.', array('%state' => $state['current']->state)), 'warning', FALSE);
-
-      if ($links = workbench_moderation_get_moderation_links($node, array('query' => array('destination' => 'node/' . $node->nid . '/current-revision')))) {
-        drupal_set_message('Moderate: ' . theme('links', array('links' => $links)), 'warning', FALSE);
-      }
     }
     elseif ($revision_current) {
       drupal_set_message('The content of this document is awaiting moderation.', 'warning', FALSE);
@@ -1255,6 +1294,22 @@ function workbench_moderation_messages($context, $node = NULL) {
       drupal_set_message('You are viewing an old version of this content. (' . l('previous', '#') . ', ' . l('next', '#') . ')', 'warning', FALSE);
       if (node_access('update', $node)) {
         drupal_set_message(l('Create a new draft from this version.', '#'), 'warning', FALSE);
+      }
+    }
+
+    // Add a moderation form.
+    if ($revision_current && !$revision_published) {
+//      if ($links = workbench_moderation_get_moderation_links($node, array('query' => array('destination' => 'node/' . $node->nid . '/current-revision')))) {
+//        drupal_set_message('Moderate: ' . theme('links', array('links' => $links)), 'warning', FALSE);
+//      }
+
+      // The problem with using a form is that it shows up twice when used with drupal_set_message(), since forms have unique tokens in them.
+      // The 'draft' tab runs node_view() twice, and we can prevent the form showing twice with a static variable, but when we save the node from the edit form
+      // the static variable doesn't help.
+      static $moderate_form;
+      if (!isset($moderate_form)) {
+        $moderate_form = drupal_render(drupal_get_form('workbench_moderation_moderate_form', $node));
+        drupal_set_message($moderate_form, 'warning', FALSE);
       }
     }
   }
