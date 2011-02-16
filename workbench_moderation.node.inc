@@ -31,10 +31,7 @@ function workbench_moderation_node_current_view($node) {
  */
 function workbench_moderation_node_view_draft($node) {
   $current_node = workbench_moderation_node_current_load($node);
-  drupal_set_message(t('There is a published version of this @type. This draft is awaiting moderation. Its moderation state is %state.', array(
-    '@type' => node_type_get_name($node->type),
-    '%state' => $current_node->workbench_moderation['current']->state
-  )), 'warning');
+  workbench_moderation_messages('view', $current_node);
   return node_page_view($current_node);
 }
 

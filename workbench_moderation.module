@@ -482,71 +482,11 @@ function workbench_moderation_node_load($nodes, $types) {
 /**
  * Implements hook_node_view().
  *
- * Ensures that the proper version of a ode is displayed.
+ * Display messages about the node's moderation state.
  */
 function workbench_moderation_node_view($node, $view_mode = 'full') {
-  // Is this a moderated content type?
-  if (!workbench_moderation_node_type_moderated($node->type)) {
-    return;
-  }
-
-  // Is this the live version of this node?
-  if ($live_node = workbench_moderation_node_live_load($node)) {
-    $has_revision = FALSE;
-    $status = 'status';
-    if ($live_node->vid != $node->vid) {
-      $has_revision = TRUE;
-      $status = 'warning';
-    }
-    $node = $live_node;
-    // Alert the user that there are moderated versions
-    // Only show this message on node/x
-    if (arg(0) == 'node' && is_numeric(arg(1)) && arg(2) == NULL) {
-      // Only show the message once and if there are subsequent revisions of
-      // this content
-      static $live_control = FALSE;
-      if (!$live_control && $has_revision && user_access('view content moderation message')) {
-        $message = t('This is the live version of this !type.', array('!type' => $node->type));
-        $message .= ' ' . t('View the most recent version in moderation !here.', array('!here' => l(t('here'), 'node/' . $node->nid . '/current-revision')));
-        drupal_set_message($message, $status, FALSE);
-        $live_control = TRUE;
-      }
-    }
-    return;
-  }
-
-  // This node is in moderation. If the user has permission to see unpublished
-  // nodes, show it and alert the user
-  $node = workbench_moderation_node_current_load($node);
-  if (arg(0) == 'node' && is_numeric(arg(1)) && arg(2) == NULL) {
-    static $revision_control = FALSE;
-    if (! $revision_control) {
-      drupal_set_message(t('The content of this document has not been approved yet.'), 'warning', FALSE);
-      $revision_control = TRUE;
-    }
-  }
+  workbench_moderation_messages('view', $node);
 }
-/* THIS IS ALL OLDER CODE that needs revision or removal from hook_node_view().
-
-  // If we are showing a revision, show the author informations
-  if (($live != NULL && $node->vid != $live->vid) && user_access('view content moderation message')) {
-    // Get username for the revision rather than the original node.
-    $revision_author = user_load_multiple($node->revision_uid);
-    drupal_set_message(t('The revision of this node has been created on @date by !author.', array('@date' => format_date($node->revision_timestamp, 'short'), '!author' => theme('username', array('account' => $revision_author)))), 'status', FALSE);
-  }
-  // If we are showing the live revision of the node and there are any pending version. tell the user about that
-  elseif (user_access('view content moderation message')) {
-    $pending_revisions = _workbench_moderation_get_latest_revisions($node->nid, 0, NULL);
-    $count = count($pending_revisions);
-
-    if ($count == 1) {
-      drupal_set_message(t('This document has 1 pending revision', array('@count' => $count)), 'status', FALSE);
-    }
-    elseif ($count > 1) {
-      drupal_set_message(t('This document has @count pending revisions', array('@count' => $count)), 'status', FALSE);
-    }
-  }
-  */
 
 /**
  * Implements hook_node_delete().
@@ -629,7 +569,6 @@ function workbench_moderation_form_alter(&$form, $form_state, $form_id) {
   // revert back to the original node status.
   if ($moderation_state == workbench_moderation_state_published()) {
     $moderation_state = workbench_moderation_state_none();
-    drupal_set_message(t('%title is currently published to the site. If you edit this page, the new revision must undergo moderation before your changes go live.', array('%title' => $form['#node']->title)), 'warning', FALSE);
   }
   // Get all the states *this* user can access. If states is false, this user
   // can not change the moderation state
@@ -668,6 +607,7 @@ function workbench_moderation_form_alter(&$form, $form_state, $form_id) {
   // moderation status is live, then it will be published, otherwise not.
   $form['options']['status']['#access'] = FALSE;
   $form['actions']['submit']['#submit'][] = 'workbench_moderation_node_form_submit';
+  workbench_moderation_messages('edit', $form['#node']);
 }
 
 /**
@@ -693,20 +633,6 @@ function workbench_moderation_node_edit_page_override($node) {
       workbench_moderation_node_data($node);
       // We ONLY edit the current revision
       $node = workbench_moderation_node_current_load($node);
-      // Is this revision the same as the live revision?
-      if (!isset($node->workbench_moderation['published']->vid) || $node->vid != $node->workbench_moderation['published']->vid) {
-        // This revision is not live; alert the user
-        if (!user_access('bypass workbench moderation')) {
-          drupal_set_message(t('You are editing the pending revision (@revision)
-            and not the live version of this content. Your changes will be
-            moderated before they are reflected.',
-            array(
-              '@revision' => $node->vid
-              )
-            ), 'warning', FALSE
-          );
-        }
-      }
     }
   }
   // Ensure we have the editing code.
@@ -1275,4 +1201,74 @@ function workbench_moderation_get_moderation_links($node, $url_options = array()
   }
 
   return $links;
+}
+
+/**
+ * Set status messages for a node.
+ *
+ * context is view, edit
+ */
+function workbench_moderation_messages($context, $node = NULL) {
+  if (! user_access('view moderation history')
+      || (!$node && !($node = menu_get_object()))
+      || !workbench_moderation_node_type_moderated($node->type)) {
+    return;
+  }
+
+  $node_published = FALSE;
+  $revision_published = FALSE;
+  $revision_current = FALSE;
+
+  // For new content, this property will not be set.
+  if (isset($node->workbench_moderation)) {
+    $state = $node->workbench_moderation;
+    if (!empty($state['published'])) {
+      $node_published = TRUE;
+    }
+    if ($state['my_revision']->state == workbench_moderation_state_published()) {
+      $revision_published = TRUE;
+    }
+    if ($state['my_revision']->vid == $state['current']->vid) {
+      $revision_current = TRUE;
+    }
+  }
+
+  if ($context == 'view') {
+    if ($revision_published && $revision_current) {
+      drupal_set_message('This is the current, published version of this content.', FALSE);
+    }
+    elseif ($revision_published && !$revision_current) {
+      drupal_set_message('An updated version of this content exists and is awaiting moderation. You are viewing the published version.', 'warning', FALSE);
+    }
+    elseif ($revision_current && $node_published) {
+      drupal_set_message(t('There is a published version of this content. This version is awaiting moderation; its moderation state is %state.', array('%state' => $state['current']->state)), 'warning', FALSE);
+
+      if ($links = workbench_moderation_get_moderation_links($node, array('query' => array('destination' => 'node/' . $node->nid . '/current-revision')))) {
+        drupal_set_message('Moderate: ' . theme('links', array('links' => $links)), 'warning', FALSE);
+      }
+    }
+    elseif ($revision_current) {
+      drupal_set_message('The content of this document is awaiting moderation.', 'warning', FALSE);
+    }
+    else {
+      // @TODO make these links work.
+      drupal_set_message('You are viewing an old version of this content. (' . l('previous', '#') . ', ' . l('next', '#') . ')', 'warning', FALSE);
+      if (node_access('update', $node)) {
+        drupal_set_message(l('Create a new draft from this version.', '#'), 'warning', FALSE);
+      }
+    }
+  }
+  elseif ($context == 'edit') {
+    if ($node_published && $revision_published) {
+      drupal_set_message('There is a published version of this content. Your changes will be placed in moderation.', 'warning', FALSE);
+    }
+    elseif ($node_published && !$revision_published) {
+      // @TODO make this link work.
+      drupal_set_message('This draft has been edited and may differ from the published version. ' . l('Create a new draft from the published version.', '#'), 'warning', FALSE);
+    }
+    else {
+      // New content.
+      drupal_set_message('Your draft will be placed in moderation.', 'warning', FALSE);
+    }
+  }
 }
