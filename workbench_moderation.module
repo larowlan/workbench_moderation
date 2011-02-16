@@ -313,6 +313,28 @@ function _workbench_moderation_access($op, $node) {
   return $access;
 }
 
+/**
+ * Menu access callback to check whether a user may make a particular transition on a node.
+ *
+ * @param $node
+ *   The node being acted upon.
+ * @param $state
+ *   The new moderation state.
+ *
+ * @return
+ *   Booelan TRUE or FALSE.
+ */
+function _workbench_moderation_moderate_access($node, $state) {
+  global $user;
+
+  $my_revision = $node->workbench_moderation['my_revision'];
+  $next = workbench_moderation_states_next($my_revision->state, $user, $node->type);
+  return node_access('update', $node, $user)   // the user can edit the node
+          && $my_revision->current                   // this is the current revision (no branching the revision history)
+          && ($next_states = $next)                  // there are next states the user may transition to
+          && isset($next_states[$state]);           // this state is in the available next states
+}
+
 function _workbench_moderation_access_current_draft($node) {
   $state = $node->workbench_moderation;
   return (_workbench_moderation_access('view revisions', $node)
@@ -1122,28 +1144,6 @@ function workbench_moderation_states_next($current_state, $account, $node_type) 
   }
 
   return FALSE;
-}
-
-/**
- * Menu access callback to check whether a user may make a particular transition on a node.
- *
- * @param $node
- *   The node being acted upon.
- * @param $state
- *   The new moderation state.
- *
- * @return
- *   Booelan TRUE or FALSE.
- */
-function _workbench_moderation_moderate_access($node, $state) {
-  global $user;
-
-  $my_revision = $node->workbench_moderation['my_revision'];
-  $next = workbench_moderation_states_next($my_revision->state, $user, $node->type);
-  return node_access('update', $node, $user)   // the user can edit the node
-          && $my_revision->current                   // this is the current revision (no branching the revision history)
-          && ($next_states = $next)                  // there are next states the user may transition to
-          && isset($next_states[$state]);           // this state is in the available next states
 }
 
 /**
