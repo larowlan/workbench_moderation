@@ -1247,9 +1247,16 @@ function workbench_moderation_moderate_form_submit($form, $form_state) {
 }
 
 /**
- * Set status messages for a node.
+ * Set status messages for a node. Note that these status messages aren't relevant to the session,
+ * only the current page view.
  *
- * context is view, edit
+ * @see workbench_moderation_set_message().
+ *
+ * @param $context
+ *   A string, either 'view' or 'edit'.
+ * @param $node
+ *   A node object. The current menu object will be used if it is a node and this variable was not
+ *   set.
  */
 function workbench_moderation_messages($context, $node = NULL) {
   if (! user_access('view moderation history')
@@ -1278,52 +1285,73 @@ function workbench_moderation_messages($context, $node = NULL) {
 
   if ($context == 'view') {
     if ($revision_published && $revision_current) {
-      drupal_set_message('This is the current, published version of this content.', 'status', FALSE);
+      workbench_moderation_set_message('This is the current, published version of this content.', 'status', FALSE);
     }
     elseif ($revision_published && !$revision_current) {
-      drupal_set_message('An updated version of this content exists and is awaiting moderation. You are viewing the published version.', 'warning', FALSE);
+      workbench_moderation_set_message('An updated version of this content exists and is awaiting moderation. You are viewing the published version.', 'warning', FALSE);
     }
     elseif ($revision_current && $node_published) {
-      drupal_set_message(t('There is a published version of this content. This version is awaiting moderation; its moderation state is %state.', array('%state' => $state['current']->state)), 'warning', FALSE);
+      workbench_moderation_set_message(t('There is a published version of this content. This version is awaiting moderation; its moderation state is %state.', array('%state' => $state['current']->state)), 'warning', FALSE);
     }
     elseif ($revision_current) {
-      drupal_set_message('The content of this document is awaiting moderation.', 'warning', FALSE);
+      workbench_moderation_set_message('The content of this document is awaiting moderation.', 'warning', FALSE);
     }
     else {
       // @TODO make these links work.
-      drupal_set_message('You are viewing an old version of this content. (' . l('previous', '#') . ', ' . l('next', '#') . ')', 'warning', FALSE);
+      workbench_moderation_set_message('You are viewing an old version of this content. (' . l('previous', '#') . ', ' . l('next', '#') . ')', 'warning', FALSE);
       if (node_access('update', $node)) {
-        drupal_set_message(l('Create a new draft from this version.', '#'), 'warning', FALSE);
+        workbench_moderation_set_message(l('Create a new draft from this version.', '#'), 'warning', FALSE);
       }
     }
 
     // Add a moderation form.
     if ($revision_current && !$revision_published) {
-//      if ($links = workbench_moderation_get_moderation_links($node, array('query' => array('destination' => 'node/' . $node->nid . '/current-revision')))) {
-//        drupal_set_message('Moderate: ' . theme('links', array('links' => $links)), 'warning', FALSE);
-//      }
-
-      // The problem with using a form is that it shows up twice when used with drupal_set_message(), since forms have unique tokens in them.
-      // The 'draft' tab runs node_view() twice, and we can prevent the form showing twice with a static variable, but when we save the node from the edit form
-      // the static variable doesn't help.
-      static $moderate_form;
-      if (!isset($moderate_form)) {
-        $moderate_form = drupal_render(drupal_get_form('workbench_moderation_moderate_form', $node));
-        drupal_set_message($moderate_form, 'warning', FALSE);
-      }
+      $moderate_form = drupal_render(drupal_get_form('workbench_moderation_moderate_form', $node));
+      workbench_moderation_set_message($moderate_form, 'warning', FALSE, 'workbench_moderation_moderate_form');
     }
   }
   elseif ($context == 'edit') {
     if ($node_published && $revision_published) {
-      drupal_set_message('There is a published version of this content. Your changes will be placed in moderation.', 'warning', FALSE);
+      workbench_moderation_set_message('There is a published version of this content. Your changes will be placed in moderation.', 'warning', FALSE);
     }
     elseif ($node_published && !$revision_published) {
       // @TODO make this link work.
-      drupal_set_message('This draft has been edited and may differ from the published version. ' . l('Create a new draft from the published version.', '#'), 'warning', FALSE);
+      workbench_moderation_set_message('This draft has been edited and may differ from the published version. ' . l('Create a new draft from the published version.', '#'), 'warning', FALSE);
     }
     else {
       // New content.
-      drupal_set_message('Your draft will be placed in moderation.', 'warning', FALSE);
+      workbench_moderation_set_message('Your draft will be placed in moderation.', 'warning', FALSE);
+    }
+  }
+}
+
+/**
+ * This function stores up moderation status messages. Moderation status messages are only relevant
+ * for the current page load, so they don't need to be stored in the session variable like normal
+ * drupal_set_message() does. When the Drupal status messages are being rendered, we jump in and
+ * add these messages. @see workbench_moderation_preprocess_status_messages().
+ */
+function workbench_moderation_set_message($message = NULL, $type = 'status', $repeat = TRUE, $key = FALSE) {
+  static $messages = array();
+
+  if ($message && $key) {
+    $messages[$type][$key] = $message;
+  }
+  elseif (!($message && !$repeat && !empty($messages[$type]) && in_array($message, $messages[$type]))) {
+    $messages[$type][] = $message;
+  }
+
+  return $messages;
+}
+
+/**
+ * Implements hook_preprocess_status_messages(), aka hook_preprocess_hook().
+ * @see workbench_moderation_set_message()
+ */
+function workbench_moderation_preprocess_status_messages(&$variables) {
+  foreach (workbench_moderation_set_message() as $type => $messages) {
+    foreach ($messages as $m) {
+      drupal_set_message($m, $type);
     }
   }
 }
