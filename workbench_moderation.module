@@ -1119,8 +1119,9 @@ function workbench_moderation_states_next($current_state, $account, $node_type) 
 
   if (user_access('bypass workbench moderation', $account)) {
     // Some functions expect an array of $state => $state pairs.
-    $states = array_keys(workbench_moderation_states());
-    return array_combine($states, $states);
+    $states = drupal_map_assoc(array_keys(workbench_moderation_states()));
+    unset($states[$current_state]);
+    return $states;
   }
   else {
     // Get a list of possible transitions.
