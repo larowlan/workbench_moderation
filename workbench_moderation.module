@@ -1093,6 +1093,14 @@ function workbench_moderation_moderate($node, $state) {
 
   $old_revision = $node->workbench_moderation['my_revision'];
 
+  // Get the number of revisions for this node with vids greater than $node->vid
+  $vid_count = db_select('node_revision', 'r')
+    ->condition('r.nid', $node->nid)
+    ->condition('r.vid', $node->vid, '>')
+    ->countQuery()->execute()->fetchField();
+  // If the number of greater vids is 0, then this is the most current revision
+  $current = ($vid_count == 0);
+
   // Build a history record.
   $new_revision = (object) array(
     'from_state' => $old_revision->state,
@@ -1100,7 +1108,7 @@ function workbench_moderation_moderate($node, $state) {
     'nid' => $node->nid,
     'vid' => $node->vid,
     'uid' => $user->uid,
-    'current' => ($old_revision->vid == $node->workbench_moderation['current']->vid),
+    'current' => $current,
     'published' => ($state == workbench_moderation_state_published()),
     'stamp' => $_SERVER['REQUEST_TIME'],
   );
