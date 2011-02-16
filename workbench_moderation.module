@@ -1226,7 +1226,6 @@ function workbench_moderation_moderate_form($form, &$form_state, $node) {
   $my_revision = $node->workbench_moderation['my_revision'];
   if ($my_revision->vid == $node->workbench_moderation['current']->vid
       && $next_states = workbench_moderation_states_next($my_revision->state, $user, $node->type)) {
-    $form['#action'] = 'node/' . $node->nid . '/current-revision';
     $form['node'] = array(
       '#type' => 'value',
       '#value' => $node,
@@ -1252,6 +1251,9 @@ function workbench_moderation_moderate_form_submit($form, $form_state) {
   if (_workbench_moderation_moderate_access($form_state['values']['node'], $form_state['values']['state'])) {
     workbench_moderation_moderate($form_state['values']['node'], $form_state['values']['state']);
   }
+
+  // This is not ideal, but we need to move away from the draft tab before we get an 'access denied' error.
+  drupal_goto('node/' . $form_state['values']['node']->nid . '/current-revision');
 }
 
 /**
