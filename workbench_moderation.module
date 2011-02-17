@@ -1269,7 +1269,7 @@ function workbench_moderation_moderate_form_submit($form, $form_state) {
  *   set.
  */
 function workbench_moderation_messages($context, $node = NULL) {
-  if (! user_access('view moderation history')
+  if (! user_access('view moderation messages')
       || (!$node && !($node = menu_get_object()))
       || !workbench_moderation_node_type_moderated($node->type)) {
     return;
@@ -1285,7 +1285,7 @@ function workbench_moderation_messages($context, $node = NULL) {
     if (!empty($state['published'])) {
       $node_published = TRUE;
     }
-    if ($state['my_revision']->state == workbench_moderation_state_published()) {
+    if ($state['my_revision']->published) {
       $revision_published = TRUE;
     }
     if ($state['my_revision']->vid == $state['current']->vid) {
