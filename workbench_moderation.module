@@ -507,7 +507,7 @@ function workbench_moderation_form_node_type_form_alter(&$form, $form_state) {
   // Add JS which handles hiding and showing of these options.
   $form['#attached']['js'][] = drupal_get_path('module', 'workbench_moderation') . '/js/workbench_moderation.js';
   // What states can this node start out in?
-  
+
   $options = array();
   foreach (workbench_moderation_states() as $key => $state) {
     $options[$key] = check_plain($key . ': ' . $state->description);
