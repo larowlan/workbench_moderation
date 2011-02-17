@@ -1053,7 +1053,6 @@ function workbench_moderation_states_next($current_state, $account, $node_type) 
     // Get a list of possible transitions.
     $states = db_select('workbench_moderation_transitions', 'transitions')
       ->condition('transitions.from_name', $current_state)
-      ->condition('transitions.ntype', array($node_type, 'all'))
       ->fields('transitions', array('to_name'))
       ->execute()
       ->fetchAllKeyed(0, 0);
