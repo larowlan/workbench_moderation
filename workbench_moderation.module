@@ -1298,7 +1298,7 @@ function workbench_moderation_messages($context, $node = NULL) {
       workbench_moderation_set_message('This is the current, published version of this content.', 'status', FALSE);
     }
     elseif ($revision_published && !$revision_current) {
-      workbench_moderation_set_message('An updated version of this content exists and is awaiting moderation. You are viewing the published version.', 'warning', FALSE);
+      workbench_moderation_set_message('You are viewing the published version of this content. An updated version exists and is awaiting moderation. ' . l('View the updated version', "node/{$node->nid}/current-revision") . '.', 'warning', FALSE);
     }
     elseif ($revision_current && $node_published) {
       workbench_moderation_set_message(t('There is a published version of this content. This version is awaiting moderation; its moderation state is %state.', array('%state' => $state['current']->state)), 'warning', FALSE);
