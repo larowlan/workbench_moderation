@@ -1307,17 +1307,70 @@ function workbench_moderation_messages($context, $node = NULL) {
       workbench_moderation_set_message('The content of this document is awaiting moderation.', 'warning', FALSE);
     }
     else {
-      // @TODO make these links work.
-      workbench_moderation_set_message('You are viewing an old version of this content. (' . l('previous', '#') . ', ' . l('next', '#') . ')', 'warning', FALSE);
-      if (node_access('update', $node)) {
-        workbench_moderation_set_message(l('Create a new draft from this version.', '#'), 'warning', FALSE);
-      }
+      workbench_moderation_set_message('You are viewing an old version of this content. ' . l('View the latest version', "node/{$node->nid}/current-revision") . '.', 'warning', FALSE);
+    }
+
+    drupal_static('_node_revision_access', array(), TRUE);
+    if (!$revision_current && _node_revision_access($node, 'update')) {
+      workbench_moderation_set_message(l('Create a new draft from this version.', 'node/' . $node->nid . '/revisions/' . $node->vid . '/revert'), 'warning', FALSE);
     }
 
     // Add a moderation form.
-    if ($revision_current && !$revision_published) {
+    if ($revision_current && !$revision_published && _workbench_moderation_access('update', $node)) {
       $moderate_form = drupal_render(drupal_get_form('workbench_moderation_moderate_form', $node));
       workbench_moderation_set_message($moderate_form, 'warning', FALSE, 'workbench_moderation_moderate_form');
+    }
+
+    // Add an unpublish link.
+    if ($revision_published && user_access('unpublish live version')) {
+      workbench_moderation_set_message('You may ' . l('unpublish this version', 'node/' . $node->nid . '/moderation/' . $node->vid . '/unpublish') . '.', 'warning', FALSE, 'workbench_moderation_unpublish_form');
+    }
+
+    // Add previous and next links.
+    drupal_static('_node_revision_access', array(), TRUE);
+    if (_node_revision_access($node, 'view')) {
+      // Base query for selecting revision ids.
+      $query = db_select('node_revision', 'revision')
+        ->condition('revision.nid', $node->nid)
+        ->range(0, 1);
+      $query->AddField('revision', 'vid');
+
+      // Get the vid of the previous revision.
+      $previous = clone $query;
+      $previous = $previous->condition('revision.vid', $node->vid, '<')
+        ->orderBy('revision.vid', 'DESC')
+        ->execute()
+        ->fetchField();
+      $previous_path = "node/{$node->nid}/revisions/{$previous}/view";
+      if ($previous == $state['current']->vid) {
+        $previous_path = "node/{$node->nid}/current-revision";
+      }
+      elseif (!empty($state['published']) && $previous == $state['published']->vid) {
+        $previous_path = "node/{$node->nid}";
+      }
+
+      // Get the vid of the next revision.
+      $next = $query->condition('revision.vid', $node->vid, '>')
+        ->orderBy('revision.vid', 'ASC')
+        ->execute()
+        ->fetchField();
+      $next_path = "node/{$node->nid}/revisions/{$next}/view";
+      if ($next == $state['current']->vid) {
+        $next_path = "node/{$node->nid}/current-revision";
+      }
+      elseif (!empty($state['published']) && $next == $state['published']->vid) {
+        $next_path = "node/{$node->nid}";
+      }
+
+      // Link it up.
+      $links = ($previous ? l('previous', $previous_path) : '')
+        . ($previous && $next ? ', ' : '')
+        . ($next ? l('next', $next_path) : '');
+
+      // If we have previous or next revisions, link to them.
+      if ($links) {
+        workbench_moderation_set_message('You may view other versions: ' . $links, 'warning', FALSE);
+      }
     }
   }
   elseif ($context == 'edit') {
@@ -1325,8 +1378,7 @@ function workbench_moderation_messages($context, $node = NULL) {
       workbench_moderation_set_message('There is a published version of this content. Your changes will be placed in moderation.', 'warning', FALSE);
     }
     elseif ($node_published && !$revision_published) {
-      // @TODO make this link work.
-      workbench_moderation_set_message('This draft has been edited and may differ from the published version. ' . l('Create a new draft from the published version.', '#'), 'warning', FALSE);
+      workbench_moderation_set_message('This draft has been edited and may differ from the published version. ' . l('Create a new draft from the published version.', "node/{$node->nid}/revisions/{$state['published']->vid}/revert"), 'warning', FALSE);
     }
     else {
       // New content.
