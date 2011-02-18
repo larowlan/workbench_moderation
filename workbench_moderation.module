@@ -96,6 +96,15 @@ function workbench_moderation_menu() {
     'access arguments' => array('administer workbench moderation'),
     'file' => 'workbench_moderation.admin.inc',
   );
+  $items['admin/config/workbench/moderation/check-permissions'] = array(
+    'title' => 'Check Permissions',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('workbench_moderation_admin_check_role'),
+    'access arguments' => array('administer workbench moderation'),
+    'file' => 'workbench_moderation.admin.inc',
+    'weight' => 10,
+  );
 
   return $items;
 }

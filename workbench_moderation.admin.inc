@@ -262,3 +262,172 @@ function workbench_moderation_admin_transitions_form_submit($form, &$form_state)
     }
   }
 }
+
+/**
+ * Administration form to assist with checking whether roles have the appropriate permissions to use
+ * moderation.
+ */
+function workbench_moderation_admin_check_role($form, &$form_state) {
+  $form = array();
+
+  $roles = user_roles();
+  $form['role'] = array(
+    '#type' => 'select',
+    '#title' => t('Check whether this role...'),
+    '#options' => $roles,
+  );
+
+  $form['moderation_role'] = array(
+    '#type' => 'select',
+    '#title' => t('... is qualified for this moderation role...'),
+    '#options' => drupal_map_assoc(array_keys(workbench_moderation_recommended_permissions())),
+  );
+
+  $types = node_type_get_types();
+  foreach ($types as $type => &$info) {
+    $info = $info->name;
+  }
+  $form['types'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('... for these node types:'),
+    '#options' => $types,
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Check'),
+  );
+
+  return $form;
+}
+
+function workbench_moderation_admin_check_role_submit($form, &$form_state) {
+  $rid = $form_state['values']['role'];
+  $role = user_role_load($rid);
+
+  $types = array_filter($form_state['values']['types']);
+
+  $moderation_role = $form_state['values']['moderation_role'];
+  $recommended_permissions = workbench_moderation_recommended_permissions($types);
+  $recommended_permissions = $recommended_permissions[$moderation_role];
+
+  // Get a full list of this role's permissions.
+  $actual_permissions = user_role_permissions(array_filter(array(
+    $rid => TRUE,
+    DRUPAL_AUTHENTICATED_RID => ($rid != DRUPAL_ANONYMOUS_RID),
+  )));
+
+  // The results of user_role_permissions() are in a nested array:
+  // array(rid => array("permission name" => TRUE))
+  // Check each for our recommended permissions.
+  foreach ($actual_permissions as $permissions) {
+    $recommended_permissions = array_diff($recommended_permissions, array_keys(array_filter($permissions)));
+  }
+
+  if (empty($recommended_permissions)) {
+    // All of the recommended permissions were accounted for.
+    drupal_set_message(t('The @role role should be a qualified @moderation_role of content types %types.', array(
+      '@role' => $role->name,
+      '@moderation_role' => $moderation_role,
+      '%type' => implode(', ', $types),
+    )), 'status');
+  }
+  else {
+    // The specified role didn't have some of the recommended permissions. Print a list for the user.
+    $all_permissions = module_invoke_all('permission');
+    foreach ($recommended_permissions as $permission) {
+      drupal_set_message(t('The @role role may need the "!permission_label" permission in order to be a qualified @moderation_role of @types content.', array(
+        '@role' => $role->name,
+        '@moderation_role' => $moderation_role,
+        '@types' => implode(' and ', array(implode(', ', array_slice($types, 0, -1)), end($types))),
+        '!permission_label' => $all_permissions[$permission]['title'],
+      )), 'error');
+    }
+    // Note that we don't cover all configurations.
+    drupal_set_message(t('The @role role may be a qualified @moderation_role regardless of these notices if it has liberal overall node and moderation permissions, like "Administer content" and "Bypass moderation restrictions".', array(
+      '@role' => $role->name,
+      '@moderation_role' => $moderation_role,
+    )), 'warning');
+  }
+
+  // Note that we don't cover all configurations.
+  drupal_set_message(t('You must check manually that this role has the appropriate transition permissions for your workflow.'), 'warning');
+
+  // Repopulate the form with the submitted values.
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * Recommended permissions for typical moderation roles.
+ */
+function workbench_moderation_recommended_permissions($types = array()) {
+  $states = workbench_moderation_states();
+  $draft = workbench_moderation_state_none();
+  $published = workbench_moderation_state_published();
+
+  $permissions = array(
+    'author' => array(
+      // node
+      "access content",
+      "view own unpublished content",
+      "view revisions",
+
+      // workbench_moderation
+      "view moderation messages",
+      "use workbench_moderation my drafts tab",
+    ),
+    'editor' => array(
+      // node
+      "access content",
+      "view revisions",
+      "revert revisions",
+
+      // workbench
+      "view all unpublished content",
+
+      // workbench_moderation
+      "view moderation messages",
+      "view moderation history",
+      "use workbench_moderation my drafts tab",
+      "use workbench_moderation needs review tab",
+    ),
+    'moderator' => array(
+      // node
+      "access content",
+      "view revisions",
+
+      // workbench
+      "view all unpublished content",
+
+      // workbench_moderation
+      "view moderation messages",
+      "view moderation history",
+      "use workbench_moderation needs review tab",
+    ),
+    'publisher' => array(
+      // node
+      "access content",
+      "view revisions",
+      "revert revisions",
+
+      // workbench
+      "view all unpublished content",
+
+      // workbench_moderation
+      "view moderation messages",
+      "view moderation history",
+      "use workbench_moderation needs review tab",
+      "unpublish live version",
+    ),
+  );
+
+  foreach ($types as $type) {
+    $permissions['author'][] = "create $type content";
+    $permissions['author'][] = "edit own $type content";
+    $permissions['editor'][] = "edit any $type content";
+    $permissions['moderator'][] = "edit any $type content";
+    $permissions['publisher'][] = "edit any $type content";
+  }
+
+  return $permissions;
+}
