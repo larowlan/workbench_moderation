@@ -30,7 +30,6 @@ function workbench_moderation_node_current_view($node) {
  */
 function workbench_moderation_node_view_draft($node) {
   $current_node = workbench_moderation_node_current_load($node);
-  workbench_moderation_messages('view', $current_node);
   return node_page_view($current_node);
 }
 

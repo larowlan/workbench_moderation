@@ -494,7 +494,10 @@ function workbench_moderation_node_load($nodes, $types) {
  * Display messages about the node's moderation state.
  */
 function workbench_moderation_node_view($node, $view_mode = 'full') {
-  workbench_moderation_messages('view', $node);
+  // Show moderation state messages if we're on a node page.
+  if (menu_get_object('node', 1)) {
+    workbench_moderation_messages('view', $node);
+  }
 }
 
 /**
