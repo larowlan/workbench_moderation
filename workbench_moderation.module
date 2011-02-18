@@ -1315,7 +1315,7 @@ function workbench_moderation_messages($context, $node = NULL) {
       workbench_moderation_set_message(t('There is a published version of this content. This version is awaiting moderation; its moderation state is %state.', array('%state' => $state['current']->state)), 'warning', FALSE);
     }
     elseif ($revision_current) {
-      workbench_moderation_set_message('The content of this document is awaiting moderation.', 'warning', FALSE);
+      workbench_moderation_set_message(t('This content is awaiting moderation; its moderation state is %state.', array('%state' => $state['current']->state)), 'warning', FALSE);
     }
     else {
       workbench_moderation_set_message('You are viewing an old version of this content. ' . l('View the latest version', "node/{$node->nid}/current-revision") . '.', 'warning', FALSE);
