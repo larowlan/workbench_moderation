@@ -1217,14 +1217,11 @@ function workbench_moderation_get_moderation_links($node, $url_options = array()
   return $links;
 }
 
+/**
+ * The caller of this form needs to check whether the node is in moderation.
+ */
 function workbench_moderation_moderate_form($form, &$form_state, $node) {
   global $user;
-
-  // Make sure that this node type is moderated.
-  if (!workbench_moderation_node_type_moderated($node->type)) {
-    return;
-  }
-
   $form = array();
 
   // Build links to available moderation states.
@@ -1248,6 +1245,9 @@ function workbench_moderation_moderate_form($form, &$form_state, $node) {
       '#type' => 'submit',
       '#value' => t('Apply'),
     );
+  }
+  else {
+    $form['#access'] = FALSE;
   }
 
   return $form;
