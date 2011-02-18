@@ -468,11 +468,6 @@ function workbench_moderation_node_update($node) {
     workbench_moderation_moderate($node, $node->workbench_moderation_state_new);
   }
 
-  // Tell the user what is happening to their content if the revision isn't published.
-  if (!$node->status) {
-    drupal_set_message(t('Your content is now awaiting moderation.'), 'status', FALSE);
-  }
-
   return;
 }
 
