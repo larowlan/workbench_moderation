@@ -124,7 +124,80 @@ function workbench_moderation_menu_alter(&$items) {
   $items['node/%node/view']['title callback'] = 'workbench_moderation_view_tab_title';
   $items['node/%node/view']['title arguments'] = array(1);
 
-  $items['node/%node/revisions']['access callback'] = 'workbench_moderation_revision_access';
+  // Redirect node/%node/revisions
+  $items['node/%node/revisions']['page callback'] = 'workbench_moderation_node_revisions_redirect';
+  $items['node/%node/revisions']['page arguments'] = array(1);
+}
+
+/**
+ * Redirects 'node/%node/revisions' to node/%node/moderation
+ *
+ * workbench_moderation_menu_alter() changes the page callback
+ * for 'node/%node/revisions' to this function
+ *
+ * @param $node
+ *   A normal $node object
+ */
+function workbench_moderation_node_revisions_redirect($node) {
+  // Redirect node types subject to moderation
+  if (workbench_moderation_node_type_moderated($node->type) === TRUE) {
+    drupal_goto('node/' . $node->nid . '/moderation');
+  }
+  // return the normal node revisions page for unmoderated types
+  else {
+    return node_revision_overview($node);
+  }
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ *
+ * Hide the node revisions tab conditionally.
+ *
+ * Check if the node type is subject to moderation.
+ * If so, unset the revision tab.
+ *
+ * Additionally, workbench_menu_alter() is used to change the page callback
+ * for node/%node/revisions so that this URL redirects to node/%node/moderation
+ * for node types subject to moderation.
+ *
+ * The bulk of the code in this function was taken from
+ * workbench_access_menu_local_tasks_alter
+ */
+function workbench_moderation_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+
+  // Do we need to bother doing anything?
+  if (empty($data['tabs'][0]['output']) || empty($router_item['page_arguments'][0])) {
+    return;
+  }
+
+  // Check the path.
+  $arg = arg(0, $root_path);
+  $arg1 = arg(1, $root_path);
+  if ($arg != 'node' || $arg1 != '%') {
+    return;
+  }
+
+  // Devel module passes node as the first parameter, but we support it.
+  if (count($router_item['page_arguments']) > 1 && $router_item['page_arguments'][0] == 'node') {
+    array_shift($router_item['page_arguments']);
+  }
+  // Ensure that we have a proper node.
+  if (!is_object($router_item['page_arguments'][0])) {
+    return;
+  }
+  $node = $router_item['page_arguments'][0];
+
+  // Here is the reason this hook implementation exists:
+  // If this is a node type that gets moderated, don't show 'node/%/revisions'
+  if (workbench_moderation_node_type_moderated($node->type) === TRUE) {
+    foreach ($data['tabs'][0]['output'] as $key => $value) {
+      if (!empty($value['#link']['path']) && $value['#link']['path'] == 'node/%/revisions') {
+        unset($data['tabs'][0]['output'][$key]);
+        break;
+      }
+    }
+  }
 }
 
 /**
