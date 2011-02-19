@@ -57,8 +57,7 @@ function workbench_moderation_menu() {
   $items["node/%node/current-revision"] = array(
     'page callback' => 'workbench_moderation_node_current_view',
     'page arguments' => array(1),
-    'access callback' => '_workbench_moderation_access',
-    'access arguments' => array('view revisions', 1),
+    'access arguments' => array('view revisions'),
     'file' => 'workbench_moderation.node.inc',
   );
 
