@@ -1447,7 +1447,7 @@ function workbench_moderation_messages($context, $node = NULL) {
 }
 
 function workbench_moderation_access_link($text, $internal_path, $options = array()) {
-  if (($item = menu_get_item($internal_path)) && $item['access']) {
+  if (($item = menu_get_item($internal_path)) && !empty($item['access'])) {
     return l($text, $internal_path, $options);
   }
 }
