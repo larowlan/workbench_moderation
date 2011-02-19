@@ -1312,23 +1312,25 @@ function workbench_moderation_messages($context, $node = NULL) {
       workbench_moderation_set_message(t('This content is awaiting moderation; its moderation state is %state.', array('%state' => $state['current']->state)), 'warning', FALSE);
     }
     else {
-      workbench_moderation_set_message('You are viewing an old version of this content. ' . l('View the latest version', "node/{$node->nid}/current-revision") . '.', 'warning', FALSE);
+      workbench_moderation_set_message('You are viewing an old version of this content. ' . workbench_moderation_access_link('View the latest version', "node/{$node->nid}/current-revision") . '.', 'warning', FALSE);
     }
 
     drupal_static('_node_revision_access', array(), TRUE);
-    if (!$revision_current && _node_revision_access($node, 'update')) {
-      workbench_moderation_set_message(l('Create a new draft from this version.', 'node/' . $node->nid . '/revisions/' . $node->vid . '/revert'), 'warning', FALSE);
+    if (!$revision_current && _node_revision_access($node, 'update')
+        && $link = workbench_moderation_access_link('Create a new draft from this version.', 'node/' . $node->nid . '/revisions/' . $node->vid . '/revert')) {
+      workbench_moderation_set_message($link, 'warning', FALSE);
     }
 
     // Add a moderation form.
-    if ($revision_current && !$revision_published && _workbench_moderation_access('update', $node)) {
-      $moderate_form = drupal_render(drupal_get_form('workbench_moderation_moderate_form', $node));
+    if ($revision_current && !$revision_published && _workbench_moderation_access('update', $node)
+        && $moderate_form = drupal_render(drupal_get_form('workbench_moderation_moderate_form', $node))) {
       workbench_moderation_set_message($moderate_form, 'warning', FALSE, 'workbench_moderation_moderate_form');
     }
 
     // Add an unpublish link.
-    if ($revision_published && user_access('unpublish live version')) {
-      workbench_moderation_set_message('You may ' . l('unpublish this version', 'node/' . $node->nid . '/moderation/' . $node->vid . '/unpublish') . '.', 'warning', FALSE, 'workbench_moderation_unpublish_form');
+    if ($revision_published && user_access('unpublish live version')
+        && $link = workbench_moderation_access_link('unpublish this version', 'node/' . $node->nid . '/moderation/' . $node->vid . '/unpublish')) {
+      workbench_moderation_set_message('You may ' . $link . '.', 'warning', FALSE, 'workbench_moderation_unpublish_form');
     }
 
     // Add previous and next links.
@@ -1368,9 +1370,9 @@ function workbench_moderation_messages($context, $node = NULL) {
       }
 
       // Link it up.
-      $links = ($previous ? l('previous', $previous_path) : '')
+      $links = ($previous ? workbench_moderation_access_link('previous', $previous_path) : '')
         . ($previous && $next ? ', ' : '')
-        . ($next ? l('next', $next_path) : '');
+        . ($next ? workbench_moderation_access_link('next', $next_path) : '');
 
       // If we have previous or next revisions, link to them.
       if ($links) {
@@ -1383,12 +1385,18 @@ function workbench_moderation_messages($context, $node = NULL) {
       workbench_moderation_set_message('There is a published version of this content. Your changes will be placed in moderation.', 'warning', FALSE);
     }
     elseif ($node_published && !$revision_published) {
-      workbench_moderation_set_message('This draft has been edited and may differ from the published version. ' . l('Create a new draft from the published version.', "node/{$node->nid}/revisions/{$state['published']->vid}/revert"), 'warning', FALSE);
+      workbench_moderation_set_message('This draft has been edited and may differ from the published version. ' . workbench_moderation_access_link('Create a new draft from the published version.', "node/{$node->nid}/revisions/{$state['published']->vid}/revert"), 'warning', FALSE);
     }
     else {
       // New content.
       workbench_moderation_set_message('Your draft will be placed in moderation.', 'warning', FALSE);
     }
+  }
+}
+
+function workbench_moderation_access_link($text, $internal_path, $options = array()) {
+  if (($item = menu_get_item($internal_path)) && $item['access']) {
+    return l($text, $internal_path, $options);
   }
 }
 
