@@ -154,15 +154,16 @@ function workbench_moderation_node_revisions_redirect($node) {
  *
  * Hide the node revisions tab conditionally.
  *
- * Check if the node type is subject to moderation.
- * If so, unset the revision tab.
- *
+ * Check if the node type is subject to moderation. If so, unset the revision tab.
+ * This is necessary because hook_menu_alter cannot change the menu item type
+ * on a node type by node type basis for node/%node/revision.
+ * 
  * Additionally, workbench_menu_alter() is used to change the page callback
  * for node/%node/revisions so that this URL redirects to node/%node/moderation
  * for node types subject to moderation.
  *
  * The bulk of the code in this function was taken from
- * workbench_access_menu_local_tasks_alter
+ * workbench_access_menu_local_tasks_alter.
  */
 function workbench_moderation_menu_local_tasks_alter(&$data, $router_item, $root_path) {
 
@@ -280,28 +281,6 @@ function workbench_moderation_theme() {
       'render element' => 'form',
     ),
   );
-}
-
-/**
- * Deny access for items we override.
- *
- * If moderation is in use, then the Revisions tab is not used, so we remove access to it.
- *
- * @see _node_revision_access()
- *
- * @param $node
- *   The node being acted upon.
- * @param $op
- *   The operation being requested.
- *
- * @return
- *   Boolean TRUE or FALSE.
- */
-function workbench_moderation_revision_access($node, $op = 'view') {
-  if (workbench_moderation_node_type_moderated($node->type) === FALSE) {
-    return _node_revision_access($node, $op);
-  }
-  return FALSE;
 }
 
 /**
