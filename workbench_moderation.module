@@ -1484,7 +1484,7 @@ function workbench_moderation_preprocess_status_messages(&$variables) {
 }
 
 /**
- * Implementation of hook_process_node
+ * Implementation of hook_process_node().
  *
  * Changing the 'submitted' variable with a process function
  * because themes link Bartik might be using phrasing like 'published on'
