@@ -1288,7 +1288,7 @@ function workbench_moderation_get_moderation_links($node, $url_options = array()
 /**
  * The caller of this form needs to check whether the node is in moderation.
  */
-function workbench_moderation_moderate_form($form, &$form_state, $node) {
+function workbench_moderation_moderate_form($form, &$form_state, $node, $destination = NULL) {
   global $user;
   $form = array();
 
@@ -1297,6 +1297,7 @@ function workbench_moderation_moderate_form($form, &$form_state, $node) {
   $my_revision = $node->workbench_moderation['my_revision'];
   if ($my_revision->vid == $node->workbench_moderation['current']->vid
       && $next_states = workbench_moderation_states_next($my_revision->state, $user, $node->type)) {
+    $form['#destination'] = $destination;
     $form['node'] = array(
       '#type' => 'value',
       '#value' => $node,
@@ -1326,8 +1327,12 @@ function workbench_moderation_moderate_form_submit($form, $form_state) {
     workbench_moderation_moderate($form_state['values']['node'], $form_state['values']['state']);
   }
 
-  // This is not ideal, but we need to move away from the draft tab before we get an 'access denied' error.
-  drupal_goto('node/' . $form_state['values']['node']->nid . '/current-revision');
+  // This is not ideal, but if the form is invoked from a node's draft tab and used to publish the
+  // node, the draft tab will not be available after publishing, and Drupal's will throw an access
+  // denied error before it is able to redirect to the published version.
+  if (!empty($form['#destination'])) {
+    drupal_redirect_form($form);
+  }
 }
 
 /**
@@ -1392,7 +1397,7 @@ function workbench_moderation_messages($context, $node = NULL) {
 
     // Add a moderation form.
     if ($revision_current && !$revision_published && _workbench_moderation_access('update', $node)
-        && $moderate_form = drupal_render(drupal_get_form('workbench_moderation_moderate_form', $node))) {
+        && $moderate_form = drupal_render(drupal_get_form('workbench_moderation_moderate_form', $node, "node/{$node->nid}/current-revision"))) {
       workbench_moderation_set_message($moderate_form, 'warning', FALSE, 'workbench_moderation_moderate_form');
     }
 
