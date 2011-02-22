@@ -395,7 +395,18 @@ function _workbench_moderation_moderate_access($node, $state) {
           && isset($next_states[$state]);           // this state is in the available next states
 }
 
+/**
+ * Return TRUE of FALSE for whether the user has access to view the current revision of a node
+ *
+ * This is the access callback for node/%node/draft as defined in workbench_moderation_menu()
+ */
 function _workbench_moderation_access_current_draft($node) {
+
+  // This tab should only appear for node types under moderation
+  if (!workbench_moderation_node_type_moderated($node->type)) {
+    return FALSE;
+  }
+
   $state = $node->workbench_moderation;
   return (_workbench_moderation_access('view revisions', $node)
       && !empty($state['published'])
