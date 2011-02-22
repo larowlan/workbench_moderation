@@ -1403,7 +1403,7 @@ function workbench_moderation_messages($context, $node = NULL) {
 
     // Add an unpublish link.
     if ($revision_published && user_access('unpublish live version')
-        && $link = workbench_moderation_access_link('unpublish this version', 'node/' . $node->nid . '/moderation/' . $node->vid . '/unpublish')) {
+        && $link = workbench_moderation_access_link('unpublish this version', "node/{$node->nid}/moderation/{$node->vid}/unpublish")) {
       workbench_moderation_set_message('You may ' . $link . '.', 'warning', FALSE, 'workbench_moderation_unpublish_form');
     }
 
