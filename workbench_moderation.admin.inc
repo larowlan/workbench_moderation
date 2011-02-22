@@ -267,29 +267,38 @@ function workbench_moderation_admin_transitions_form_submit($form, &$form_state)
  * Administration form to assist with checking whether roles have the appropriate permissions to use
  * moderation.
  */
-function workbench_moderation_admin_check_role($form, &$form_state) {
+function workbench_moderation_admin_check_role_form($form, &$form_state) {
   $form = array();
 
   $roles = user_roles();
   $form['role'] = array(
     '#type' => 'select',
-    '#title' => t('Check whether this role...'),
+    '#title' => t('Drupal role:'),
+    '#description' => t('Select a role to check.'),
     '#options' => $roles,
   );
 
-  $form['moderation_role'] = array(
+  $form['moderation_task'] = array(
     '#type' => 'select',
-    '#title' => t('... is qualified for this moderation role...'),
-    '#options' => drupal_map_assoc(array_keys(workbench_moderation_recommended_permissions())),
+    '#title' => t('Moderation task:'),
+    '#description' => t('Select a moderation task that the role should be able to perform.'),
+    '#options' => array(
+      'author' => t('Author moderated content'),
+      'editor' => t('Edit moderated content'),
+      'moderator' => t('Moderate content'),
+      'publisher' => t('Publish moderated content'),
+    ),
   );
 
-  $types = node_type_get_types();
-  foreach ($types as $type => &$info) {
-    $info = $info->name;
+  $types = drupal_map_assoc(workbench_moderation_moderate_node_types());
+  $all_types = node_type_get_types();
+  foreach ($types as $type) {
+    $types[$type] = $all_types[$type]->name;
   }
   $form['types'] = array(
     '#type' => 'checkboxes',
-    '#title' => t('... for these node types:'),
+    '#title' => t('Content types:'),
+    '#description' => t('Select any content types on which the user should have the ability to perform the moderation task.'),
     '#options' => $types,
   );
 
@@ -301,15 +310,15 @@ function workbench_moderation_admin_check_role($form, &$form_state) {
   return $form;
 }
 
-function workbench_moderation_admin_check_role_submit($form, &$form_state) {
+function workbench_moderation_admin_check_role_form_submit($form, &$form_state) {
   $rid = $form_state['values']['role'];
   $role = user_role_load($rid);
 
   $types = array_filter($form_state['values']['types']);
 
-  $moderation_role = $form_state['values']['moderation_role'];
+  $moderation_task = $form_state['values']['moderation_task'];
   $recommended_permissions = workbench_moderation_recommended_permissions($types);
-  $recommended_permissions = $recommended_permissions[$moderation_role];
+  $recommended_permissions = $recommended_permissions[$moderation_task];
 
   // Get a full list of this role's permissions.
   $actual_permissions = user_role_permissions(array_filter(array(
@@ -326,9 +335,9 @@ function workbench_moderation_admin_check_role_submit($form, &$form_state) {
 
   if (empty($recommended_permissions)) {
     // All of the recommended permissions were accounted for.
-    drupal_set_message(t('The @role role should be a qualified @moderation_role of content types %types.', array(
+    drupal_set_message(t('The @role role should be a qualified @moderation_task of content types %types.', array(
       '@role' => $role->name,
-      '@moderation_role' => $moderation_role,
+      '@moderation_task' => $moderation_task,
       '%type' => implode(', ', $types),
     )), 'status');
   }
@@ -336,22 +345,30 @@ function workbench_moderation_admin_check_role_submit($form, &$form_state) {
     // The specified role didn't have some of the recommended permissions. Print a list for the user.
     $all_permissions = module_invoke_all('permission');
     foreach ($recommended_permissions as $permission) {
-      drupal_set_message(t('The @role role may need the "!permission_label" permission in order to be a qualified @moderation_role of @types content.', array(
+      drupal_set_message(t('The @role role may need the "!permission_label" permission in order to be a qualified @moderation_task of @types content.', array(
         '@role' => $role->name,
-        '@moderation_role' => $moderation_role,
+        '@moderation_task' => $moderation_task,
         '@types' => implode(' and ', array(implode(', ', array_slice($types, 0, -1)), end($types))),
         '!permission_label' => $all_permissions[$permission]['title'],
       )), 'error');
     }
-    // Note that we don't cover all configurations.
-    drupal_set_message(t('The @role role may be a qualified @moderation_role regardless of these notices if it has liberal overall node and moderation permissions, like "Administer content" and "Bypass moderation restrictions".', array(
+    // Provide links to node and moderation permissions.
+    drupal_set_message(t('View !node_permissions or !moderation_permissions for the @role role.', array(
+      '!node_permissions' => l(t('node permissions'), 'admin/people/permissions/' . $rid, array('fragment' => 'module-node')),
+      '!moderation_permissions' => l(t('moderation permissions'), 'admin/people/permissions/' . $rid, array('fragment' => 'module-workbench_moderation')),
       '@role' => $role->name,
-      '@moderation_role' => $moderation_role,
+    )), 'error');
+
+    // Note that we don't cover all configurations.
+    drupal_set_message(t('The @role role may be a qualified @moderation_task regardless of these notices if it has liberal overall node and moderation permissions, like "Administer content" and "Bypass moderation restrictions".', array(
+      '@role' => $role->name,
+      '@moderation_task' => $moderation_task,
     )), 'warning');
   }
 
   // Note that we don't cover all configurations.
-  drupal_set_message(t('You must check manually that this role has the appropriate transition permissions for your workflow.'), 'warning');
+  $link = l(t('View moderation permissions for this role.'), 'admin/people/permissions/' . $rid, array('fragment' => 'module-workbench_moderation'));
+  drupal_set_message(t('You must check manually that this role has the appropriate transition permissions for your workflow. !moderation_permissions_link', array('!moderation_permissions_link' => $link)), 'warning');
 
   // Repopulate the form with the submitted values.
   $form_state['rebuild'] = TRUE;

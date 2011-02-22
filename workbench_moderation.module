@@ -99,7 +99,7 @@ function workbench_moderation_menu() {
     'title' => 'Check Permissions',
     'type' => MENU_LOCAL_TASK,
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('workbench_moderation_admin_check_role'),
+    'page arguments' => array('workbench_moderation_admin_check_role_form'),
     'access arguments' => array('administer workbench moderation'),
     'file' => 'workbench_moderation.admin.inc',
     'weight' => 10,
@@ -435,6 +435,12 @@ function workbench_moderation_help($path, $arg) {
         on this page control how nodes move from state to state.", array('%draft' => workbench_moderation_state_none(),
         '%published' => workbench_moderation_state_published())) . ' ' . l(t('Permission to perform these transitions
         is controlled on a role-by-role basis.'), 'admin/people/permissions', array('fragment' => 'module-workbench_moderation')) . '</p>';
+
+    case 'admin/config/workbench/moderation/check-permissions':
+      return '<p>' . t("In order to participate in the moderation process,
+        Drupal users must be granted several node- and moderation- related
+        permissions. This page can help check whether roles have the correct
+        permissions to author, edit, moderate, and publish moderated content.") . '</p>';
   }
 }
 
