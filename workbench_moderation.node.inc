@@ -149,7 +149,7 @@ function workbench_moderation_node_history_view($node) {
     elseif ($revision->vid == $node->workbench_moderation['current']->vid) {
       $node_current = workbench_moderation_node_current_load($node);
       $row['data']['moderation'] = '<div class="moderation-state"><strong>' . t('This is the current revision. The current state is %state.', array('%state' => $node->workbench_moderation['current']->state)) . '</strong></div>';
-      $row['data']['moderation'] .= '<div class="moderation-actions">' . theme('links', array('links' => workbench_moderation_get_moderation_links($node_current, array('query' => array('destination' => $_GET['q']))))) . '</div>';
+      $row['data']['moderation'] .= '<div class="moderation-actions">' . drupal_render(drupal_get_form('workbench_moderation_moderate_form', $node_current)) . '</div>';
     }
 
     // Build a table of the moderation history.
