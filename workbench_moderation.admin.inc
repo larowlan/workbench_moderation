@@ -220,7 +220,7 @@ function theme_workbench_moderation_admin_transitions_form($variables) {
     $row['data']['delete'] = drupal_render($element['delete']);
     $rows[] = $row;
   }
-
+  // @TODO: change this css call.
   drupal_add_css(drupal_get_path('module', 'workbench_moderation') . '/css/workbench_moderation.css');
   $output = theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('class' => array('width-auto'))));
   $output .= drupal_render_children($form);
