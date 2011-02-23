@@ -1584,18 +1584,3 @@ function workbench_moderation_preprocess_status_messages(&$variables) {
     }
   }
 }
-
-/**
- * Implements hook_process_node().
- *
- * Changes the 'submitted' variable with a process function
- * because themes link Bartik might be using phrasing like 'published on'
- * that would cause confusion with the workbench_moderation states.
- */
-function workbench_moderation_process_node(&$variables) {
-  // Only take over the submitted variable if this node is not published.
-  // and is of a type controlled by workbench_moderation
-  if (!$variables['status'] && workbench_moderation_node_type_moderated($variables['type'])) {
-    $variables['submitted'] = t('Authored by !username on !datetime', array('!username' => $variables['name'], '!datetime' => $variables['date']));
-  }
-}
