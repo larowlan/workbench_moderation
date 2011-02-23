@@ -744,7 +744,6 @@ function workbench_moderation_state_published() {
  *
  * @TODO: make this configurable.
  */
- */
 function workbench_moderation_state_none() {
   return t('Draft');
 }
