@@ -388,11 +388,15 @@ function _workbench_moderation_moderate_access($node, $state) {
   global $user;
 
   $my_revision = $node->workbench_moderation['my_revision'];
-  $next = workbench_moderation_states_next($my_revision->state, $user, $node->type);
-  return node_access('update', $node, $user)   // the user can edit the node
-          && $my_revision->current                   // this is the current revision (no branching the revision history)
-          && ($next_states = $next)                  // there are next states the user may transition to
-          && isset($next_states[$state]);           // this state is in the available next states
+  $next_states = workbench_moderation_states_next($my_revision->state, $user, $node->type);
+  $access = node_access('update', $node, $user)       // the user can edit the node
+          && $my_revision->current                    // this is the current revision (no branching the revision history)
+          && (!empty($next_states))                   // there are next states the user may transition to
+          && isset($next_states[$state]);             // this state is in the available next states
+
+  // Allow other modules to change our rule set.
+  $op = 'moderate';
+  drupal_alter('workbench_moderation_access', $access, $op, $node);
 }
 
 /**
