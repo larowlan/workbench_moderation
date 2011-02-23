@@ -3,12 +3,10 @@
 /**
  * @file
  *  Content moderation views integration for Workbench.
- *
- * @copyright (C) Copyright 2010 Palantir.net
  */
 
 /**
- * Implementation of hook_views_data().
+ * Implements hook_views_data().
  */
 function workbench_moderation_views_data() {
   $data = array();

@@ -1,14 +1,14 @@
 <?php
-// $Id$
+
 /**
  * @file
- *  Administrative functions for content moderation for Workbench.
- *
- * @copyright (C) Copyright 2010 Palantir.net
+ *  Administrative functions for Workbench Moderation.
  */
 
 /**
- * Administration form for states. Administrators can use this form to add, delete, reorder, and
+ * Administration form for states.
+ *
+ * Administrators can use this form to add, delete, reorder, and
  * update the description for states.
  */
 function workbench_moderation_admin_states_form($form, &$form_state) {
@@ -77,7 +77,7 @@ function workbench_moderation_admin_states_form($form, &$form_state) {
 }
 
 /**
- * Theme function to transform the states administration form into a reorderable table.
+ * Transforms the states administration form into a reorderable table.
  */
 function theme_workbench_moderation_admin_states_form($variables) {
   $form = $variables['form'];
@@ -138,8 +138,9 @@ function workbench_moderation_admin_states_form_submit($form, &$form_state) {
 }
 
 /**
- * Administration form to create and delete moderation transitions. Transition ordering is based on
- * state ordering.
+ * Administration form to create and delete moderation transitions.
+ *
+ * Transition ordering is based on state ordering.
  */
 function workbench_moderation_admin_transitions_form($form, &$form_state) {
   $form['transitions'] = array(
@@ -197,7 +198,7 @@ function workbench_moderation_admin_transitions_form($form, &$form_state) {
 }
 
 /**
- * Theme function to transform the transitions administration form into a table.
+ * Transforms the transitions administration form into a table.
  */
 function theme_workbench_moderation_admin_transitions_form($variables) {
   $form = $variables['form'];
@@ -227,6 +228,9 @@ function theme_workbench_moderation_admin_transitions_form($variables) {
   return $output;
 }
 
+/**
+ * Form validation handler for the transitions form.
+ */
 function workbench_moderation_admin_transitions_form_validate($form, &$form_state) {
   $new = $form_state['values']['transitions']['new'];
   if (!empty($new['from_name']) && !empty($new['to_name'])) {
@@ -265,8 +269,10 @@ function workbench_moderation_admin_transitions_form_submit($form, &$form_state)
 }
 
 /**
- * Administration form to assist with checking whether roles have the appropriate permissions to use
- * moderation.
+ * Check proper permissions for moderation roles.
+ *
+ * This helper administration form checks whether roles have the appropriate
+ * permissions to use moderation as intended.
  */
 function workbench_moderation_admin_check_role_form($form, &$form_state) {
   $form = array();
@@ -311,6 +317,9 @@ function workbench_moderation_admin_check_role_form($form, &$form_state) {
   return $form;
 }
 
+/**
+ * Form submit handler for moderation role tests.
+ */
 function workbench_moderation_admin_check_role_form_submit($form, &$form_state) {
   $rid = $form_state['values']['role'];
   $role = user_role_load($rid);

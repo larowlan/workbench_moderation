@@ -1,11 +1,8 @@
 <?php
-// $Id$
 
 /**
  * @file
- * Install file for the workbench moderation module.
- *
- * @copyright (C) Copyright 2010 Palantir.net
+ * Install file for the Workbench Moderation module.
  */
 
 /**
@@ -183,8 +180,9 @@ function _workbench_moderation_insert_values() {
 }
 
 /**
- * Update the 'weight' field on the {workbench_moderation_states} table so that it can accept
- * standard Drupal weight values.
+ * Update the 'weight' field on {workbench_moderation_states}.
+ *
+ * Accept standard Drupal weight values.
  */
 function workbench_moderation_update_7001() {
   db_change_field('workbench_moderation_states', 'weight', 'weight', array(

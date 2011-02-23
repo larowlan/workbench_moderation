@@ -2,14 +2,7 @@
 
 /**
  * @file
- *  Content moderation for Workbench.
- *
- * @copyright (C) Copyright 2010 Palantir.net
- */
-
-/**
- * @file
- *   Filter state handlers.
+ * Filter based on moderation state.
  */
 class workbench_moderation_handler_filter_state extends views_handler_filter_in_operator {
   function get_value_options() {

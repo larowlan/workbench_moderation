@@ -1,16 +1,17 @@
 <?php
-// $Id$
 
 /**
  * @file
  * Provides node functions for Workbench Moderation.
- *
- * @copyright (C) Copyright 2010 Palantir.net
  */
 
 /**
- * Menu callback. Redirect the user to the current version of the node, which is either the 'draft'
- * page or the regular node view page.
+ * Redirects the user to the current version of the node.
+ 
+ * This page will deliver either the 'draft' page or the regular node view page.
+ *
+ * @param $node
+ *   The node being acted upon.
  */
 function workbench_moderation_node_current_view($node) {
   if (_workbench_moderation_access_current_draft($node)) {
@@ -232,7 +233,8 @@ function workbench_moderation_node_unpublish_form_submit($form, &$form_state) {
   // Moderate the revision.
   workbench_moderation_moderate($node, workbench_moderation_state_none());
 
-  // Make sure the 'current' version is the 'live' revision -- ie, the revision in {node}.
+  // Make sure the 'current' version is the 'live' revision -- ie, the revision
+  // in {node}.
   $live_revision = workbench_moderation_node_current_load($node);
   $live_revision->status = 0;
   $live_revision->revision = 0;

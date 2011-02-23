@@ -2,9 +2,7 @@
 
 /**
  * @file
- *  Content moderation for Workbench.
- *
- * @copyright (C) Copyright 2010 Palantir.net
+ * Provides moderation links for Views.
  */
 
 class workbench_moderation_handler_field_links extends views_handler_field {

@@ -1,9 +1,8 @@
-; $Id$
-project = "workbench_moderation"
-core = 7.x
 name = Workbench Moderation
 description = Provides content moderation services
-package = "Workbench"
+package = Workbench
+core = 7.x
+configure = admin/config/workbench/moderation
 dependencies[] = workbench
 files[] = workbench_moderation.admin.inc
 files[] = workbench_moderation.install
