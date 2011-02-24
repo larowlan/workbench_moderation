@@ -110,6 +110,14 @@ $handler->display->display_options['style_options']['info'] = array(
 $handler->display->display_options['style_options']['override'] = 1;
 $handler->display->display_options['style_options']['sticky'] = 0;
 $handler->display->display_options['style_options']['order'] = 'desc';
+/* Empty text: Global: Text area */
+$handler->display->display_options['empty']['area']['id'] = 'area';
+$handler->display->display_options['empty']['area']['table'] = 'views';
+$handler->display->display_options['empty']['area']['field'] = 'area';
+$handler->display->display_options['empty']['area']['label'] = 'Needs Review Empty Text';
+$handler->display->display_options['empty']['area']['empty'] = FALSE;
+$handler->display->display_options['empty']['area']['content'] = 'This list displays content in the "Review" state that you can moderate. Currently there is no such content.';
+$handler->display->display_options['empty']['area']['format'] = 'plain_text';
 /* Relationship: Node revision: User */
 $handler->display->display_options['relationships']['uid']['id'] = 'uid';
 $handler->display->display_options['relationships']['uid']['table'] = 'node_revision';
@@ -435,6 +443,15 @@ $handler->display->display_options['style_options']['order'] = 'desc';
 $handler->display->display_options['defaults']['style_options'] = FALSE;
 $handler->display->display_options['defaults']['row_plugin'] = FALSE;
 $handler->display->display_options['defaults']['row_options'] = FALSE;
+$handler->display->display_options['defaults']['empty'] = FALSE;
+/* Empty text: Global: Text area */
+$handler->display->display_options['empty']['area']['id'] = 'area';
+$handler->display->display_options['empty']['area']['table'] = 'views';
+$handler->display->display_options['empty']['area']['field'] = 'area';
+$handler->display->display_options['empty']['area']['label'] = 'My Drafts Empty Text';
+$handler->display->display_options['empty']['area']['empty'] = FALSE;
+$handler->display->display_options['empty']['area']['content'] = 'This list displays content you have created that is not published. Currently there is no such content.';
+$handler->display->display_options['empty']['area']['format'] = 'plain_text';
 $handler->display->display_options['defaults']['fields'] = FALSE;
 /* Field: Node: Nid */
 $handler->display->display_options['fields']['nid']['id'] = 'nid';
@@ -668,6 +685,8 @@ $translatables['workbench_moderation'] = array(
   t('Items per page'),
   t('- All -'),
   t('Offset'),
+  t('Needs Review Empty Text'),
+  t('This list displays content in the "Review" state that you can moderate. Currently there is no such content.'),
   t('revision user'),
   t('moderator user'),
   t('Nid'),
@@ -690,6 +709,8 @@ $translatables['workbench_moderation'] = array(
   t('Needs Review'),
   t('Drafts Page'),
   t('My Drafts'),
+  t('My Drafts Empty Text'),
+  t('This list displays content you have created that is not published. Currently there is no such content.'),
   t('Revision author'),
   t('Moderation state'),
 );
