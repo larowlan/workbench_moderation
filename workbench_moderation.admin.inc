@@ -444,7 +444,7 @@ function workbench_moderation_recommended_permissions($types = array()) {
       "view moderation messages",
       "view moderation history",
       "use workbench_moderation needs review tab",
-      "unpublish live version",
+      "unpublish live revision",
     ),
   );
 

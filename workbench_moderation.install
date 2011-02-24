@@ -53,7 +53,7 @@ function workbench_moderation_schema() {
         'not null' => TRUE
       ),
       'vid' => array(
-        'description' => 'Node version id. Foreign key to {node_revision}',
+        'description' => 'Node revision id. Foreign key to {node_revision}',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -97,7 +97,7 @@ function workbench_moderation_schema() {
         'disp-width' => '10',
       ),
       'published' => array(
-        'description' => 'Indicated the live version of a node.',
+        'description' => 'Indicated the live revision of a node.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -105,7 +105,7 @@ function workbench_moderation_schema() {
         'disp-width' => '10',
       ),
       'current' => array(
-        'description' => 'Indicated the current version of a node.',
+        'description' => 'Indicated the current revision of a node.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,

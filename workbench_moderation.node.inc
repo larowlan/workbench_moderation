@@ -6,7 +6,7 @@
  */
 
 /**
- * Redirects the user to the current version of the node.
+ * Redirects the user to the current revision of the node.
  
  * This page will deliver either the 'draft' page or the regular node view page.
  *
@@ -52,7 +52,7 @@ function workbench_moderation_node_history_view($node) {
 
   // Alert if there is no live node
   if (!isset($node->workbench_moderation['published'])) {
-    drupal_set_message(t('Currently there is no live (published) version of this node.'));
+    drupal_set_message(t('Currently there is no published revision of this node.'));
   }
 
   // Get all of the node revisions, each with its most recent moderation.
@@ -143,7 +143,7 @@ function workbench_moderation_node_history_view($node) {
     if (!empty($node->workbench_moderation['published']) && $revision->vid == $node->workbench_moderation['published']->vid) {
       $row['data']['moderation'] = '<div class="moderation-state"><strong>' . t('This is the published revision.') . '</strong></div>';
       // Provide an unpublish link.
-      if (user_access('unpublish live version')) {
+      if (user_access('unpublish live revision')) {
         $row['data']['moderation'] .= '<div class="moderation-actions">' . l(t('Unpublish'), "node/{$revision->nid}/moderation/{$revision->live_revision}/unpublish") . '</div>';
       }
     }
@@ -212,7 +212,7 @@ function workbench_moderation_node_unpublish_form($form, &$form_state, $node) {
     '#type' => 'value'
   );
   $form['message'] = array(
-    '#markup' =>  '<p>'. t('Are you sure that you want to unpublish the live version of this content? The current live revision will be set to moderation state %state.', array('%state' => workbench_moderation_state_none())) . '</p>',
+    '#markup' =>  '<p>'. t('Are you sure that you want to unpublish the live revision of this content? The current live revision will be set to moderation state %state.', array('%state' => workbench_moderation_state_none())) . '</p>',
   );
   return confirm_form($form, t('Unpublish "!title"?', array('!title' => $node->title)), "node/{$node->nid}/moderation");
 }
@@ -233,7 +233,7 @@ function workbench_moderation_node_unpublish_form_submit($form, &$form_state) {
   // Moderate the revision.
   workbench_moderation_moderate($node, workbench_moderation_state_none());
 
-  // Make sure the 'current' version is the 'live' revision -- ie, the revision
+  // Make sure the 'current' revision is the 'live' revision -- ie, the revision
   // in {node}.
   $live_revision = workbench_moderation_node_current_load($node);
   $live_revision->status = 0;
