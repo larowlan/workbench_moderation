@@ -594,25 +594,36 @@ function workbench_moderation_node_delete($node) {
  * Add moderation rules to node types.
  */
 function workbench_moderation_form_node_type_form_alter(&$form, $form_state) {
-  // Add JS which handles hiding and showing of these options.
-  $form['#attached']['js'][] = drupal_get_path('module', 'workbench_moderation') . '/js/workbench_moderation.js';
-  // What states can this node start out in?
-
+  // Get a list of moderation states.
   $options = array();
   foreach (workbench_moderation_states() as $key => $state) {
     $options[$key] = check_plain($key . ': ' . $state->description);
   }
 
+  // Disable the 'revision' checkbox when the 'moderation' checkbox is checked, so that moderation
+  // can not be enabled unless revisions are enabled.
+  $form['workflow']['node_options']['revision']['#states'] = array(
+    'disabled' => array(':input[name="node_options[moderation]"]' => array('checked' => TRUE)),
+  );
+
+  // Disable the 'moderation' checkbox when the 'revision' checkbox is not checked, so that
+  // revisions can not be turned off without also turning off moderation.
   $form['workflow']['node_options']['#options']['moderation'] = t('Enable moderation of revisions');
-  $form['workflow']['node_options']['#description'] .= '<p>' . t('Revisions must be enabled for moderation');
+  $form['workflow']['node_options']['moderation']['#description'] = t('Revisions must be enabled in order to use moderation.');
+  $form['workflow']['node_options']['moderation']['#states'] = array(
+    'disabled' => array(':input[name="node_options[revision]"]' => array('checked' => FALSE)),
+  );
+
+  // This select element is hidden when moderation is not enabled.
   $form['workflow']['workbench_moderation_default_state'] = array(
     '#title' => t('Default moderation state'),
     '#type' => 'select',
     '#options' => $options,
     '#default_value' => variable_get('workbench_moderation_default_state_' . $form['#node_type']->type),
-    '#description' => t('Set the default workflow state for this content.
-      If a user has additional moderation rights they will be able to change it
-      on the node')
+    '#description' => t('Set the default moderation state for this content type. Users with additional moderation permissions will be able to set the moderation state when creating or editing nodes.'),
+    '#states' => array(
+      'visible' => array(':input[name="node_options[moderation]"]' => array('checked' => TRUE)),
+    ),
   );
   $form['#validate'][] = 'workbench_moderation_node_type_form_validate';
 }
