@@ -126,6 +126,9 @@ function workbench_moderation_menu_alter(&$items) {
   // Redirect node/%node/revisions
   $items['node/%node/revisions']['page callback'] = 'workbench_moderation_node_revisions_redirect';
   $items['node/%node/revisions']['page arguments'] = array(1);
+
+  // For revert operations, use our own access check.
+  $items['node/%node/revisions/%/revert']['access callback'] = '_workbench_moderation_revert_access';
 }
 
 /**
@@ -374,6 +377,37 @@ function _workbench_moderation_access($op, $node) {
   // Allow other modules to change our rule set.
   drupal_alter('workbench_moderation_access', $access, $op, $node);
 
+  return $access;
+}
+
+/**
+ * Wrapper function for the 'revert' operation of _node_revision_access().
+ *
+ * Drupal core's "current revision" of a node is the version in {node}; for
+ * Workbench Moderation, latest revision in {node_revision} is the current
+ * revision. For nodes with a published revision, Workbench Moderation keeps
+ * that revision in {node}, whether or not it is the current revision.
+ */
+function _workbench_moderation_revert_access($node, $op = 'revert') {
+  // Normal behavior for unmoderated nodes.
+  if (!workbench_moderation_node_type_moderated($node->type)) {
+    return _node_revision_access($node, $op);
+  }
+
+  // Prevent reverting to the current revision.
+  if ($node->workbench_moderation['current']->vid == $node->workbench_moderation['my_revision']->vid) {
+    return FALSE;
+  }
+
+  // Temporarily give the node an impossible revision.
+  $tmp = $node->vid;
+  $node->vid = -1;
+
+  // Check access.
+  $access = _node_revision_access($node, $op);
+
+  // Restore the original revision id.
+  $node->vid = $tmp;
   return $access;
 }
 
@@ -1450,7 +1484,7 @@ function workbench_moderation_messages($context, $node = NULL) {
     }
 
     drupal_static('_node_revision_access', array(), TRUE);
-    if (!$revision_current && _node_revision_access($node, 'update')
+    if (!$revision_current
         && $link = workbench_moderation_access_link('Create a new draft from this revision.', 'node/' . $node->nid . '/revisions/' . $node->vid . '/revert')) {
       workbench_moderation_set_message($link, 'warning', FALSE);
     }
