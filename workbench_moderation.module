@@ -201,12 +201,12 @@ function workbench_moderation_menu_local_tasks_alter(&$data, $router_item, $root
  *
  * - Don't change the title if the content is not under moderation.
  *
- * - If a piece of content has a published version and the published version is
- *   also the current moderation revision, the "Edit" tab should be titled
+ * - If a piece of content has a published revision and the published revision
+ *   is also the current moderation revision, the "Edit" tab should be titled
  *   "Create draft".
  *
- * - If a piece of content has a published version and the current moderation
- *   revision is a newer, or if the content has no published version, the
+ * - If a piece of content has a published revision and the current moderation
+ *   revision is a newer, or if the content has no published revision, the
  *   "Edit" tab should be titled "Edit draft".
  *
  * @param $node
@@ -236,7 +236,7 @@ function workbench_moderation_edit_tab_title($node) {
  *
  * - Don't change the title if the content is not under moderation.
  *
- * - If a piece of content has a published version, the "View" tab should be
+ * - If a piece of content has a published revision, the "View" tab should be
  *   titled "View published".
  *
  * - Otherwise, it should be titled "View draft".
@@ -253,7 +253,7 @@ function workbench_moderation_view_tab_title($node) {
     return t('View');
   }
 
-  // Is there a published version?
+  // Is there a published revision?
   $state = $node->workbench_moderation;
   if (!empty($state['published'])) {
     return t('View published');
@@ -435,8 +435,8 @@ function workbench_moderation_help($path, $arg) {
   switch ($path) {
     case 'admin/help#workbench_moderation':
       return '<p>' . t("Enables you to control node display with a moderation
-        workflow. You can have a 'Live version' for all visitors and pending
-        revisions which need to be approved to become the new 'Live Version.'") . '</p>';
+        workflow. You can have a 'Live revision' for all visitors and pending
+        revisions which need to be approved to become the new 'Live Revision.'") . '</p>';
 
     case 'admin/config/workbench/moderation':
       return '<p>' . t("These are the states through which a node passes in order to become published. By
@@ -479,14 +479,14 @@ function workbench_moderation_views_default_views() {
  *
  * Ensure that a node in moderation has the proper publication status.
  * We set $node->status = 0 (unpublished) if this is a new node which has not
- * been marked as published, or if the node has no published version.
+ * been marked as published, or if the node has no published revision.
  */
 function workbench_moderation_node_presave($node) {
   global $user;
   // Set the published status when a node is set to live
   // Is this a node that is controlled by content moderation?
   if (isset($node->workbench_moderation_state_new)) {
-    // Is the new state live or is there an existing published version?
+    // Is the new state live or is there an existing published revision?
     if ($node->workbench_moderation_state_new == workbench_moderation_state_published() ||
        !empty($node->workbench_moderation['published']->nid)) {
       $node->status = 1;
@@ -515,7 +515,7 @@ function workbench_moderation_node_update($node) {
   global $user;
 
   // Don't proceed if moderation is not enabled on this content type, or if
-  // we're replacing an already-published version.
+  // we're replacing an already-published revision.
   if (!workbench_moderation_node_type_moderated($node->type) ||
       !empty($node->workbench_moderation['updating_live_revision'])) {
     return;
@@ -741,7 +741,7 @@ function workbench_moderation_node_edit_page_override($node) {
 }
 
 /**
- * Returns the key which represents the live version.
+ * Returns the key which represents the live revision.
  *
  * @TODO: make this configurable.
  */
@@ -750,7 +750,7 @@ function workbench_moderation_state_published() {
 }
 
 /**
- * Returns the key which represents the neutral non moderated version.
+ * Returns the key which represents the neutral non moderated revision.
  *
  * @TODO: make this configurable.
  */
@@ -915,7 +915,7 @@ function workbench_moderation_node_data($node) {
   }
 
   // Fetch the workbench_moderation record for this node object's revision. If
-  // it is either the current or published version of the node, that data will
+  // it is either the current or published revision of the node, that data will
   // be used.
   if ($node->vid == $current->vid) {
     $my_revision = $current;
@@ -934,8 +934,8 @@ function workbench_moderation_node_data($node) {
 
     // This might happen if you're turning workbench_moderation on and off, but
     // it should be really rare. Workbench_moderation must have recorded a
-    // current version, and then the node table must contain a different and
-    // unpublished version.
+    // current revision, and then the node table must contain a different and
+    // unpublished revision.
     if (!$my_revision) {
       $my_revision = (object) array(
         'hid' => NULL,
@@ -955,7 +955,7 @@ function workbench_moderation_node_data($node) {
 }
 
 /**
- * Utility function to load the current version of a node.
+ * Utility function to load the current revision of a node.
  *
  * @param $node
  *   The node being acted upon.
@@ -966,7 +966,7 @@ function workbench_moderation_node_data($node) {
 function workbench_moderation_node_current_load($node) {
   // Is there a current revision?
   if (isset($node->workbench_moderation['current']->vid)) {
-    // Ensure that we will return the current version
+    // Ensure that we will return the current revision
     if ($node->vid != $node->workbench_moderation['current']->vid) {
       $node = node_load($node->nid, $node->workbench_moderation['current']->vid);
     }
@@ -976,7 +976,7 @@ function workbench_moderation_node_current_load($node) {
 
 
 /**
- * Utility function to load the live version of a node.
+ * Utility function to load the live revision of a node.
  *
  * This is encapsulated so that changes to how the moderation data is stored
  * will not impact the API.
@@ -990,7 +990,7 @@ function workbench_moderation_node_current_load($node) {
 function workbench_moderation_node_live_load($node) {
   // Is there a live revision of this node?
   if (isset($node->workbench_moderation['published']->vid)) {
-    // If the live revision is not this version, we need to load that revision
+    // If the live revision is not this revision, we need to load that revision
     if ($node->vid != $node->workbench_moderation['published']->vid) {
       return node_load($node->nid, $node->workbench_moderation['published']->vid, TRUE);
     }
@@ -1266,8 +1266,8 @@ function workbench_moderation_moderate($node, $state) {
     $node->workbench_moderation['published'] = $new_revision;
   }
 
-  // If we're moderating an unpublished version and there is an existing
-  // published version, make sure that the published version is live.
+  // If we're moderating an unpublished revision and there is an existing
+  // published revision, make sure that the published revision is live.
   if (!empty($node->workbench_moderation['published']) && empty($node->is_new)) {
     $live_revision = workbench_moderation_node_live_load($node);
     // Make sure we're published.
@@ -1387,7 +1387,7 @@ function workbench_moderation_moderate_form_submit($form, $form_state) {
   // This is not ideal, but if the form is invoked from a node's draft tab and
   // used to publish the node, the draft tab will not be available after
   // publishing, and Drupal's will throw an access denied error before it is
-  // able to redirect to the published version.
+  // able to redirect to the published revision.
   if (!empty($form['#destination'])) {
     drupal_redirect_form($form);
   }
@@ -1434,24 +1434,24 @@ function workbench_moderation_messages($context, $node = NULL) {
 
   if ($context == 'view') {
     if ($revision_published && $revision_current) {
-      workbench_moderation_set_message('This is the current, published version of this content.', 'status', FALSE);
+      workbench_moderation_set_message('This is the current, published revision of this content.', 'status', FALSE);
     }
     elseif ($revision_published && !$revision_current) {
-      workbench_moderation_set_message('You are viewing the published version of this content. An updated version exists and is awaiting moderation. ' . l('View the updated version', "node/{$node->nid}/current-revision") . '.', 'warning', FALSE);
+      workbench_moderation_set_message('You are viewing the published revision of this content. An updated revision exists and is awaiting moderation. ' . l('View the updated revision', "node/{$node->nid}/current-revision") . '.', 'warning', FALSE);
     }
     elseif ($revision_current && $node_published) {
-      workbench_moderation_set_message(t('There is a published version of this content. This version is awaiting moderation; its moderation state is %state.', array('%state' => $state['current']->state)), 'warning', FALSE);
+      workbench_moderation_set_message(t('There is a published revision of this content. This revision is awaiting moderation; its moderation state is %state.', array('%state' => $state['current']->state)), 'warning', FALSE);
     }
     elseif ($revision_current) {
       workbench_moderation_set_message(t('This content is awaiting moderation; its moderation state is %state.', array('%state' => $state['current']->state)), 'warning', FALSE);
     }
     else {
-      workbench_moderation_set_message('You are viewing an old version of this content. ' . workbench_moderation_access_link('View the latest version', "node/{$node->nid}/current-revision") . '.', 'warning', FALSE);
+      workbench_moderation_set_message('You are viewing an old revision of this content. ' . workbench_moderation_access_link('View the latest revision', "node/{$node->nid}/current-revision") . '.', 'warning', FALSE);
     }
 
     drupal_static('_node_revision_access', array(), TRUE);
     if (!$revision_current && _node_revision_access($node, 'update')
-        && $link = workbench_moderation_access_link('Create a new draft from this version.', 'node/' . $node->nid . '/revisions/' . $node->vid . '/revert')) {
+        && $link = workbench_moderation_access_link('Create a new draft from this revision.', 'node/' . $node->nid . '/revisions/' . $node->vid . '/revert')) {
       workbench_moderation_set_message($link, 'warning', FALSE);
     }
 
@@ -1510,16 +1510,16 @@ function workbench_moderation_messages($context, $node = NULL) {
 
       // If we have previous or next revisions, link to them.
       if ($links) {
-        workbench_moderation_set_message('You may view other versions: ' . $links, 'warning', FALSE);
+        workbench_moderation_set_message('You may view other revisions: ' . $links, 'warning', FALSE);
       }
     }
   }
   elseif ($context == 'edit') {
     if ($node_published && $revision_published) {
-      workbench_moderation_set_message('There is a published version of this content. Your changes will be placed in moderation.', 'warning', FALSE);
+      workbench_moderation_set_message('There is a published revision of this content. Your changes will be placed in moderation.', 'warning', FALSE);
     }
     elseif ($node_published && !$revision_published) {
-      workbench_moderation_set_message('This draft has been edited and may differ from the published version. ' . workbench_moderation_access_link('Create a new draft from the published version.', "node/{$node->nid}/revisions/{$state['published']->vid}/revert"), 'warning', FALSE);
+      workbench_moderation_set_message('This draft has been edited and may differ from the published revision. ' . workbench_moderation_access_link('Create a new draft from the published revision.', "node/{$node->nid}/revisions/{$state['published']->vid}/revert"), 'warning', FALSE);
     }
     else {
       // New content.
