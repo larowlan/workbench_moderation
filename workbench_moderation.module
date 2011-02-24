@@ -138,11 +138,11 @@ function workbench_moderation_menu_alter(&$items) {
  *   The node being acted upon.
  */
 function workbench_moderation_node_revisions_redirect($node) {
-  // Redirect node types subject to moderation
+  // Redirect node types subject to moderation.
   if (workbench_moderation_node_type_moderated($node->type) === TRUE) {
     drupal_goto('node/' . $node->nid . '/moderation');
   }
-  // return the normal node revisions page for unmoderated types
+  // Return the normal node revisions page for unmoderated types.
   else {
     return node_revision_overview($node);
   }
@@ -162,7 +162,6 @@ function workbench_moderation_node_revisions_redirect($node) {
  * for node types subject to moderation.
  */
 function workbench_moderation_menu_local_tasks_alter(&$data, $router_item, $root_path) {
-
   // Do we need to bother doing anything?
   if (empty($data['tabs'][0]['output']) || empty($router_item['page_arguments'][0])) {
     return;
@@ -207,11 +206,14 @@ function workbench_moderation_menu_local_tasks_alter(&$data, $router_item, $root
  *   "Create draft".
  *
  * - If a piece of content has a published version and the current moderation
- *   revision is a newer, OR if the content has no published version, the
+ *   revision is a newer, or if the content has no published version, the
  *   "Edit" tab should be titled "Edit draft".
  *
  * @param $node
  *   The node being acted upon.
+ *
+ * @return
+ *   The title for the tab.
  */
 function workbench_moderation_edit_tab_title($node) {
   // Use the normal tab title if the node type is not under moderation.
@@ -241,6 +243,9 @@ function workbench_moderation_edit_tab_title($node) {
  *
  * @param $node
  *   The node being acted upon.
+ *
+ * @return
+ *   The title for the tab.
  */
 function workbench_moderation_view_tab_title($node) {
   // Use the normal tab title if the node type is not under moderation.
@@ -288,7 +293,7 @@ function workbench_moderation_theme() {
 /**
  * Implements hook_permission().
  *
- * Provides permissions for each state to state change
+ * Provides permissions for each state to state change.
  */
 function workbench_moderation_permission() {
   $permissions = array();
@@ -355,7 +360,7 @@ function workbench_moderation_permission() {
  */
 function _workbench_moderation_access($op, $node) {
   // The user must be able to view the moderation history.
-  $access = user_access("view moderation history");
+  $access = user_access('view moderation history');
 
   // If we do not control this node type, deny access.
   if (workbench_moderation_node_type_moderated($node->type) === FALSE) {
@@ -363,10 +368,6 @@ function _workbench_moderation_access($op, $node) {
   }
   // If the user cannot edit this node, deny access.
   if (!node_access('update', $node)) {
-    $access = FALSE;
-  }
-  // If the user cannot view the moderation history, deny access.
-  if (!user_access('view moderation history')) {
     $access = FALSE;
   }
 
@@ -496,7 +497,6 @@ function workbench_moderation_node_presave($node) {
   }
 }
 
-
 /**
  * Implements hook_node_insert().
  *
@@ -505,7 +505,6 @@ function workbench_moderation_node_presave($node) {
 function workbench_moderation_node_insert($node) {
   workbench_moderation_node_update($node);
 }
-
 
 /**
  * Implements hook_node_update().
@@ -754,7 +753,6 @@ function workbench_moderation_state_published() {
  * Returns the key which represents the neutral non moderated version.
  *
  * @TODO: make this configurable.
- */
  */
 function workbench_moderation_state_none() {
   return t('Draft');
@@ -1595,20 +1593,5 @@ function workbench_moderation_preprocess_status_messages(&$variables) {
     foreach ($messages as $m) {
       drupal_set_message($m, $type);
     }
-  }
-}
-
-/**
- * Implements hook_process_node().
- *
- * Changes the 'submitted' variable with a process function
- * because themes link Bartik might be using phrasing like 'published on'
- * that would cause confusion with the workbench_moderation states.
- */
-function workbench_moderation_process_node(&$variables) {
-  // Only take over the submitted variable if this node is not published.
-  // and is of a type controlled by workbench_moderation
-  if (!$variables['status'] && workbench_moderation_node_type_moderated($variables['type'])) {
-    $variables['submitted'] = t('Authored by !username on !datetime', array('!username' => $variables['name'], '!datetime' => $variables['date']));
   }
 }
