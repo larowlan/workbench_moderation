@@ -36,7 +36,7 @@ function workbench_moderation_menu() {
     'page arguments' => array('workbench_moderation_node_unpublish_form', 1),
     'load arguments' => array(3),
     'theme callback' => '_node_custom_theme',
-    'access arguments' => array('unpublish live version'),
+    'access arguments' => array('unpublish live revision'),
     'file' => 'workbench_moderation.node.inc'
   );
 
@@ -310,8 +310,8 @@ function workbench_moderation_permission() {
   $permissions['view moderation messages'] = array(
     'title' => t('View the moderation messages on a node')
   );
-  $permissions['unpublish live version'] = array(
-    'title' => t('Unpublish the current live version'),
+  $permissions['unpublish live revision'] = array(
+    'title' => t('Unpublish the current live revision'),
   );
   $permissions['use workbench_moderation my drafts tab'] = array(
     'title' => t('Use "My Drafts" workbench tab')
@@ -1462,8 +1462,8 @@ function workbench_moderation_messages($context, $node = NULL) {
     }
 
     // Add an unpublish link.
-    if ($revision_published && user_access('unpublish live version')
-        && $link = workbench_moderation_access_link('unpublish this version', "node/{$node->nid}/moderation/{$node->vid}/unpublish")) {
+    if ($revision_published && user_access('unpublish live revision')
+        && $link = workbench_moderation_access_link('unpublish this revision', "node/{$node->nid}/moderation/{$node->vid}/unpublish")) {
       workbench_moderation_set_message('You may ' . $link . '.', 'warning', FALSE, 'workbench_moderation_unpublish_form');
     }
 
