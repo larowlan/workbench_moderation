@@ -325,9 +325,7 @@ $handler->display->display_options['filters']['state']['table'] = 'workbench_mod
 $handler->display->display_options['filters']['state']['field'] = 'state';
 $handler->display->display_options['filters']['state']['value'] = array(
   'Review' => 'Review',
-  'Approve' => 'Approve',
 );
-$handler->display->display_options['filters']['state']['exposed'] = TRUE;
 $handler->display->display_options['filters']['state']['expose']['operator'] = 'state_op';
 $handler->display->display_options['filters']['state']['expose']['label'] = 'Moderation State';
 $handler->display->display_options['filters']['state']['expose']['use_operator'] = TRUE;
@@ -646,6 +644,8 @@ $handler->display->display_options['filters']['state']['value'] = array(
 $handler->display->display_options['filters']['state']['exposed'] = TRUE;
 $handler->display->display_options['filters']['state']['expose']['label'] = 'Moderation state';
 $handler->display->display_options['filters']['state']['expose']['identifier'] = 'state';
+$handler->display->display_options['filters']['state']['expose']['optional'] = 0;
+$handler->display->display_options['filters']['state']['expose']['remember'] = 1;
 $handler->display->display_options['filters']['state']['expose']['reduce'] = 1;
 /* Filter: User: Current */
 $handler->display->display_options['filters']['uid_current']['id'] = 'uid_current';
@@ -693,4 +693,3 @@ $translatables['workbench_moderation'] = array(
   t('Revision author'),
   t('Moderation state'),
 );
-
