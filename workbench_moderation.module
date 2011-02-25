@@ -474,7 +474,7 @@ function workbench_moderation_help($path, $arg) {
 
     case 'admin/config/workbench/moderation':
       return '<p>' . t("These are the states through which a node passes in order to become published. By
-        default, the Workbench Moderation module provides the states 'Draft,' 'Review,' and 'Published.'
+        default, the Workbench Moderation module provides the states 'Draft,' 'Needs Review,' and 'Published.'
         On this screen you may create, delete and re-order states. Additional states might include
         'Legal Review,' 'PR Review,' or any or state your site may need.") . '</p>';
 
@@ -780,7 +780,7 @@ function workbench_moderation_node_edit_page_override($node) {
  * @TODO: make this configurable.
  */
 function workbench_moderation_state_published() {
-  return t('Publish');
+  return t('Published');
 }
 
 /**
