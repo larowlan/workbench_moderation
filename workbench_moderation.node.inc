@@ -184,7 +184,7 @@ function workbench_moderation_node_history_view($node) {
 
   // Return properly styled output.
   return array(
-    '#attatched' => array('css' => array(drupal_get_path('module', 'workbench_moderation') . '/css/workbench_moderation.css')),
+    '#attached' => array('css' => array(drupal_get_path('module', 'workbench_moderation') . '/css/workbench_moderation.css')),
     '#markup' => theme('table', array('header' => $header, 'rows' => $rows)),
   );
 }
