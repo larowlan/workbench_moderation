@@ -435,6 +435,8 @@ function _workbench_moderation_moderate_access($node, $state) {
   // Allow other modules to change our rule set.
   $op = 'moderate';
   drupal_alter('workbench_moderation_access', $access, $op, $node);
+
+  return $access;
 }
 
 /**
