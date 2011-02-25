@@ -152,17 +152,17 @@ function workbench_moderation_schema() {
 function _workbench_moderation_insert_values() {
   $states[] = array(
     'name' => workbench_moderation_state_none(),
-    'description' => '"Draft" content is visible only to its author',
+    'description' => 'Draft content is visible only to its author',
   );
 
   $states[] = array(
     'name' => 'Needs Review',
-    'description' => '"Needs Review" content is brought to the attention administrators and editors who may then publish it',
+    'description' => 'Needs Review content is brought to the attention administrators and editors who may then publish it',
   );
 
   $states[] = array(
     'name' => workbench_moderation_state_published(),
-    'description' => '"Published" content is visible to the world',
+    'description' => 'Published content is visible to the world',
   );
 
   $weight = 0;
@@ -250,7 +250,7 @@ function workbench_moderation_update_7004() {
   // Update workbench_moderation_states
   db_update('workbench_moderation_states')
     ->fields(array(
-      'description' => '"Draft" content is visible only to its author',
+      'description' => 'Draft content is visible only to its author',
     ))
     ->condition('Name', 'Draft', '=')
     ->execute();
@@ -258,7 +258,7 @@ function workbench_moderation_update_7004() {
   db_update('workbench_moderation_states')
     ->fields(array(
       'Name' => 'Needs Review',
-      'description' => '"Needs Review" content is brought to the attention administrators and editors who may then publish it',
+      'description' => 'Needs Review content is brought to the attention administrators and editors who may then publish it',
     ))
     ->condition('Name', 'Review', '=')
     ->execute();
@@ -266,7 +266,7 @@ function workbench_moderation_update_7004() {
   db_update('workbench_moderation_states')
     ->fields(array(
       'Name' => workbench_moderation_state_published(),
-      'description' => '"Published" content is visible to the world',
+      'description' => 'Published content is visible to the world',
     ))
     ->condition('Name', 'Publish', '=')
     ->execute();
