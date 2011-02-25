@@ -51,7 +51,7 @@ function workbench_moderation_node_history_view($node) {
 
   // Alert if there is no live node
   if (!isset($node->workbench_moderation['published'])) {
-    drupal_set_message(t('Currently there is no published revision of this node.'));
+    drupal_set_message(t('Currently there is no published revision of this node.'), 'warning');
   }
 
   // Get all of the node revisions, each with its most recent moderation.
