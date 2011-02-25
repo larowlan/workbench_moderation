@@ -930,6 +930,7 @@ function workbench_moderation_node_data($node) {
     }
   }
 
+  $current->current = 1;
   $node->workbench_moderation['current'] = $current;
 
   // Fetch the published revision. There may not be a workbench_moderation
