@@ -46,8 +46,7 @@ function workbench_moderation_node_view_draft($node) {
 function workbench_moderation_node_history_view($node) {
   global $user;
 
-  // Load our css. @todo: change loading pattern?
-  drupal_add_css(drupal_get_path('module', 'workbench_moderation') . '/css/workbench_moderation.css');
+  // Page title.
   drupal_set_title(t('!title History', array('!title' => $node->title)));
 
   // Alert if there is no live node
@@ -184,7 +183,10 @@ function workbench_moderation_node_history_view($node) {
   $header = array(t('Revision'), t('Title'), t('Date'), t('Revision Actions'), t('Moderation Actions'));
 
   // Return properly styled output.
-  return array('#markup' => theme('table', array('header' => $header, 'rows' => $rows)));
+  return array(
+    '#attatched' => array('css' => array(drupal_get_path('module', 'workbench_moderation') . '/css/workbench_moderation.css')),
+    '#markup' => theme('table', array('header' => $header, 'rows' => $rows)),
+  );
 }
 
 /**
