@@ -329,4 +329,38 @@ function workbench_moderation_update_7004() {
     ))
     ->condition('state', 'Publish', '=')
     ->execute();
+
+
+  // Update role_permission table
+  // Grab all of the workbench_moderation permissions
+  $perms = db_select('role_permission', 'rp')
+    ->fields('rp', array('permission'))
+    ->condition('permission', '%moderate content from %', 'LIKE')
+    ->execute()
+    ->fetchCol();
+
+  // This function doesn't need duplicates
+  $perms  = array_unique($perms);
+
+  foreach ($perms as $key => $perm) {
+
+    $new_perm = $perm;
+    // Check that this permission hasn't had this change already
+    if (!strpos($perm, 'Published')) {
+      $new_perm = str_replace('Publish', 'Published', $perm);
+    }
+
+    // Check that this permission hasn't had this change already
+    if (!strpos($new_perm, 'Needs Review')) {
+      $new_perm = str_replace('Review', 'Needs Review', $new_perm);
+    }
+
+    //Update the records
+    db_update('role_permission')
+    ->fields(array(
+      'permission' => $new_perm,
+    ))
+    ->condition('permission', $perm, '=')
+    ->execute();
+  }
 }
