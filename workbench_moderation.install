@@ -146,29 +146,40 @@ function workbench_moderation_schema() {
   return $schema;
 }
 
-
 /**
  * Adds default data for workflow states
  */
 function _workbench_moderation_insert_values() {
-  $states[] = array('name' => workbench_moderation_state_none());
-  $states[] = array('name' => 'Review');
-  $states[] = array('name' => workbench_moderation_state_published());
+  $states[] = array(
+    'name' => workbench_moderation_state_none(),
+    'description' => '"Draft" content is visible only to its author.',
+  );
+
+  $states[] = array(
+    'name' => 'Needs Review',
+    'description' => '"Needs Review" content is brought to the attention administrators and editors who may then publish it.',
+  );
+
+  $states[] = array(
+    'name' => workbench_moderation_state_published(),
+    'description' => '"Published" content is visible to the world.',
+  );
+
   $weight = 0;
   foreach ($states as $state) {
     db_insert('workbench_moderation_states')
       ->fields(array(
-          'name' => $state,
-          'description' => $state,
+          'name' => $state['name'],
+          'description' => $state['description'],
           'weight' => $weight++,
       ))
       ->execute();
   }
 
   // Transitions.
-  $transitions[] = array(workbench_moderation_state_none(), 'Review');
-  $transitions[] = array('Review', workbench_moderation_state_published());
-  $transitions[] = array(workbench_moderation_state_published(), 'Review');
+  $transitions[] = array(workbench_moderation_state_none(), ' Needs Review');
+  $transitions[] = array('Needs Review', workbench_moderation_state_published());
+  $transitions[] = array(workbench_moderation_state_published(), 'Needs Review');
   foreach ($transitions as $transition) {
     db_insert('workbench_moderation_transitions')
       ->fields(array(
@@ -229,4 +240,88 @@ function workbench_moderation_update_7003() {
     ->execute();
 
   return t('The renamed permission was updated for !count roles.', array('!count' => count($roles)));
+}
+
+/**
+ * Use "Published" instead of "Publish" and "Needs Review" instead of "Review" for state names.
+ */
+function workbench_moderation_update_7004() {
+
+  // Update workbench_moderation_states
+  db_update('workbench_moderation_states')
+    ->fields(array(
+      'Name' => 'Needs Review',
+      'description' => '"Needs Review" content is brought to the attention administrators and editors who may then publish it.',
+    ))
+    ->condition('Name', 'Review', '=')
+    ->execute();
+
+  db_update('workbench_moderation_states')
+    ->fields(array(
+      'Name' => workbench_moderation_state_published(),
+      'description' => '"Published" content is visible to the world.',
+    ))
+    ->condition('Name', 'Publish', '=')
+    ->execute();
+
+
+  // Update workbench_moderation_transitions
+  db_update('workbench_moderation_transitions')
+    ->fields(array(
+      'from_name' => 'Needs Review',
+    ))
+    ->condition('from_name', 'Review', '=')
+    ->execute();
+
+  db_update('workbench_moderation_transitions')
+    ->fields(array(
+      'to_name' => 'Needs Review',
+    ))
+    ->condition('to_name', 'Review', '=')
+    ->execute();
+
+  db_update('workbench_moderation_transitions')
+    ->fields(array(
+      'from_name' => workbench_moderation_state_published(),
+    ))
+    ->condition('from_name', 'Publish', '=')
+    ->execute();
+
+  db_update('workbench_moderation_transitions')
+    ->fields(array(
+      'to_name' => workbench_moderation_state_published(),
+    ))
+    ->condition('to_name', 'Publish', '=')
+    ->execute();
+
+
+  // Update workbench_moderation_node_history
+  db_update('workbench_moderation_node_history')
+    ->fields(array(
+      'from_state' => 'Needs Review',
+    ))
+    ->condition('from_state', 'Review', '=')
+    ->execute();
+
+  db_update('workbench_moderation_node_history')
+    ->fields(array(
+      'state' => 'Needs Review',
+    ))
+    ->condition('state', 'Review', '=')
+    ->execute();
+
+  db_update('workbench_moderation_node_history')
+    ->fields(array(
+      'from_state' => workbench_moderation_state_published(),
+    ))
+    ->condition('from_state', 'Publish', '=')
+    ->execute();
+
+  db_update('workbench_moderation_node_history')
+    ->fields(array(
+      'state' => workbench_moderation_state_published(),
+    ))
+    ->condition('state', 'Publish', '=')
+    ->execute();
+
 }
