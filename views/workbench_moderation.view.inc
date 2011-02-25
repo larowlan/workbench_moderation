@@ -332,7 +332,7 @@ $handler->display->display_options['filters']['state']['id'] = 'state';
 $handler->display->display_options['filters']['state']['table'] = 'workbench_moderation_node_history';
 $handler->display->display_options['filters']['state']['field'] = 'state';
 $handler->display->display_options['filters']['state']['value'] = array(
-  'Review' => 'Review',
+  'Needs Review' => 'Needs Review',
 );
 $handler->display->display_options['filters']['state']['expose']['operator'] = 'state_op';
 $handler->display->display_options['filters']['state']['expose']['label'] = 'Moderation State';
@@ -656,7 +656,7 @@ $handler->display->display_options['filters']['state']['table'] = 'workbench_mod
 $handler->display->display_options['filters']['state']['field'] = 'state';
 $handler->display->display_options['filters']['state']['value'] = array(
   'Draft' => 'Draft',
-  'Review' => 'Review',
+  'Needs Review' => 'Needs Review',
 );
 $handler->display->display_options['filters']['state']['exposed'] = TRUE;
 $handler->display->display_options['filters']['state']['expose']['label'] = 'Moderation state';
