@@ -36,7 +36,7 @@ function workbench_moderation_menu() {
     'page arguments' => array('workbench_moderation_node_unpublish_form', 1),
     'load arguments' => array(3),
     'theme callback' => '_node_custom_theme',
-    'access callback' => '_workbench_moderation_access_unpublish',
+    'access callback' => '_workbench_moderation_access',
     'access arguments' => array('unpublish', 1),
     'file' => 'workbench_moderation.node.inc'
   );
