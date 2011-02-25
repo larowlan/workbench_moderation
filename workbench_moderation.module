@@ -36,7 +36,8 @@ function workbench_moderation_menu() {
     'page arguments' => array('workbench_moderation_node_unpublish_form', 1),
     'load arguments' => array(3),
     'theme callback' => '_node_custom_theme',
-    'access arguments' => array('unpublish live revision'),
+    'access callback' => '_workbench_moderation_access_unpublish',
+    'access arguments' => array('unpublish', 1),
     'file' => 'workbench_moderation.node.inc'
   );
 
@@ -362,16 +363,21 @@ function workbench_moderation_permission() {
  *   Boolean TRUE or FALSE.
  */
 function _workbench_moderation_access($op, $node) {
-  // The user must be able to view the moderation history.
-  $access = user_access('view moderation history');
-
   // If we do not control this node type, deny access.
   if (workbench_moderation_node_type_moderated($node->type) === FALSE) {
-    $access = FALSE;
+    return FALSE;
   }
-  // If the user cannot edit this node, deny access.
-  if (!node_access('update', $node)) {
-    $access = FALSE;
+
+  $access = TRUE;
+
+  // The user must be able to view the moderation history.
+  $access &= user_access('view moderation history');
+
+  // The user must be able to edit this node.
+  $access &= node_access('update', $node);
+
+  if ($op == 'unpublish') {
+    $access &= (user_access('unpublish live revision') || user_access('bypass workbench moderation'));
   }
 
   // Allow other modules to change our rule set.
