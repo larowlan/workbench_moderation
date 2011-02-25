@@ -1288,11 +1288,16 @@ function workbench_moderation_moderate($node, $state) {
   }
 
   // If this revision is to be published, the new moderation record should be
-  // the only one flagged 'published' in {workbench_moderation_node_history}.
+  // the only one flagged 'published' in both
+  // {workbench_moderation_node_history} AND {node_revision}
   if ($new_revision->published) {
     $query = db_update('workbench_moderation_node_history')
       ->condition('nid', $node->nid)
       ->fields(array('published' => 0))
+      ->execute();
+    $query = db_update('node_revision')
+      ->condition('nid', $node->nid)
+      ->fields(array('status' => 0))
       ->execute();
   }
 
