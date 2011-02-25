@@ -152,17 +152,17 @@ function workbench_moderation_schema() {
 function _workbench_moderation_insert_values() {
   $states[] = array(
     'name' => workbench_moderation_state_none(),
-    'description' => 'Draft content is visible only to its author',
+    'description' => 'Visible only to the author',
   );
 
   $states[] = array(
     'name' => 'Needs Review',
-    'description' => 'Needs Review content is brought to the attention administrators and editors who may then publish it',
+    'description' => 'Visible to the author and editors',
   );
 
   $states[] = array(
     'name' => workbench_moderation_state_published(),
-    'description' => 'Published content is visible to the world',
+    'description' => 'Visible to the world',
   );
 
   $weight = 0;
@@ -363,4 +363,32 @@ function workbench_moderation_update_7004() {
     ->condition('permission', $perm, '=')
     ->execute();
   }
+}
+
+/**
+ * Shorten descriptions for default states
+ */
+function workbench_moderation_update_7005() {
+
+  // Update workbench_moderation_states
+  db_update('workbench_moderation_states')
+    ->fields(array(
+      'description' => 'Visible only to the author',
+    ))
+    ->condition('Name', workbench_moderation_state_none(), '=')
+    ->execute();
+
+  db_update('workbench_moderation_states')
+    ->fields(array(
+      'description' => 'Visible to the author and editors',
+    ))
+    ->condition('Name', 'Needs Review', '=')
+    ->execute();
+
+  db_update('workbench_moderation_states')
+    ->fields(array(
+      'description' => 'Visible to the world',
+    ))
+    ->condition('Name', workbench_moderation_state_published(), '=')
+    ->execute();
 }
