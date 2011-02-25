@@ -102,23 +102,20 @@ function workbench_moderation_node_history_view($node) {
 
     // Revision operations.
     $revision_operations = array();
-    if ($revision->vid == $node->workbench_moderation['current']->vid) {
-      $revision_operations = array(l(t('view'), "node/{$revision->nid}/current-revision"));
+    if (isset($node->workbench_moderation['published']) && $revision->vid == $node->workbench_moderation['published']->vid) {
+      $revision_operations['view'] = workbench_moderation_access_link(t('view'), "node/{$revision->nid}");
     }
-    elseif (isset($node->workbench_moderation['published']) && $revision->vid == $node->workbench_moderation['published']->vid) {
-      $revision_operations = array(
-        l(t('view'), "node/{$revision->nid}"),
-        '<strike>revert</strike>', //@TODO make reverting to the published revision possible.
-      );
+    elseif ($revision->vid == $node->workbench_moderation['current']->vid) {
+      $revision_operations['view'] = workbench_moderation_access_link(t('view'), "node/{$revision->nid}/current-revision");
     }
     else {
-      foreach (array('view', 'revert', 'delete') as $perm) {
-        if (user_access("$perm revisions")) {
-          $revision_operations[] =  l(t('!perm', array('!perm' => $perm)), "node/{$revision->nid}/revisions/{$revision->vid}/$perm", array('query' => array('destination' => $_GET['q'])));
-        }
-      }
+      $revision_operations['view'] = workbench_moderation_access_link(t('view'), "node/{$revision->nid}/revisions/{$revision->vid}/view");
     }
-    $row['data']['revision'] = implode(' | ', $revision_operations);
+
+    $revision_operations['revert'] = workbench_moderation_access_link(t('revert'), "node/{$revision->nid}/revisions/{$revision->vid}/revert");
+    $revision_operations['delete'] = workbench_moderation_access_link(t('delete'), "node/{$revision->nid}/revisions/{$revision->vid}/delete");
+
+    $row['data']['revision'] = implode(' | ', array_filter($revision_operations));
 
     // Get the moderation history of this revision.
     $query = db_select('workbench_moderation_node_history', 'm');
