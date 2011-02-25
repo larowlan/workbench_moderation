@@ -435,6 +435,8 @@ function _workbench_moderation_moderate_access($node, $state) {
   // Allow other modules to change our rule set.
   $op = 'moderate';
   drupal_alter('workbench_moderation_access', $access, $op, $node);
+
+  return $access;
 }
 
 /**
@@ -1468,19 +1470,19 @@ function workbench_moderation_messages($context, $node = NULL) {
 
   if ($context == 'view') {
     if ($revision_published && $revision_current) {
-      workbench_moderation_set_message('This is the current, published revision of this content.', 'status', FALSE);
+      workbench_moderation_set_message('You are viewing the current, published revision of this content.', 'status', FALSE);
     }
     elseif ($revision_published && !$revision_current) {
-      workbench_moderation_set_message('You are viewing the published revision of this content. An updated revision exists and is awaiting moderation. ' . l('View the updated revision', "node/{$node->nid}/current-revision") . '.', 'warning', FALSE);
+      workbench_moderation_set_message('You are viewing the published revision of this content. An updated revision exists and is awaiting moderation. ' . l('View the current revision', "node/{$node->nid}/current-revision") . '.', 'warning', FALSE);
     }
     elseif ($revision_current && $node_published) {
-      workbench_moderation_set_message(t('There is a published revision of this content. This revision is awaiting moderation; its moderation state is %state.', array('%state' => $state['current']->state)), 'warning', FALSE);
+      workbench_moderation_set_message(t('There is a published revision of this content. You are viewing the current revision, which is awaiting moderation; its moderation state is %state.', array('%state' => $state['current']->state)), 'warning', FALSE);
     }
     elseif ($revision_current) {
-      workbench_moderation_set_message(t('This content is awaiting moderation; its moderation state is %state.', array('%state' => $state['current']->state)), 'warning', FALSE);
+      workbench_moderation_set_message(t('You are viewing the current revision of this content, which is awaiting moderation; its moderation state is %state.', array('%state' => $state['current']->state)), 'warning', FALSE);
     }
     else {
-      workbench_moderation_set_message('You are viewing an old revision of this content. ' . workbench_moderation_access_link('View the latest revision', "node/{$node->nid}/current-revision") . '.', 'warning', FALSE);
+      workbench_moderation_set_message('You are viewing an old revision of this content. ' . workbench_moderation_access_link('View the current revision', "node/{$node->nid}/current-revision") . '.', 'warning', FALSE);
     }
 
     drupal_static('_node_revision_access', array(), TRUE);
@@ -1501,50 +1503,37 @@ function workbench_moderation_messages($context, $node = NULL) {
       workbench_moderation_set_message('You may ' . $link . '.', 'warning', FALSE, 'workbench_moderation_unpublish_form');
     }
 
-    // Add previous and next links.
-    drupal_static('_node_revision_access', array(), TRUE);
-    if (_node_revision_access($node, 'view')) {
-      // Base query for selecting revision ids.
-      $query = db_select('node_revision', 'revision')
-        ->condition('revision.nid', $node->nid)
-        ->range(0, 1);
-      $query->AddField('revision', 'vid');
+    // Revision navigation links.
+    if (user_access('view revisions')) {
+      $links = array();
 
-      // Get the vid of the previous revision.
-      $previous = clone $query;
-      $previous = $previous->condition('revision.vid', $node->vid, '<')
-        ->orderBy('revision.vid', 'DESC')
-        ->execute()
-        ->fetchField();
-      $previous_path = "node/{$node->nid}/revisions/{$previous}/view";
-      if ($previous == $state['current']->vid) {
-        $previous_path = "node/{$node->nid}/current-revision";
+      // Get previous and next revision ids.
+      $args = array(':nid' => $node->nid, ':vid' => $node->vid);
+      if ($prev_vid = db_query_range("SELECT nr.vid FROM {node_revision} nr WHERE nr.nid = :nid AND nr.vid < :vid ORDER BY nr.vid DESC", 0, 1, $args)->fetchField()) {
+        $links[$prev_vid] = array('title' => 'previous', 'href' => "node/{$node->nid}/revisions/{$prev_vid}/view");
       }
-      elseif (!empty($state['published']) && $previous == $state['published']->vid) {
-        $previous_path = "node/{$node->nid}";
+      if ($next_vid = db_query_range("SELECT nr.vid FROM {node_revision} nr WHERE nr.nid = :nid AND nr.vid > :vid ORDER BY nr.vid ASC", 0, 1, $args)->fetchField()) {
+        $links[$next_vid] = array('title' => 'next', 'href' => "node/{$node->nid}/revisions/{$next_vid}/view");
       }
 
-      // Get the vid of the next revision.
-      $next = $query->condition('revision.vid', $node->vid, '>')
-        ->orderBy('revision.vid', 'ASC')
-        ->execute()
-        ->fetchField();
-      $next_path = "node/{$node->nid}/revisions/{$next}/view";
-      if ($next == $state['current']->vid) {
-        $next_path = "node/{$node->nid}/current-revision";
-      }
-      elseif (!empty($state['published']) && $next == $state['published']->vid) {
-        $next_path = "node/{$node->nid}";
+      // If the current revision is next or previous, use the "node/%node/current-revision" path.
+      if (($current = $state['current']->vid) && isset($links[$current])) {
+        $links[$current]['href'] = "node/{$node->nid}/current-revision";
       }
 
-      // Link it up.
-      $links = ($previous ? workbench_moderation_access_link('previous', $previous_path) : '')
-        . ($previous && $next ? ', ' : '')
-        . ($next ? workbench_moderation_access_link('next', $next_path) : '');
+      // If the published revision is next or previous, use the "node/%node" path.
+      if (isset($state['published']) && ($published = $state['published']->vid) && isset($links[$published])) {
+        $links[$published]['href'] = "node/{$node->nid}";
+      }
 
-      // If we have previous or next revisions, link to them.
-      if ($links) {
-        workbench_moderation_set_message('You may view other revisions: ' . $links, 'warning', FALSE);
+      // Link it up, with access checks.
+      foreach ($links as $key => $args) {
+        $links[$key] = call_user_func_array('workbench_moderation_access_link', $args);
+      }
+
+      // Post the links in a non-repeating message.
+      if (!empty($links)) {
+        workbench_moderation_set_message('View other revisions: ' . implode(', ', $links), 'warning', FALSE);
       }
     }
   }
