@@ -150,44 +150,60 @@ function workbench_moderation_schema() {
  * Adds default data for workflow states
  */
 function _workbench_moderation_insert_values() {
-  $states[] = array(
-    'name' => workbench_moderation_state_none(),
-    'description' => 'Visible only to the author',
+  // Default states.
+  $states = array(
+    array(
+      'name' => workbench_moderation_state_none(),
+      'description' => 'Visible only to the author',
+      'weight' => -99,
+    ),
+    array(
+      'name' => 'Needs Review',
+      'description' => 'Visible to the author and editors',
+      'weight' => 0,
+    ),
+    array(
+      'name' => workbench_moderation_state_published(),
+      'description' => 'Visible to the world',
+      'weight' => 99,
+    ),
   );
 
-  $states[] = array(
-    'name' => 'Needs Review',
-    'description' => 'Visible to the author and editors',
-  );
+  // Save default states to the database.
+  $query = db_insert('workbench_moderation_states')
+    ->fields(array('name', 'description', 'weight'));
 
-  $states[] = array(
-    'name' => workbench_moderation_state_published(),
-    'description' => 'Visible to the world',
-  );
-
-  $weight = 0;
   foreach ($states as $state) {
-    db_insert('workbench_moderation_states')
-      ->fields(array(
-          'name' => $state['name'],
-          'description' => $state['description'],
-          'weight' => $weight++,
-      ))
-      ->execute();
+    $query->values($state);
   }
 
-  // Transitions.
-  $transitions[] = array(workbench_moderation_state_none(), ' Needs Review');
-  $transitions[] = array('Needs Review', workbench_moderation_state_published());
-  $transitions[] = array(workbench_moderation_state_published(), 'Needs Review');
+  $query->execute();
+
+  // Default transitions.
+  $transitions = array(
+    array(
+      'from_name' => workbench_moderation_state_none(),
+      'to_name' => 'Needs Review',
+    ),
+    array(
+      'from_name' => 'Needs Review',
+      'to_name' => workbench_moderation_state_none(),
+    ),
+    array(
+      'from_name' => 'Needs Review',
+      'to_name' => workbench_moderation_state_published(),
+    ),
+  );
+
+  // Save default transitions to the database.
+  $query = db_insert('workbench_moderation_transitions')
+    ->fields(array('from_name', 'to_name'));
+
   foreach ($transitions as $transition) {
-    db_insert('workbench_moderation_transitions')
-      ->fields(array(
-          'from_name' => $transition[0],
-          'to_name' => $transition[1],
-      ))
-      ->execute();
+    $query->values($transition);
   }
+
+  $query->execute();
 }
 
 /**
