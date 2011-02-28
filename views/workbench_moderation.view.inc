@@ -116,7 +116,7 @@ $handler->display->display_options['empty']['area']['table'] = 'views';
 $handler->display->display_options['empty']['area']['field'] = 'area';
 $handler->display->display_options['empty']['area']['label'] = 'Needs Review Empty Text';
 $handler->display->display_options['empty']['area']['empty'] = FALSE;
-$handler->display->display_options['empty']['area']['content'] = 'This list displays content in the "Review" state that you can moderate. Currently there is no such content.';
+$handler->display->display_options['empty']['area']['content'] = 'This list displays content in the "Needs Review" state that you can moderate. Currently there is no such content.';
 $handler->display->display_options['empty']['area']['format'] = 'plain_text';
 /* Relationship: Node revision: User */
 $handler->display->display_options['relationships']['uid']['id'] = 'uid';
@@ -686,7 +686,7 @@ $translatables['workbench_moderation'] = array(
   t('- All -'),
   t('Offset'),
   t('Needs Review Empty Text'),
-  t('This list displays content in the "Review" state that you can moderate. Currently there is no such content.'),
+  t('This list displays content in the "Needs Review" state that you can moderate. Currently there is no such content.'),
   t('revision user'),
   t('moderator user'),
   t('Nid'),
