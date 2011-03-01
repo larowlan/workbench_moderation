@@ -301,6 +301,9 @@ function workbench_moderation_theme() {
  */
 function workbench_moderation_permission() {
   $permissions = array();
+  $permissions['view all unpublished content'] = array(
+    'title' => t('View all unpublished content'),
+  );
   $permissions['administer workbench moderation'] = array(
     'title' => t('Administer Workbench Moderation'),
   );
@@ -349,6 +352,18 @@ function workbench_moderation_permission() {
     }
   }
   return $permissions;
+}
+
+/**
+ * Implements hook_node_access().
+ *
+ * Allows users with the 'view all unpublished content' permission to do so.
+ */
+function workbench_moderation_node_access($node, $op, $account) {
+  if ($op == 'view' && !$node->status && user_access('view all unpublished content', $account)) {
+    return NODE_ACCESS_ALLOW;
+  }
+  return NODE_ACCESS_IGNORE;
 }
 
 /**
