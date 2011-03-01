@@ -3,7 +3,6 @@ description = Provides content moderation services
 package = Workbench
 core = 7.x
 configure = admin/config/workbench/moderation
-dependencies[] = workbench
 files[] = workbench_moderation.admin.inc
 files[] = workbench_moderation.install
 files[] = workbench_moderation.module
