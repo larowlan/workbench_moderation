@@ -318,6 +318,11 @@ function workbench_moderation_admin_check_role_form($form, &$form_state) {
     '#value' => t('Check'),
   );
 
+  if (empty($types)) {
+    drupal_set_message(t('Moderation is not enabled for any content types. Visit the !content_type_administration_page to enable moderation for one or more types.', array('!content_type_administration_page' => l(t('content type administration page'), 'admin/structure/content/types'))), 'warning');
+    $form['#disabled'] = TRUE;
+  }
+
   return $form;
 }
 
