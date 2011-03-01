@@ -269,22 +269,6 @@ $handler->display->display_options['fields']['changed']['element_default_classes
 $handler->display->display_options['fields']['changed']['hide_empty'] = 0;
 $handler->display->display_options['fields']['changed']['empty_zero'] = 0;
 $handler->display->display_options['fields']['changed']['date_format'] = 'time ago';
-/* Field: Node revision: Vid */
-$handler->display->display_options['fields']['vid']['id'] = 'vid';
-$handler->display->display_options['fields']['vid']['table'] = 'node_revision';
-$handler->display->display_options['fields']['vid']['field'] = 'vid';
-$handler->display->display_options['fields']['vid']['alter']['alter_text'] = 0;
-$handler->display->display_options['fields']['vid']['alter']['make_link'] = 0;
-$handler->display->display_options['fields']['vid']['alter']['absolute'] = 0;
-$handler->display->display_options['fields']['vid']['alter']['trim'] = 0;
-$handler->display->display_options['fields']['vid']['alter']['word_boundary'] = 1;
-$handler->display->display_options['fields']['vid']['alter']['ellipsis'] = 1;
-$handler->display->display_options['fields']['vid']['alter']['strip_tags'] = 0;
-$handler->display->display_options['fields']['vid']['alter']['html'] = 0;
-$handler->display->display_options['fields']['vid']['element_label_colon'] = 1;
-$handler->display->display_options['fields']['vid']['element_default_classes'] = 1;
-$handler->display->display_options['fields']['vid']['hide_empty'] = 0;
-$handler->display->display_options['fields']['vid']['empty_zero'] = 0;
 /* Sort criterion: Node: Updated date */
 $handler->display->display_options['sorts']['changed']['id'] = 'changed';
 $handler->display->display_options['sorts']['changed']['table'] = 'node';
@@ -304,6 +288,7 @@ $handler->display->display_options['filters']['title']['operator'] = 'contains';
 $handler->display->display_options['filters']['title']['exposed'] = TRUE;
 $handler->display->display_options['filters']['title']['expose']['operator'] = 'title_op';
 $handler->display->display_options['filters']['title']['expose']['label'] = 'Title';
+$handler->display->display_options['filters']['title']['expose']['use_operator'] = TRUE;
 $handler->display->display_options['filters']['title']['expose']['identifier'] = 'title';
 $handler->display->display_options['filters']['title']['expose']['remember'] = 1;
 /* Filter: Node: Type */
@@ -313,6 +298,7 @@ $handler->display->display_options['filters']['type']['field'] = 'type';
 $handler->display->display_options['filters']['type']['exposed'] = TRUE;
 $handler->display->display_options['filters']['type']['expose']['operator'] = 'type_op';
 $handler->display->display_options['filters']['type']['expose']['label'] = 'Type';
+$handler->display->display_options['filters']['type']['expose']['use_operator'] = TRUE;
 $handler->display->display_options['filters']['type']['expose']['identifier'] = 'type';
 $handler->display->display_options['filters']['type']['expose']['remember'] = 1;
 $handler->display->display_options['filters']['type']['expose']['reduce'] = 0;
@@ -327,6 +313,7 @@ $handler->display->display_options['filters']['state']['value'] = array(
 $handler->display->display_options['filters']['state']['exposed'] = TRUE;
 $handler->display->display_options['filters']['state']['expose']['operator'] = 'state_op';
 $handler->display->display_options['filters']['state']['expose']['label'] = 'State';
+$handler->display->display_options['filters']['state']['expose']['use_operator'] = TRUE;
 $handler->display->display_options['filters']['state']['expose']['identifier'] = 'state';
 $handler->display->display_options['filters']['state']['expose']['optional'] = 0;
 $handler->display->display_options['filters']['state']['expose']['remember'] = 1;
@@ -485,7 +472,6 @@ $translatables['workbench_moderation'] = array(
   t('Type'),
   t('Revised by'),
   t('Last updated'),
-  t('Vid'),
   t('State'),
   t('Needs Review Page'),
   t('Needs Review'),
@@ -494,3 +480,4 @@ $translatables['workbench_moderation'] = array(
   t('Drafts Page'),
   t('My Drafts'),
 );
+
