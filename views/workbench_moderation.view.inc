@@ -288,7 +288,6 @@ $handler->display->display_options['filters']['title']['operator'] = 'contains';
 $handler->display->display_options['filters']['title']['exposed'] = TRUE;
 $handler->display->display_options['filters']['title']['expose']['operator'] = 'title_op';
 $handler->display->display_options['filters']['title']['expose']['label'] = 'Title';
-$handler->display->display_options['filters']['title']['expose']['use_operator'] = TRUE;
 $handler->display->display_options['filters']['title']['expose']['identifier'] = 'title';
 $handler->display->display_options['filters']['title']['expose']['remember'] = 1;
 /* Filter: Node: Type */
@@ -298,7 +297,6 @@ $handler->display->display_options['filters']['type']['field'] = 'type';
 $handler->display->display_options['filters']['type']['exposed'] = TRUE;
 $handler->display->display_options['filters']['type']['expose']['operator'] = 'type_op';
 $handler->display->display_options['filters']['type']['expose']['label'] = 'Type';
-$handler->display->display_options['filters']['type']['expose']['use_operator'] = TRUE;
 $handler->display->display_options['filters']['type']['expose']['identifier'] = 'type';
 $handler->display->display_options['filters']['type']['expose']['remember'] = 1;
 $handler->display->display_options['filters']['type']['expose']['reduce'] = 0;
@@ -313,7 +311,6 @@ $handler->display->display_options['filters']['state']['value'] = array(
 $handler->display->display_options['filters']['state']['exposed'] = TRUE;
 $handler->display->display_options['filters']['state']['expose']['operator'] = 'state_op';
 $handler->display->display_options['filters']['state']['expose']['label'] = 'State';
-$handler->display->display_options['filters']['state']['expose']['use_operator'] = TRUE;
 $handler->display->display_options['filters']['state']['expose']['identifier'] = 'state';
 $handler->display->display_options['filters']['state']['expose']['optional'] = 0;
 $handler->display->display_options['filters']['state']['expose']['remember'] = 1;
@@ -336,8 +333,8 @@ $handler->display->display_options['empty']['area']['id'] = 'area';
 $handler->display->display_options['empty']['area']['table'] = 'views';
 $handler->display->display_options['empty']['area']['field'] = 'area';
 $handler->display->display_options['empty']['area']['empty'] = FALSE;
-$handler->display->display_options['empty']['area']['content'] = 'You haven\'t created or edited any content.';
-$handler->display->display_options['empty']['area']['format'] = '1';
+$handler->display->display_options['empty']['area']['content'] = 'This list displays content in the "Needs Review" state that you can moderate. Currently there is no such content.';
+$handler->display->display_options['empty']['area']['format'] = 'plain_text';
 $handler->display->display_options['defaults']['filters'] = FALSE;
 /* Filter: Workbench Moderation: Current */
 $handler->display->display_options['filters']['current']['id'] = 'current';
@@ -393,8 +390,8 @@ $handler->display->display_options['empty']['area']['id'] = 'area';
 $handler->display->display_options['empty']['area']['table'] = 'views';
 $handler->display->display_options['empty']['area']['field'] = 'area';
 $handler->display->display_options['empty']['area']['empty'] = FALSE;
-$handler->display->display_options['empty']['area']['content'] = 'You haven\'t created or edited any content.';
-$handler->display->display_options['empty']['area']['format'] = '1';
+$handler->display->display_options['empty']['area']['content'] = 'This list displays content you have created that is not published. Currently there is no such content.';
+$handler->display->display_options['empty']['area']['format'] = 'plain_text';
 $handler->display->display_options['defaults']['filters'] = FALSE;
 /* Filter: User: Current */
 $handler->display->display_options['filters']['uid_current']['id'] = 'uid_current';
@@ -476,8 +473,11 @@ $translatables['workbench_moderation'] = array(
   t('Needs Review Page'),
   t('Needs Review'),
   t('more'),
+  t('This list displays content in the "Needs Review" state that you can moderate. Currently there is no such content.'),
   t('Workbench Moderation: State'),
   t('Drafts Page'),
   t('My Drafts'),
+  t('This list displays content you have created that is not published. Currently there is no such content.'),
 );
+
 
