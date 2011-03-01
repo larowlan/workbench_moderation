@@ -130,6 +130,19 @@ function workbench_moderation_menu_alter(&$items) {
 
   // For revert operations, use our own access check.
   $items['node/%node/revisions/%/revert']['access callback'] = '_workbench_moderation_revert_access';
+
+  // Provide a container administration menu item, if one doesn't already exist.
+  if (!isset($items['admin/config/workbench'])) {
+    $items['admin/config/workbench'] = array(
+      'title' => 'Workbench',
+      'description' => 'Workbench',
+      'page callback' => 'system_admin_menu_block_page',
+      'access arguments' => array('administer site configuration'),
+      'position' => 'right',
+      'file' => 'system.admin.inc',
+      'file path' => drupal_get_path('module', 'system'),
+    );
+  }
 }
 
 /**
