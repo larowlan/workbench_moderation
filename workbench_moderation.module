@@ -130,6 +130,19 @@ function workbench_moderation_menu_alter(&$items) {
 
   // For revert operations, use our own access check.
   $items['node/%node/revisions/%/revert']['access callback'] = '_workbench_moderation_revert_access';
+
+  // Provide a container administration menu item, if one doesn't already exist.
+  if (!isset($items['admin/config/workbench'])) {
+    $items['admin/config/workbench'] = array(
+      'title' => 'Workbench',
+      'description' => 'Workbench',
+      'page callback' => 'system_admin_menu_block_page',
+      'access arguments' => array('administer site configuration'),
+      'position' => 'right',
+      'file' => 'system.admin.inc',
+      'file path' => drupal_get_path('module', 'system'),
+    );
+  }
 }
 
 /**
@@ -301,6 +314,9 @@ function workbench_moderation_theme() {
  */
 function workbench_moderation_permission() {
   $permissions = array();
+  $permissions['view all unpublished content'] = array(
+    'title' => t('View all unpublished content'),
+  );
   $permissions['administer workbench moderation'] = array(
     'title' => t('Administer Workbench Moderation'),
   );
@@ -349,6 +365,18 @@ function workbench_moderation_permission() {
     }
   }
   return $permissions;
+}
+
+/**
+ * Implements hook_node_access().
+ *
+ * Allows users with the 'view all unpublished content' permission to do so.
+ */
+function workbench_moderation_node_access($node, $op, $account) {
+  if ($op == 'view' && !$node->status && user_access('view all unpublished content', $account)) {
+    return NODE_ACCESS_ALLOW;
+  }
+  return NODE_ACCESS_IGNORE;
 }
 
 /**
@@ -512,7 +540,23 @@ function workbench_moderation_views_api() {
  * Implementation of hook_views_default_views().
  */
 function workbench_moderation_views_default_views() {
-  return workbench_load_all_exports('workbench_moderation', 'views', 'view.inc', 'view');
+  $module = 'workbench_moderation';
+  $directory = 'views';
+  $extension = 'view.inc';
+  $name = 'view';
+
+  // From workbench_load_all_exports().
+  $return = array();
+  // Find all the files in the directory with the correct extension.
+  $files = file_scan_directory(drupal_get_path('module', $module) . "/$directory", "/.$extension/");
+  foreach ($files as $path => $file) {
+    require $path;
+    if (isset($$name)) {
+      $return[$$name->name] = $$name;
+    }
+  }
+
+  return $return;
 }
 
 

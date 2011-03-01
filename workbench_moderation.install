@@ -45,6 +45,24 @@ function workbench_moderation_schema() {
     'unique keys' => array('name' => array('name'))
   );
 
+  $schema['workbench_moderation_transitions'] = array(
+    'description' => 'Defines the valid transitions for states',
+    'fields' => array(
+      'from_name' => array(
+        'description' => 'The starting moderation state.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'to_name' => array(
+        'description' => 'The ending moderation state.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+    ),
+  );
+
   $schema['workbench_moderation_node_history'] = array(
     'fields' => array(
       'hid' => array(
@@ -122,24 +140,6 @@ function workbench_moderation_schema() {
       'nid' => array('node' => 'nid'),
       'vid' => array('node_revision' => 'vid'),
       'uid' => array('users' => 'uid'),
-    ),
-  );
-
-  $schema['workbench_moderation_transitions'] = array(
-    'description' => 'Defines the valid transitions for states',
-    'fields' => array(
-      'from_name' => array(
-        'description' => 'The starting moderation state.',
-        'type' => 'varchar',
-        'length' => '255',
-        'not null' => FALSE,
-      ),
-      'to_name' => array(
-        'description' => 'The ending moderation state.',
-        'type' => 'varchar',
-        'length' => '255',
-        'not null' => FALSE,
-      ),
     ),
   );
 
