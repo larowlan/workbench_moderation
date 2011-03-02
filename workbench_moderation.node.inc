@@ -7,7 +7,7 @@
 
 /**
  * Redirects the user to the current revision of the node.
- 
+ *
  * This page will deliver either the 'draft' page or the regular node view page.
  *
  * @param $node
@@ -211,7 +211,7 @@ function workbench_moderation_node_unpublish_form($form, &$form_state, $node) {
     '#type' => 'value'
   );
   $form['message'] = array(
-    '#markup' =>  '<p>'. t('Are you sure that you want to unpublish the live revision of this content? The current live revision will be set to moderation state %state.', array('%state' => workbench_moderation_state_none())) . '</p>',
+    '#markup' =>  '<p>' . t('Are you sure that you want to unpublish the live revision of this content? The current live revision will be set to moderation state %state.', array('%state' => workbench_moderation_state_none())) . '</p>',
   );
   return confirm_form($form, t('Unpublish "!title"?', array('!title' => $node->title)), "node/{$node->nid}/moderation");
 }

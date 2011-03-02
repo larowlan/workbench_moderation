@@ -10,7 +10,9 @@
  */
 class workbench_moderation_handler_filter_moderated_type extends views_handler_filter_boolean_operator {
   function query() {
-    if (!isset($this->value) || $this->value === NULL) { return; }
+    if (!isset($this->value) || $this->value === NULL) {
+      return;
+    }
 
     $node_types = workbench_moderation_moderate_node_types();
 

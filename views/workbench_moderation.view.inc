@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * @file workbench_moderation.view.inc
+ * Default view. Provides two tabs on the Workbench, "My Drafts" and "Needs
+ * Review", which list the moderation state for content relevant to the current
+ * user.
+ */
+
 $view = new view;
 $view->name = 'workbench_moderation';
 $view->description = '';
