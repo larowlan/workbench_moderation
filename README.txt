@@ -10,18 +10,6 @@ CONTENTS
 --------
 
 1.  Introduction
-1.1   Concepts
-2.  Installation
-3.  Configuration
-3.1  States
-3.2  Transitions
-3.3  Checking permissions
-3.3.1  Recommended permissions
-4.  Using the module
-5.  Troubleshooting
-6.  Developer notes
-7.  Feature roadmap
-1.  Introduction
 1.1  Concepts
 1.1.1  Arbitrary publishing states
 1.1.2  Node revision behavior
