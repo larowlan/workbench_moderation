@@ -354,10 +354,9 @@ function workbench_moderation_admin_check_role_form_submit($form, &$form_state) 
 
   if (empty($recommended_permissions)) {
     // All of the recommended permissions were accounted for.
-    drupal_set_message(t('The @role role should be a qualified @moderation_task of content types %types.', array(
+    drupal_set_message(t('The @role role should be a qualified @moderation_task.', array(
       '@role' => $role->name,
       '@moderation_task' => $moderation_task,
-      '%type' => implode(', ', $types),
     )), 'status');
   }
   else {
