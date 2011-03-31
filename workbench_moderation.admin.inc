@@ -319,7 +319,7 @@ function workbench_moderation_admin_check_role_form($form, &$form_state) {
   );
 
   if (empty($types)) {
-    drupal_set_message(t('Moderation is not enabled for any content types. Visit the !content_type_administration_page to enable moderation for one or more types.', array('!content_type_administration_page' => l(t('content type administration page'), 'admin/structure/content/types'))), 'warning');
+    drupal_set_message(t('Moderation is not enabled for any content types. Visit the <a href="@content_type_administration_page">content type administration page</a> to enable moderation for one or more types.', array('@content_type_administration_page' => url('admin/structure/content/types'))), 'warning');
     $form['#disabled'] = TRUE;
   }
 
@@ -371,9 +371,9 @@ function workbench_moderation_admin_check_role_form_submit($form, &$form_state) 
       )), 'error');
     }
     // Provide links to node and moderation permissions.
-    drupal_set_message(t('View !node_permissions or !moderation_permissions for the @role role.', array(
-      '!node_permissions' => l(t('node permissions'), 'admin/people/permissions/' . $rid, array('fragment' => 'module-node')),
-      '!moderation_permissions' => l(t('moderation permissions'), 'admin/people/permissions/' . $rid, array('fragment' => 'module-workbench_moderation')),
+    drupal_set_message(t('View <a href="@node_permissions">node permissions</a> or <a href="@moderation_permissions">moderation permissions</a> for the @role role.', array(
+      '@node_permissions' => url('admin/people/permissions/' . $rid, array('fragment' => 'module-node')),
+      '@moderation_permissions' => url('admin/people/permissions/' . $rid, array('fragment' => 'module-workbench_moderation')),
       '@role' => $role->name,
     )), 'error');
 
@@ -385,8 +385,7 @@ function workbench_moderation_admin_check_role_form_submit($form, &$form_state) 
   }
 
   // Note that we don't cover all configurations.
-  $link = l(t('View moderation permissions for this role.'), 'admin/people/permissions/' . $rid, array('fragment' => 'module-workbench_moderation'));
-  drupal_set_message(t('You must check manually that this role has the appropriate transition permissions for your workflow. !moderation_permissions_link', array('!moderation_permissions_link' => $link)), 'warning');
+  drupal_set_message(t('You must check manually that this role has the appropriate transition permissions for your workflow. <a href="@moderation_permission_link">View moderation permissions for this role.</a>', array('@moderation_permissions_link' => url('admin/people/permissions/' . $rid, array('fragment' => 'module-workbench_moderation')))), 'warning');
 
   // Repopulate the form with the submitted values.
   $form_state['rebuild'] = TRUE;

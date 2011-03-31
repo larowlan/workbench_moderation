@@ -47,7 +47,7 @@ function workbench_moderation_node_history_view($node) {
   global $user;
 
   // Page title.
-  drupal_set_title(t('!title History', array('!title' => $node->title)));
+  drupal_set_title(t('@title History', array('@title' => $node->title)), PASS_THROUGH);
 
   // Alert if there is no live node
   if (!isset($node->workbench_moderation['published'])) {
@@ -146,7 +146,8 @@ function workbench_moderation_node_history_view($node) {
     elseif ($revision->vid == $node->workbench_moderation['current']->vid) {
       $node_current = workbench_moderation_node_current_load($node);
       $row['data']['moderation'] = '<div class="moderation-state"><strong>' . t('This is the current revision. The current state is %state.', array('%state' => $node->workbench_moderation['current']->state)) . '</strong></div>';
-      $row['data']['moderation'] .= '<div class="moderation-actions">' . drupal_render(drupal_get_form('workbench_moderation_moderate_form', $node_current)) . '</div>';
+      $moderate_form = drupal_get_form('workbench_moderation_moderate_form', $node_current);
+      $row['data']['moderation'] .= '<div class="moderation-actions">' . drupal_render($moderate_form) . '</div>';
     }
 
     // Build a table of the moderation history.
@@ -184,7 +185,11 @@ function workbench_moderation_node_history_view($node) {
 
   // Return properly styled output.
   return array(
-    '#attached' => array('css' => array(drupal_get_path('module', 'workbench_moderation') . '/css/workbench_moderation.css')),
+    '#attached' => array(
+      'css' => array(
+        drupal_get_path('module', 'workbench_moderation') . '/css/workbench_moderation.css',
+      ),
+    ),
     '#markup' => theme('table', array('header' => $header, 'rows' => $rows)),
   );
 }
@@ -208,12 +213,12 @@ function workbench_moderation_node_unpublish_form($form, &$form_state, $node) {
   $form = array();
   $form['node'] = array(
     '#value' => $node,
-    '#type' => 'value'
+    '#type' => 'value',
   );
   $form['message'] = array(
     '#markup' =>  '<p>' . t('Are you sure that you want to unpublish the live revision of this content? The current live revision will be set to moderation state %state.', array('%state' => workbench_moderation_state_none())) . '</p>',
   );
-  return confirm_form($form, t('Unpublish "!title"?', array('!title' => $node->title)), "node/{$node->nid}/moderation");
+  return confirm_form($form, t('Unpublish %title?', array('%title' => $node->title)), "node/{$node->nid}/moderation");
 }
 
 /**

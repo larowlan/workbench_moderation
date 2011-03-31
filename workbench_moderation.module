@@ -1546,9 +1546,10 @@ function workbench_moderation_messages($context, $node = NULL) {
     }
 
     // Add a moderation form.
-    if ($revision_current && !$revision_published && _workbench_moderation_access('update', $node)
-        && $moderate_form = drupal_render(drupal_get_form('workbench_moderation_moderate_form', $node, "node/{$node->nid}/current-revision"))) {
-      workbench_moderation_set_message($moderate_form, 'warning', FALSE, 'workbench_moderation_moderate_form');
+    if ($revision_current && !$revision_published && _workbench_moderation_access('update', $node) && $moderate_form = drupal_get_form('workbench_moderation_moderate_form', $node, "node/{$node->nid}/current-revision")) {
+      if ($moderate_form = drupal_render($moderate_form)) {
+        workbench_moderation_set_message($moderate_form, 'warning', FALSE, 'workbench_moderation_moderate_form');
+      }
     }
 
     // Add an unpublish link.

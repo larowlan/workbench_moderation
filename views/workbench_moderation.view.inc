@@ -494,4 +494,3 @@ $translatables['workbench_moderation'] = array(
   t('My Drafts'),
   t('This list displays content you have created that is not published. Currently there is no such content.'),
 );
-
