@@ -244,9 +244,20 @@ function workbench_moderation_update_7003() {
     ->execute()
     ->fetchCol();
 
-  // Grant these roles the new permission.
+  // Grant these roles the new permission. Normally, this would use
+  // user_role_grant_permissions(), but since update hooks run regardless of
+  // whether a module is enabled, we can't guarantee that workbench_moderation
+  // permissions will be available when user.module invokes hook_permission().
   foreach ($roles as $rid) {
-    user_role_grant_permissions($rid, array($new_permission));
+    db_merge('role_permission')
+      ->key(array(
+        'rid' => $rid,
+        'permission' => $new_permission,
+      ))
+      ->fields(array(
+        'module' => 'workbench_moderation',
+      ))
+      ->execute();
   }
 
   // Delete all grants of the old permission.
@@ -281,7 +292,7 @@ function workbench_moderation_update_7004() {
 
   db_update('workbench_moderation_states')
     ->fields(array(
-      'Name' => workbench_moderation_state_published(),
+      'Name' => 'Published', // Normally we would use workbench_moderation_state_published(), but we can't guarantee that workbench_moderation is enabled.
       'description' => 'Published content is visible to the world',
     ))
     ->condition('Name', 'Publish', '=')
@@ -304,14 +315,14 @@ function workbench_moderation_update_7004() {
 
   db_update('workbench_moderation_transitions')
     ->fields(array(
-      'from_name' => workbench_moderation_state_published(),
+      'from_name' => 'Published', // Normally we would use workbench_moderation_state_published(), but we can't guarantee that workbench_moderation is enabled.
     ))
     ->condition('from_name', 'Publish', '=')
     ->execute();
 
   db_update('workbench_moderation_transitions')
     ->fields(array(
-      'to_name' => workbench_moderation_state_published(),
+      'to_name' => 'Published', // Normally we would use workbench_moderation_state_published(), but we can't guarantee that workbench_moderation is enabled.
     ))
     ->condition('to_name', 'Publish', '=')
     ->execute();
@@ -334,14 +345,14 @@ function workbench_moderation_update_7004() {
 
   db_update('workbench_moderation_node_history')
     ->fields(array(
-      'from_state' => workbench_moderation_state_published(),
+      'from_state' => 'Published', // Normally we would use workbench_moderation_state_published(), but we can't guarantee that workbench_moderation is enabled.
     ))
     ->condition('from_state', 'Publish', '=')
     ->execute();
 
   db_update('workbench_moderation_node_history')
     ->fields(array(
-      'state' => workbench_moderation_state_published(),
+      'state' => 'Published', // Normally we would use workbench_moderation_state_published(), but we can't guarantee that workbench_moderation is enabled.
     ))
     ->condition('state', 'Publish', '=')
     ->execute();
@@ -379,6 +390,8 @@ function workbench_moderation_update_7004() {
     ->condition('permission', $perm, '=')
     ->execute();
   }
+  
+  return t("Updated state names and transitions.");
 }
 
 /**
@@ -391,7 +404,7 @@ function workbench_moderation_update_7005() {
     ->fields(array(
       'description' => 'Visible only to the author',
     ))
-    ->condition('Name', workbench_moderation_state_none(), '=')
+    ->condition('Name', 'Draft', '=') // Normally we would use workbench_moderation_state_none(), but we can't guarantee that workbench_moderation is enabled.
     ->execute();
 
   db_update('workbench_moderation_states')
@@ -405,6 +418,8 @@ function workbench_moderation_update_7005() {
     ->fields(array(
       'description' => 'Visible to the world',
     ))
-    ->condition('Name', workbench_moderation_state_published(), '=')
+    ->condition('Name', 'Published', '=') // Normally we would use workbench_moderation_state_published(), but we can't guarantee that workbench_moderation is enabled.
     ->execute();
+
+  return t("Updated state descriptions.");
 }
