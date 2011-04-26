@@ -137,7 +137,7 @@ function workbench_moderation_admin_states_form_submit($form, &$form_state) {
   drupal_set_message(t('Your settings have been saved.'));
 
   // Warn users that changes here may need require reconfiguring Views that use Workbench.
-  $views_message = t('Depending on the changes you have made it may be necessary to <a href="@views" target="_blank">reconfigure Views</a> that leverage Workbench Moderation such as <a href="@workbench_moderation" target="_blank">workbench_modertation</a>', array('@views' => url('admin/structure/views'), '@workbench_moderation' => url('admin/structure/views/edit/workbench_moderation')));
+  $views_message = t('Depending on the changes you have made it may be necessary to <a href="@views" target="_blank">reconfigure Views</a> that leverage Workbench Moderation such as <a href="@workbench_moderation" target="_blank">workbench_moderation</a>', array('@views' => url('admin/structure/views'), '@workbench_moderation' => url('admin/structure/views/edit/workbench_moderation')));
   drupal_set_message($views_message, $type = 'warning', $repeat = FALSE);
 }
 
