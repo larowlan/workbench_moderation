@@ -390,7 +390,7 @@ function workbench_moderation_update_7004() {
     ->condition('permission', $perm, '=')
     ->execute();
   }
-  
+
   return t("Updated state names and transitions.");
 }
 
