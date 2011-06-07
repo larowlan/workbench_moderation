@@ -928,6 +928,30 @@ function workbench_moderation_node_data($node) {
     return;
   }
 
+  // Path module is stupid and doesn't load its data in node_load.
+  if (module_exists('path') && isset($node->nid)) {
+    $path = array();
+    $conditions = array('source' => 'node/' . $node->nid);
+    if ($node->language != LANGUAGE_NONE) {
+      $conditions['language'] = $node->language;
+    }
+    $path = path_load($conditions);
+    if ($path === FALSE) {
+      $path = array();
+    }
+    if (isset($node->path)) {
+      $path += $node->path;
+    }
+    $path += array(
+      'pid' => NULL,
+      'source' => 'node/' . $node->nid,
+      'alias' => '',
+      'language' => isset($node->language) ? $node->language : LANGUAGE_NONE,
+    );
+
+    $node->path = $path;
+  }
+
   // Build a default 'current' moderation record. Nodes will lack a
   // workbench_moderation record if moderation was not enabled for their node
   // type when they were created. In that case, assume the live node is at the
@@ -1358,22 +1382,49 @@ function workbench_moderation_moderate($node, $state) {
 
   // If we're moderating an unpublished revision and there is an existing
   // published revision, make sure that the published revision is live.
+  // We do this in a shutdown function to avoid race conditions when
+  // running node_save() from within a node submission.
   if (!empty($node->workbench_moderation['published']) && empty($node->is_new)) {
-    $live_revision = workbench_moderation_node_live_load($node);
-    // Make sure we're published.
-    $live_revision->status = 1;
-    // Don't create a new revision.
-    $live_revision->revision = 0;
-    // Prevent another moderation record from being written.
-    $live_revision->workbench_moderation['updating_live_revision'] = TRUE;
-
-    // Reset flag from taxonomy_field_update() so that {taxonomy_index} values aren't written twice.
-    $taxonomy_index_flag = &drupal_static('taxonomy_field_update', array());
-    unset($taxonomy_index_flag[$node->nid]);
-
-    // @TODO: do we trust node_save() here?
-    node_save($live_revision);
+    drupal_register_shutdown_function('workbench_moderation_store', $node);
   }
+}
+
+/**
+ * Shutdown callback for saving a node revision.
+ *
+ * This function is called by drupal_register_shutdown_function().
+ * The purpose is to delay a node_save() call so that a live revision
+ * is not called during hook_node_update().
+ *
+ * Instead, we delay the update until the new revision is saved. This way,
+ * we can more safely call the revision and pick up changes to items
+ * that are not revisioned (such as menu and path assignments).
+ *
+ * @see workbench_moderation_moderate()
+ *
+ * @param $node
+ *   The node being saved.
+ */
+function workbench_moderation_store($node) {
+  if (!isset($node->nid)) {
+    watchdog('Workbench moderation', 'Failed to save node revision: node not passed to shutdown function.', array(), WATCHDOG_NOTICE);
+    return;
+  }
+  watchdog('Workbench moderation', 'Saved node revision: %node as live version for node %live.', array('%node' => $node->vid, '%live' => $node->nid), WATCHDOG_NOTICE, l($node->title, 'node/' . $node->nid));
+  $live_revision = workbench_moderation_node_live_load($node);
+  // Make sure we're published.
+  $live_revision->status = 1;
+  // Don't create a new revision.
+  $live_revision->revision = 0;
+  // Prevent another moderation record from being written.
+  $live_revision->workbench_moderation['updating_live_revision'] = TRUE;
+
+  // Reset flag from taxonomy_field_update() so that {taxonomy_index} values aren't written twice.
+  $taxonomy_index_flag = &drupal_static('taxonomy_field_update', array());
+  unset($taxonomy_index_flag[$node->nid]);
+
+  // Save the node.
+  node_save($live_revision);
 }
 
 /**
