@@ -1387,7 +1387,7 @@ function workbench_moderation_moderate($node, $state) {
   // published revision, make sure that the published revision is live.
   // We do this in a shutdown function to avoid race conditions when
   // running node_save() from within a node submission.
-  if (!empty($node->workbench_moderation['published']) && empty($node->is_new)) {
+  if (!empty($node->workbench_moderation['published'])) {
     drupal_register_shutdown_function('workbench_moderation_store', $node);
   }
 }
