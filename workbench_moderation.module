@@ -1507,7 +1507,6 @@ function workbench_moderation_moderate_form($form, &$form_state, $node, $destina
     $form['#attached']['css'][] = drupal_get_path('module', 'workbench_moderation') . '/css/workbench_moderation.css';
     $form['state'] = array(
       '#type' => 'select',
-      '#title' => t('Moderate:'),
       '#options' => $next_states,
       '#default_value' => $node->workbench_moderation['current']->state,
     );
@@ -1582,53 +1581,53 @@ function workbench_moderation_messages($context, $node = NULL) {
     }
   }
 
-  if ($context == 'view') {
-    if ($revision_published && $revision_current) {
-      workbench_moderation_set_message(t('You are viewing the current, published revision of this content.'), 'status', FALSE);
-    }
-    elseif ($revision_published && !$revision_current) {
-      workbench_moderation_set_message(t('You are viewing the published revision of this content. An updated revision exists and is awaiting moderation.') . ' ' . l(t('View the current revision'), "node/{$node->nid}/current-revision") . '.', 'warning', FALSE);
-    }
-    elseif ($revision_current && $node_published) {
-      workbench_moderation_set_message(t('There is a published revision of this content. You are viewing the current revision, which is awaiting moderation; its moderation state is %state.', array('%state' => $state['current']->state)), 'warning', FALSE);
-    }
-    elseif ($revision_current) {
-      workbench_moderation_set_message(t('You are viewing the current revision of this content, which is awaiting moderation; its moderation state is %state.', array('%state' => $state['current']->state)), 'warning', FALSE);
-    }
-    else {
-      workbench_moderation_set_message(t('You are viewing an old revision of this content.') . ' ' . workbench_moderation_access_link(t('View the current revision'), "node/{$node->nid}/current-revision") . '.', 'warning', FALSE);
-    }
+  // An array of messages to add to the general workbench block.
+  $info_block_messages = array();
 
+  if ($context == 'view') {
+    $info_block_messages[] = array(
+      'label' => t('Revision state'),
+      'message' => check_plain($state['my_revision']->state),
+    );
+    $info_block_messages[] = array(
+      'label' => t('Current draft'),
+      'message' => !empty($revision_current) ? t('Yes') : t('No'),
+    );
+
+    // Check node access.
     drupal_static('_node_revision_access', array(), TRUE);
-    if (!$revision_current
-        && $link = workbench_moderation_access_link(t('Create a new draft from this revision.'), "node/{$node->nid}/revisions/{$node->vid}/revert")) {
-      workbench_moderation_set_message($link, 'warning', FALSE);
-    }
 
     // Add a moderation form.
     if ($revision_current && !$revision_published && _workbench_moderation_access('update', $node) && $moderate_form = drupal_get_form('workbench_moderation_moderate_form', $node, "node/{$node->nid}/current-revision")) {
       if ($moderate_form = drupal_render($moderate_form)) {
-        workbench_moderation_set_message($moderate_form, 'warning', FALSE, 'workbench_moderation_moderate_form');
+        $info_block_messages[] = array(
+          'label' => t('Moderate'),
+          'message' => $moderate_form,
+        );
       }
     }
 
     // Add an unpublish link.
-    if ($revision_published && user_access('unpublish live revision')
-        && $link = workbench_moderation_access_link(t('unpublish this revision'), "node/{$node->nid}/moderation/{$node->vid}/unpublish")) {
-      workbench_moderation_set_message(t('You may !action_link.', array('!action_link' => $link)), 'warning', FALSE, 'workbench_moderation_unpublish_form');
+    if ($revision_published && user_access('unpublish live revision') && $link = workbench_moderation_access_link(t('Unpublish this revision'), "node/{$node->nid}/moderation/{$node->vid}/unpublish")) {
+      $info_block_messages[] = array(
+        'label' => t('Actions'),
+        'message' => $link,
+      );
     }
 
-    // Revision navigation links.
-    if (user_access('view revisions')) {
+    // Revision navigation links. This is disabled for the time being, since
+    // node tabs are lost when navigating through old revisions.
+    // @TODO remove this entirely?
+    if (variable_get('workbench_moderation_show_revision_navigation', FALSE) && user_access('view revisions')) {
       $links = array();
 
       // Get previous and next revision ids.
       $args = array(':nid' => $node->nid, ':vid' => $node->vid);
       if ($prev_vid = db_query_range("SELECT nr.vid FROM {node_revision} nr WHERE nr.nid = :nid AND nr.vid < :vid ORDER BY nr.vid DESC", 0, 1, $args)->fetchField()) {
-        $links[$prev_vid] = array('title' => t('previous'), 'href' => "node/{$node->nid}/revisions/{$prev_vid}/view");
+        $links[$prev_vid] = array('title' => t('Previous revision'), 'href' => "node/{$node->nid}/revisions/{$prev_vid}/view");
       }
       if ($next_vid = db_query_range("SELECT nr.vid FROM {node_revision} nr WHERE nr.nid = :nid AND nr.vid > :vid ORDER BY nr.vid ASC", 0, 1, $args)->fetchField()) {
-        $links[$next_vid] = array('title' => t('next'), 'href' => "node/{$node->nid}/revisions/{$next_vid}/view");
+        $links[$next_vid] = array('title' => t('Next revision'), 'href' => "node/{$node->nid}/revisions/{$next_vid}/view");
       }
 
       // If the current revision is next or previous, use the "node/%node/current-revision" path.
@@ -1648,23 +1647,43 @@ function workbench_moderation_messages($context, $node = NULL) {
 
       // Post the links in a non-repeating message.
       if (!empty($links)) {
-        workbench_moderation_set_message(t('View other revisions: !action_links', array('!action_links' => implode(', ', $links))), 'warning', FALSE);
+        $info_block_messages[] = array(
+          'label' => t('View'),
+          'message' => implode(', ', $links),
+        );
       }
     }
   }
+  // @TODO: Clean these up.
   elseif ($context == 'edit') {
     if ($node_published && $revision_published) {
-      workbench_moderation_set_message(t('There is a published revision of this content. Your changes will be placed in moderation.'), 'warning', FALSE);
+      $info_block_messages[] = array(
+        'label' => t('Status'),
+        'message' => t('New draft of live content.'),
+      );
     }
     elseif ($node_published && !$revision_published) {
+      $info_block_messages[] = array(
+        'label' => t('Status'),
+        'message' => t('New draft from current revision'),
+      );
       $link = workbench_moderation_access_link('Create a new draft from the published revision.', "node/{$node->nid}/revisions/{$state['published']->vid}/revert");
-      workbench_moderation_set_message(t('This draft has been edited and may differ from the published revision. !action_link', array('!action_link' => $link)), 'warning', FALSE);
+      $info_block_messages[] = array(
+        'label' => t('Actions'),
+        'message' => $link,
+      );
     }
     else {
       // New content.
-      workbench_moderation_set_message(t('Your draft will be placed in moderation.'), 'warning', FALSE);
+      $info_block_messages[] = array(
+        'label' => t('New content'),
+        'message' => t('Your draft will be placed in moderation.'),
+      );
     }
   }
+
+  // Send the info block array to a static variable.
+  workbench_moderation_set_message($info_block_messages);
 }
 
 /**
@@ -1691,46 +1710,36 @@ function workbench_moderation_access_link($text, $internal_path, $options = arra
 /**
  * Stores status messages for delivery.
  *
- * This function stores up moderation status messages. Moderation status
- * messages are only relevant for the current page load, so they don't need to
- * be stored in the session variable like normal drupal_set_message() does.
+ * This function stores up moderation messages to be passed on to workbench_moderation_workbench_block().
  *
- * When the Drupal status messages are being rendered, we jump in and
- * add these messages.
+ * This function uses a static variable so that function can be called more than
+ * once and the array built up.
  *
- * @see workbench_moderation_preprocess_status_messages()
- * @see drupal_set_message()
+ * @see workbench_moderation_workbench_block()
+ * @see workbench_moderation_messages()
  *
- * @param $message
- *   The message text to display. This should already be sanitized and translated.
- * @param $type
- *  The message type.
+ * @param $new_messages
+ *   An array of messages to be added to the block.
  *
  * @return
- *   An array of messages to deliver to the user.
+ *   An array of messages to be added to the block.
  */
-function workbench_moderation_set_message($message = NULL, $type = 'status', $repeat = TRUE, $key = FALSE) {
+function workbench_moderation_set_message($new_messages = array()) {
   static $messages = array();
-
-  if ($message && $key) {
-    $messages[$type][$key] = $message;
-  }
-  elseif (!($message && !$repeat && !empty($messages[$type]) && in_array($message, $messages[$type]))) {
-    $messages[$type][] = $message;
-  }
-
+  $messages = array_merge($messages, $new_messages);
   return $messages;
 }
 
 /**
- * Implements hook_preprocess_status_messages().
+ * Implements hook_block_view_workbench_block().
  *
- * @see workbench_moderation_set_message()
+ * Show the editorial status of this node.
  */
-function workbench_moderation_preprocess_status_messages(&$variables) {
-  foreach (workbench_moderation_set_message() as $type => $messages) {
-    foreach ($messages as $m) {
-      drupal_set_message($m, $type); // These messages are pre-sanitized and translated.
-    }
+function workbench_moderation_workbench_block() {
+  $output = array();
+  foreach (workbench_moderation_set_message() as $message) {
+    $output[] = t('!label: <em>!message</em>', array('!label' => $message['label'], '!message' => $message['message']));
   }
+
+  return $output;
 }

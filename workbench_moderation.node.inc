@@ -147,7 +147,7 @@ function workbench_moderation_node_history_view($node) {
       $node_current = workbench_moderation_node_current_load($node);
       $row['data']['moderation'] = '<div class="moderation-state"><strong>' . t('This is the current revision. The current state is %state.', array('%state' => $node->workbench_moderation['current']->state)) . '</strong></div>';
       $moderate_form = drupal_get_form('workbench_moderation_moderate_form', $node_current);
-      $row['data']['moderation'] .= '<div class="moderation-actions">' . drupal_render($moderate_form) . '</div>';
+      $row['data']['moderation'] .= '<div class="moderation-actions">' . t('Moderate') . ': ' . drupal_render($moderate_form) . '</div>';
     }
 
     // Build a table of the moderation history.

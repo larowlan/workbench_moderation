@@ -127,6 +127,9 @@ does have Views integration, and it provides two useful views ("My Drafts" and
 Moderation without Workbench, you may override or clone these views and place
 them where your users can find them.
 
+Using the "Workbench" module with Workbench Moderation enables the display of
+moderation status information and a mini moderation form on node viewing pages.
+
 ----
 3.  Configuration
 
@@ -233,9 +236,12 @@ Permissions" tab:
 Once the module is installed and moderation is enabled for one or more node
 types, users with permission may:
 
+* Use the "Moderate" node tab to view moderation history and navigate versions.
+
+When the Workbench module is enabled, users with permission may also:
+
 * See messages about moderation state when visiting a moderated node.
 * Moderate content from the "View Draft" page.
-* Use the "Moderate" node tab to view moderation history and navigate versions.
 
 ----
 5.  Troubleshooting

@@ -10,7 +10,7 @@ class WorkbenchModerationTestCase extends DrupalWebTestCase {
   protected $moderator_user;
 
   function setUp() {
-    parent::setUp('workbench_moderation');
+    parent::setUp('workbench_moderation', 'workbench');
 
     // Create a new content type and enable moderation on it.
     $type = $this->drupalCreateContentType();
@@ -105,13 +105,15 @@ class WorkbenchModerationDraftTabTestCase extends WorkbenchModerationTestCase {
 
   public static function getInfo() {
     return array(
-      'name' => 'Mini moderation form',
-      'description' => 'Create a moderated node publish it using the mini moderation form.',
+      'name' => 'Draft tab',
+      'description' => 'Test access to the "Draft" tab and publishing from the mini moderation form on the draft tab.',
       'group' => 'Workbench Moderation',
     );
   }
 
   function testDraftTab() {
+    // Workbench is now required for the mini moderation form.
+    module_enable(array('workbench'));
     $this->drupalLogin($this->moderator_user);
 
     // Create a new node and make sure it is unpublished.
