@@ -101,6 +101,67 @@ class WorkbenchModerationModerateTabTestCase extends WorkbenchModerationTestCase
 
 }
 
+class WorkbenchModerationDraftTabTestCase extends WorkbenchModerationTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Mini moderation form',
+      'description' => 'Create a moderated node publish it using the mini moderation form.',
+      'group' => 'Workbench Moderation',
+    );
+  }
+
+  function testDraftTab() {
+    $this->drupalLogin($this->moderator_user);
+
+    // Create a new node and make sure it is unpublished.
+    $body_name = 'body[' . LANGUAGE_NONE . '][0]';
+    $edit = array(
+      'title' => $this->randomName(),
+      "{$body_name}[value]" => $this->randomString(128),
+      "{$body_name}[format]" => filter_default_format(),
+    );
+    $this->drupalPost("node/add/{$this->content_type}", $edit, t('Save'));
+
+    // Get the new node.
+    $node = $this->drupalGetNodeByTitle($edit['title']);
+    $this->assertFalse($node->status, t('New content is unpublished'));
+
+    // Publish the node via the moderation form.
+    $moderate = array('state' => workbench_moderation_state_published());
+    $this->drupalPost("node/{$node->nid}/moderation", $moderate, t('Apply'));
+
+    $node = node_load($node->nid, NULL, TRUE);
+    $this->assertTrue($node->status, t('Content is published'));
+
+    // Create a new draft.
+    $edit = array('title' => $this->randomName(10) . '_revision1');
+    $this->drupalPost("node/{$node->nid}/edit", $edit, t('Save'));
+
+    // Can we get to the 'draft' tab?
+    $this->drupalGet("node/{$node->nid}/draft");
+    $this->assertResponse(200, t('Draft tab is accessible'));
+
+    // Moderate the content to a non-draft, non-published state.
+    $middle_state = current(array_diff(array_keys(workbench_moderation_states()), array(workbench_moderation_state_none(), workbench_moderation_state_published())));
+    $edit = array('state' => $middle_state);
+    $this->drupalPost(NULL, $edit, t('Apply'));
+
+    // Are we still on node/NID/draft?
+    $this->assertUrl("node/{$node->nid}/draft");
+    $this->assertResponse(200);
+
+    // Publish the content.
+    $edit = array('state' => workbench_moderation_state_published());
+    $this->drupalPost(NULL, $edit, t('Apply'));
+
+    // Are we redirected to node/NID?
+    $this->assertUrl("node/{$node->nid}");
+    $this->assertResponse(200);
+  }
+
+}
+
 class WorkbenchModerationPublishFromNodeFormTestCase extends WorkbenchModerationTestCase {
 
   public static function getInfo() {
