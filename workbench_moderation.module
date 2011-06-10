@@ -778,12 +778,22 @@ function workbench_moderation_form_alter(&$form, $form_state, $form_id) {
       '#value' => $moderation_state
     );
   }
+
   // Move the Revision log under publishing to make things pretty
   $form['options']['log'] = $form['revision_information']['log'];
   $form['options']['log']['#title'] = t('Moderation notes');
-  $action = !empty($form['#node']->nid) ? t('Edited') : t('Created');
-  $form['options']['log']['#default_value'] = t('!action by @user.', array('!action' => $action, '@user' => $user->name));
+  // Unset the old placement of the Revision log.
   unset($form['revision_information']['log']);
+
+  // Log the proper user name or anonymous name.
+  if (user_is_anonymous()) {
+    $logged_name = variable_get('anonymous', t('Anonymous'));
+  }
+  else {
+    $logged_name = $user->name;
+  }
+  $action = !empty($form['#node']->nid) ? t('Edited') : t('Created');
+  $form['options']['log']['#default_value'] = t('!action by @user.', array('!action' => $action, '@user' => $logged_name));
 
   // Always create new revisions for nodes that are moderated
   $form['revision_information']['revision']['#default_value'] = TRUE;
