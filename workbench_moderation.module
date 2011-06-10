@@ -1524,12 +1524,29 @@ function workbench_moderation_moderate_form($form, &$form_state, $node, $destina
       '#type' => 'submit',
       '#value' => t('Apply'),
     );
+
+    // Cache the form on first load to preserve the node for validation.
+    // Otherwise, the node would be reloaded on submit, and there would be no
+    // way to detect if the current revision has been changed.
+    $form_state['cache'] = TRUE;
   }
   else {
     $form['#access'] = FALSE;
   }
 
   return $form;
+}
+
+function workbench_moderation_moderate_form_validate($form, &$form_state) {
+  // Make sure that the revision that was shown to the user is still the current
+  // revision before changing the current revision's state.
+  $moderated_node = $form_state['values']['node'];
+  $current_node = workbench_moderation_node_current_load(node_load($moderated_node->nid));
+  if ($moderated_node->vid != $current_node->vid) {
+    form_set_error('', t('The moderation state could not be changed because the draft has been updated by another user. Please review the current draft.'));
+    // Redirect the form so that it rebuilds with the current revision.
+    drupal_redirect_form($form_state);
+  }
 }
 
 function workbench_moderation_moderate_form_submit($form, $form_state) {
