@@ -97,7 +97,6 @@ class WorkbenchModerationFilesTestCase extends FileFieldTestCase {
     // Check that the second file is present on the draft revision.
     $draft_file = (object) $draft->{$this->field_name}[LANGUAGE_NONE][0];
     $this->assertFileExists($draft_file, t('File is present on draft revision'));
-
     $this->assertNotEqual($published_file->uri, $draft_file->uri, t('File on published revision is different from file on draft revision'));
   }
 

@@ -46,13 +46,13 @@ class WorkbenchModerationModerateTabTestCase extends WorkbenchModerationTestCase
 
   public static function getInfo() {
     return array(
-      'name' => '"Moderate" tab',
+      'name' => 'Moderation tab',
       'description' => 'Create a moderated node publish it using the "Moderate" tab.',
       'group' => 'Workbench Moderation',
     );
   }
 
-  function testPublishFromModerateTab() {
+  function testModerateTab() {
     $this->drupalLogin($this->moderator_user);
 
     $is_moderated = workbench_moderation_node_type_moderated($this->content_type);
@@ -133,7 +133,7 @@ class WorkbenchModerationPublishFromNodeFormTestCase extends WorkbenchModeration
     // Test anonymous access to the published content.
     $this->drupalLogout();
     $this->drupalGet("node/{$node->nid}");
-    $this->assertText($edit['title'], t('Anonymous users can access the published content'));
+    $this->assertResponse(200, t('Anonymous users can access the published content'));
   }
 
 }
