@@ -52,9 +52,12 @@ class WorkbenchModerationModerateTabTestCase extends WorkbenchModerationTestCase
     );
   }
 
-  function testModerateTab() {
+  function setUp() {
+    parent::setUp();
     $this->drupalLogin($this->moderator_user);
+  }
 
+  function testModerateTab() {
     $is_moderated = workbench_moderation_node_type_moderated($this->content_type);
     $this->assertTrue($is_moderated, t('The content type is moderated.'));
 
@@ -111,11 +114,16 @@ class WorkbenchModerationDraftTabTestCase extends WorkbenchModerationTestCase {
     );
   }
 
-  function testDraftTab() {
+  function setUp() {
+    parent::setUp();
+
     // Workbench is now required for the mini moderation form.
     module_enable(array('workbench'));
-    $this->drupalLogin($this->moderator_user);
 
+    $this->drupalLogin($this->moderator_user);
+  }
+
+  function testDraftTab() {
     // Create a new node and make sure it is unpublished.
     $body_name = 'body[' . LANGUAGE_NONE . '][0]';
     $edit = array(
@@ -174,9 +182,12 @@ class WorkbenchModerationPublishFromNodeFormTestCase extends WorkbenchModeration
     );
   }
 
-  function testPublishFromNodeForm() {
+  function setUp() {
+    parent::setUp();
     $this->drupalLogin($this->admin_user);
+  }
 
+  function testPublishFromNodeForm() {
     // Create a new node and publish it immediately.
     $body_name = 'body[' . LANGUAGE_NONE . '][0]';
     $edit = array(
