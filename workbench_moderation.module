@@ -1694,7 +1694,7 @@ function workbench_moderation_messages($context, $node = NULL) {
         'label' => t('Status'),
         'message' => t('New draft from current revision'),
       );
-      $link = workbench_moderation_access_link('Create a new draft from the published revision.', "node/{$node->nid}/revisions/{$state['published']->vid}/revert");
+      $link = workbench_moderation_access_link(t('Create a new draft from the published revision.'), "node/{$node->nid}/revisions/{$state['published']->vid}/revert");
       $info_block_messages[] = array(
         'label' => t('Actions'),
         'message' => $link,
