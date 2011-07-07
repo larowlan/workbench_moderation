@@ -568,11 +568,10 @@ function workbench_moderation_views_default_views() {
  */
 function workbench_moderation_node_presave($node) {
   global $user;
-  // Set the published status when a node is set to live
-  // Is this a node that is controlled by content moderation?
   if (isset($node->workbench_moderation_state_new)) {
-    // Is the new state live or is there an existing published revision?
-    if ($node->workbench_moderation_state_new == workbench_moderation_state_published() || !empty($node->workbench_moderation['published']->nid)) {
+    // If the new moderation state is published, or if this revision is the
+    // published revision, set the node status to published.
+    if ($node->workbench_moderation_state_new == workbench_moderation_state_published() || (!empty($node->workbench_moderation['published']) && $node->vid == $node->workbench_moderation['published']->vid)) {
       $node->status = 1;
     }
     else {
@@ -1389,8 +1388,16 @@ function workbench_moderation_moderate($node, $state) {
   if ($new_revision->current) {
     $node->workbench_moderation['current'] = $new_revision;
   }
+  // Handle the published revision.
   if ($new_revision->published) {
+    // If we're moderating a revision to the published state, mark the new
+    // revision as the published revision.
     $node->workbench_moderation['published'] = $new_revision;
+  }
+  elseif (isset($node->workbench_moderation['published']) && $new_revision->vid == $node->workbench_moderation['published']->vid && $new_revision->from_state == workbench_moderation_state_published()) {
+    // If we're moderating the published revision to a non-published state,
+    // remove the workbench moderation 'published' property.
+    unset($node->workbench_moderation['published']);
   }
 
   // If we're moderating an unpublished revision and there is an existing
