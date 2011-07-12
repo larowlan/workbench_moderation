@@ -790,29 +790,31 @@ function workbench_moderation_form_alter(&$form, $form_state, $form_id) {
     );
   }
 
-  // Move the Revision log under publishing to make things pretty
-  $form['options']['log'] = $form['revision_information']['log'];
-  $form['options']['log']['#title'] = t('Moderation notes');
-  // Unset the old placement of the Revision log.
-  unset($form['revision_information']['log']);
-
-  // Log the proper user name or anonymous name.
-  if (user_is_anonymous()) {
-    $logged_name = variable_get('anonymous', t('Anonymous'));
-  }
-  else {
-    $logged_name = $user->name;
-  }
-  $action = !empty($form['#node']->nid) ? t('Edited') : t('Created');
-  $form['options']['log']['#default_value'] = t('!action by @user.', array('!action' => $action, '@user' => $logged_name));
-
   // Always create new revisions for nodes that are moderated
-  $form['revision_information']['revision']['#default_value'] = TRUE;
-  // Do not allow users to change the revision status
-  $form['revision_information']['#access'] = FALSE;
+  $form['revision_information']['revision'] = array(
+    '#type' => 'value',
+    '#value' => TRUE,
+  );
 
-  // User has no ability to choose if this content is published or not. If the
-  // moderation status is live, then it will be published, otherwise not.
+  // Set a default revision log message.
+  $logged_name = (user_is_anonymous() ? variable_get('anonymous', t('Anonymous')) : $user->name);
+  $logged_action = !empty($form['#node']->nid) ? t('Edited') : t('Created');
+  $form['revision_information']['log']['#default_value'] = t('!action by @user.', array('!action' => $logged_action, '@user' => $logged_name));
+
+  // Move the revision log into the publishing options to make things pretty.
+  if ($form['options']['#access']) {
+    $form['options']['log'] = $form['revision_information']['log'];
+    $form['options']['log']['#title'] = t('Moderation notes');
+
+    // Unset the old placement of the Revision log.
+    unset($form['revision_information']['log']);
+
+    // The revision information section should now be empty.
+    $form['revision_information']['#access'] = FALSE;
+  }
+
+  // Users can not choose to publish content; content can only be published by
+  // setting the content's moderation state to "Published".
   $form['options']['status']['#access'] = FALSE;
   $form['actions']['submit']['#submit'][] = 'workbench_moderation_node_form_submit';
   workbench_moderation_messages('edit', $form['#node']);
