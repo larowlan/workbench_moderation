@@ -10,7 +10,7 @@ class WorkbenchModerationTestCase extends DrupalWebTestCase {
   protected $moderator_user;
 
   function setUp() {
-    parent::setUp('workbench_moderation', 'workbench');
+    parent::setUp(array('workbench_moderation', 'workbench'));
 
     // Create a new content type and enable moderation on it.
     $type = $this->drupalCreateContentType();
