@@ -21,7 +21,6 @@ function workbench_moderation_menu() {
     'type' => MENU_LOCAL_TASK,
     'page callback' => 'workbench_moderation_node_history_view',
     'page arguments' => array(1),
-    'theme callback' => '_node_custom_theme',
     'access callback' => '_workbench_moderation_access',
     'access arguments' => array('view history', 1),
     'file' => 'workbench_moderation.node.inc'
@@ -35,7 +34,6 @@ function workbench_moderation_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('workbench_moderation_node_unpublish_form', 1),
     'load arguments' => array(3),
-    'theme callback' => '_node_custom_theme',
     'access callback' => '_workbench_moderation_access',
     'access arguments' => array('unpublish', 1),
     'file' => 'workbench_moderation.node.inc'
