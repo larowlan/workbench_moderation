@@ -190,7 +190,9 @@ function workbench_moderation_node_history_view($node) {
         drupal_get_path('module', 'workbench_moderation') . '/css/workbench_moderation.css',
       ),
     ),
-    '#markup' => theme('table', array('header' => $header, 'rows' => $rows)),
+    '#theme' => 'table',
+    '#header' => $header,
+    '#rows' => $rows,
   );
 }
 
