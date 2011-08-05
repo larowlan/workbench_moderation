@@ -1,0 +1,71 @@
+From 8d0038ef74c1e44c157e593372f2c76e60b6179e Mon Sep 17 00:00:00 2001
+From: Dan Lobelle <dan+git@muriqui.net>
+Date: Wed, 27 Apr 2011 10:43:01 -0400
+Subject: [PATCH] Issue #1128746: Fixed access callback to work with revision action links.
+
+---
+ workbench_moderation.module |   24 ++++++++++++++++++------
+ 1 files changed, 18 insertions(+), 6 deletions(-)
+
+diff --git a/workbench_moderation.module b/workbench_moderation.module
+index eb3f7c7..30914c4 100644
+--- a/workbench_moderation.module
++++ b/workbench_moderation.module
+@@ -128,8 +128,9 @@ function workbench_moderation_menu_alter(&$items) {
+   $items['node/%node/revisions']['page callback'] = 'workbench_moderation_node_revisions_redirect';
+   $items['node/%node/revisions']['page arguments'] = array(1);
+ 
+-  // For revert operations, use our own access check.
+-  $items['node/%node/revisions/%/revert']['access callback'] = '_workbench_moderation_revert_access';
++  // For revert and delete operations, use our own access check.
++  $items['node/%node/revisions/%/revert']['access callback'] = '_workbench_moderation_revision_access';
++  $items['node/%node/revisions/%/delete']['access callback'] = '_workbench_moderation_revision_access';
+ 
+   // Provide a container administration menu item, if one doesn't already exist.
+   if (!isset($items['admin/config/workbench'])) {
+@@ -414,27 +415,38 @@ function _workbench_moderation_access($op, $node) {
+ }
+ 
+ /**
+- * Wrapper function for the 'revert' operation of _node_revision_access().
++ * Wrapper for the 'revert' and 'delete' operations of _node_revision_access().
+  *
+  * Drupal core's "current revision" of a node is the version in {node}; for
+  * Workbench Moderation, latest revision in {node_revision} is the current
+  * revision. For nodes with a published revision, Workbench Moderation keeps
+  * that revision in {node}, whether or not it is the current revision.
+  */
+-function _workbench_moderation_revert_access($node, $op = 'revert') {
++function _workbench_moderation_revision_access($node, $op) {
+   // Normal behavior for unmoderated nodes.
+   if (!workbench_moderation_node_type_moderated($node->type)) {
+     return _node_revision_access($node, $op);
+   }
+ 
+-  // Prevent reverting to the current revision.
++  // Prevent reverting to or deleting the current revision.
+   if ($node->workbench_moderation['current']->vid == $node->workbench_moderation['my_revision']->vid) {
+     return FALSE;
+   }
+ 
+   // Temporarily give the node an impossible revision.
++  // _node_revision_access() keeps access check results in a static variable
++  // indexed by revision only, not by op. Thus, subsequent checks on the same
++  // vid for different ops yield the same result, regardless of permissions.
++  // Setting a fake vid here allows us to store different static results per op.
+   $tmp = $node->vid;
+-  $node->vid = -1;
++  switch ($op) {
++    case 'update':
++      $node->vid = -1;
++      break;
++    case 'delete':
++      $node->vid = -2;
++      break;
++  }
+ 
+   // Check access.
+   $access = _node_revision_access($node, $op);
+-- 
+1.7.3.5
+
