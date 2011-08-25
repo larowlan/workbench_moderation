@@ -9,8 +9,9 @@ class WorkbenchModerationTestCase extends DrupalWebTestCase {
   protected $content_type;
   protected $moderator_user;
 
-  function setUp() {
-    parent::setUp(array('workbench_moderation', 'workbench'));
+  function setUp($modules = array()) {
+    $modules = array_merge($modules, array('workbench_moderation'));
+    parent::setUp($modules);
 
     // Create a new content type and enable moderation on it.
     $type = $this->drupalCreateContentType();
@@ -52,8 +53,8 @@ class WorkbenchModerationModerateTabTestCase extends WorkbenchModerationTestCase
     );
   }
 
-  function setUp() {
-    parent::setUp();
+  function setUp($modules = array()) {
+    parent::setUp($modules);
     $this->drupalLogin($this->moderator_user);
   }
 
@@ -111,15 +112,15 @@ class WorkbenchModerationDraftTabTestCase extends WorkbenchModerationTestCase {
       'name' => 'Draft tab',
       'description' => 'Test access to the "Draft" tab and publishing from the mini moderation form on the draft tab.',
       'group' => 'Workbench Moderation',
+      'dependencies' => array(
+        'workbench', // Workbench is required for the mini moderation form
+      ),
     );
   }
 
-  function setUp() {
-    parent::setUp();
-
-    // Workbench is now required for the mini moderation form.
-    module_enable(array('workbench'));
-
+  function setUp($modules = array()) {
+    $modules = array_merge($modules, array('workbench'));
+    parent::setUp($modules);
     $this->drupalLogin($this->moderator_user);
   }
 
@@ -182,8 +183,8 @@ class WorkbenchModerationPublishFromNodeFormTestCase extends WorkbenchModeration
     );
   }
 
-  function setUp() {
-    parent::setUp();
+  function setUp($modules = array()) {
+    parent::setUp($modules);
     $this->drupalLogin($this->admin_user);
   }
 
@@ -222,8 +223,8 @@ class WorkbenchModerationUnpublishTestCase extends WorkbenchModerationTestCase {
     );
   }
 
-  function setUp() {
-    parent::setUp();
+  function setUp($modules = array()) {
+    parent::setUp($modules);
     $this->drupalLogin($this->admin_user);
   }
 
