@@ -6,9 +6,10 @@ core = 7.x
 configure = admin/config/workbench/moderation
 
 files[] = workbench_moderation.module
+files[] = includes/workbench_moderation_handler_field_history_link.inc
+files[] = includes/workbench_moderation_handler_field_links.inc
 files[] = includes/workbench_moderation_handler_field_state.inc
 files[] = includes/workbench_moderation_handler_filter_state.inc
-files[] = includes/workbench_moderation_handler_field_links.inc
 files[] = includes/workbench_moderation_handler_filter_moderated_type.inc
 files[] = includes/workbench_moderation_handler_filter_user_can_moderate.inc
 files[] = tests/workbench_moderation.test

@@ -185,7 +185,7 @@ function workbench_moderation_views_data() {
     ),
   );
 
-  // Declare a virtual field on the {node} table.
+  // Declare virtual fields on the {node} table.
   $data['node']['workbench_moderation_moderated_type'] = array(
     'group' => t('Workbench Moderation'),
     'title' => t('Type is moderated'),
@@ -195,6 +195,17 @@ function workbench_moderation_views_data() {
       'handler' => 'workbench_moderation_handler_filter_moderated_type',
       'label' => t('Type is moderated'),
       'type' => 'yes-no',
+    ),
+  );
+  $data['node']['workbench_moderation_history_link'] = array(
+    'group' => t('Workbench Moderation'),
+    'title' => t('Moderation History'),
+    'help' => t('A link to the Moderation History page of the node'),
+    'real field' => 'nid',
+    'field' => array(
+      'title' => t('Moderation History Link'),
+      'handler' => 'workbench_moderation_handler_field_history_link',
+      'click sortable' => FALSE,
     ),
   );
 
