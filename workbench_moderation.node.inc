@@ -145,7 +145,7 @@ function workbench_moderation_node_history_view($node) {
     }
     elseif ($revision->vid == $node->workbench_moderation['current']->vid) {
       $node_current = workbench_moderation_node_current_load($node);
-      $row['data']['moderation'] = '<div class="moderation-state"><strong>' . t('This is the current revision. The current state is %state.', array('%state' => $node->workbench_moderation['current']->state)) . '</strong></div>';
+      $row['data']['moderation'] = '<div class="moderation-state"><strong>' . t('This is the current revision. The current state is %state.', array('%state' => workbench_moderation_state_label($node->workbench_moderation['current']->state))) . '</strong></div>';
       $moderate_form = drupal_get_form('workbench_moderation_moderate_form', $node_current);
       $row['data']['moderation'] .= '<div class="moderation-actions">' . t('Moderate') . ': ' . drupal_render($moderate_form) . '</div>';
     }
@@ -157,8 +157,8 @@ function workbench_moderation_node_history_view($node) {
       if ($moderation->from_state) {
         $items[] = t('From @from_state --> @to_state on %date by !user',
           array(
-            '@from_state' => $moderation->from_state,
-            '@to_state' => $moderation->state,
+            '@from_state' => workbench_moderation_state_label($moderation->from_state),
+            '@to_state' => workbench_moderation_state_label($moderation->state),
             '%date' => format_date($moderation->stamp, 'short'),
             '!user' => theme('username', array('account' => $moderation)),
           )
@@ -167,8 +167,8 @@ function workbench_moderation_node_history_view($node) {
       else {
         $items[] = t('Created as @to_state on %date by !user',
           array(
-            '@from_state' => $moderation->from_state,
-            '@to_state' => $moderation->state,
+            '@from_state' => workbench_moderation_state_label($moderation->from_state),
+            '@to_state' => workbench_moderation_state_label($moderation->state),
             '%date' => format_date($moderation->stamp, 'short'),
             '!user' => theme('username', array('account' => $moderation)),
           )
@@ -218,7 +218,7 @@ function workbench_moderation_node_unpublish_form($form, &$form_state, $node) {
     '#type' => 'value',
   );
   $form['message'] = array(
-    '#markup' =>  '<p>' . t('Are you sure that you want to unpublish the live revision of this content? The current live revision will be set to moderation state %state.', array('%state' => workbench_moderation_state_none())) . '</p>',
+    '#markup' =>  '<p>' . t('Are you sure that you want to unpublish the live revision of this content? The current live revision will be set to moderation state %state.', array('%state' => workbench_moderation_state_label(workbench_moderation_state_none()))) . '</p>',
   );
   return confirm_form($form, t('Unpublish %title?', array('%title' => $node->title)), "node/{$node->nid}/moderation");
 }

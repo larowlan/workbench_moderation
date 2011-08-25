@@ -342,13 +342,14 @@ function workbench_moderation_permission() {
   // Per-node-type, per-transition permissions. Used by workbench_moderation_state_allowed().
   $node_types = workbench_moderation_moderate_node_types();
   $transitions = workbench_moderation_transitions();
-  foreach ($transitions as $t) {
-    $from_state = check_plain($t->from_name);
-    $to_state = check_plain($t->to_name);
+
+  foreach ($transitions as $transition) {
+    $from_state = $transition->from_name;
+    $to_state = $transition->to_name;
 
     // Always set a permission to perform all moderation states.
     $permissions["moderate content from $from_state to $to_state"] = array(
-      'title' => t('Moderate all content from !from_state to !to_state', array('!from_state' => $from_state, '!to_state' => $to_state)),
+      'title' => t('Moderate all content from @from_state to @to_state', array('@from_state' => workbench_moderation_state_label($from_state), '@to_state' => workbench_moderation_state_label($to_state))),
     );
     // Per-node type permissions are very complex, and should only be used if
     // absolutely needed. For right now, this is hardcoded to OFF. To enable it,
@@ -357,7 +358,7 @@ function workbench_moderation_permission() {
     if (variable_get('workbench_moderation_per_node_type', FALSE)) {
       foreach ($node_types as $node_type) {
         $permissions["moderate $node_type state from $from_state to $to_state"] = array(
-          'title' => t('Moderate @node_type state from !from_state to !to_state', array('@node_type' => node_type_get_name($node_type), '!from_state' => $from_state, '!to_state' => $to_state)),
+          'title' => t('Moderate @node_type state from @from_state to @to_state', array('@node_type' => node_type_get_name($node_type), '@from_state' => workbench_moderation_state_label($from_state), '@to_state' => workbench_moderation_state_label($to_state))),
         );
       }
     }
@@ -526,8 +527,8 @@ function workbench_moderation_help($path, $arg) {
     case 'admin/config/workbench/moderation/transitions':
       return '<p>' . t("The Workbench Moderation module keeeps track of when a node moves from one state to
         another. By default, nodes begin in the %draft state and end in the %published state. The transitions
-        on this page control how nodes move from state to state.", array('%draft' => workbench_moderation_state_none(),
-        '%published' => workbench_moderation_state_published())) . ' ' . l(t('Permission to perform these transitions
+        on this page control how nodes move from state to state.", array('%draft' => workbench_moderation_state_label(workbench_moderation_state_none()),
+        '%published' => workbench_moderation_state_label(workbench_moderation_state_published()))) . ' ' . l(t('Permission to perform these transitions
         is controlled on a role-by-role basis.'), 'admin/people/permissions', array('fragment' => 'module-workbench_moderation')) . '</p>';
 
     case 'admin/config/workbench/moderation/check-permissions':
@@ -690,10 +691,7 @@ function workbench_moderation_node_delete($node) {
  */
 function workbench_moderation_form_node_type_form_alter(&$form, $form_state) {
   // Get a list of moderation states.
-  $options = array();
-  foreach (workbench_moderation_states() as $key => $state) {
-    $options[$key] = check_plain($key . ': ' . $state->description);
-  }
+  $options = workbench_moderation_state_labels();
 
   // Disable the 'revision' checkbox when the 'moderation' checkbox is checked, so that moderation
   // can not be enabled unless revisions are enabled.
@@ -769,7 +767,7 @@ function workbench_moderation_form_alter(&$form, $form_state, $form_id) {
   // Get all the states *this* user can access. If states is false, this user
   // can not change the moderation state
   if ($states = workbench_moderation_states_next($moderation_state, $user, $form['type']['#value'])) {
-    $current = array($moderation_state => t('Current: !state', array('!state' => $moderation_state)));
+    $current = array($moderation_state => t('Current: @state', array('@state' => workbench_moderation_state_label($moderation_state))));
     $states = array_merge($current, $states);
     $form['options']['workbench_moderation_state_new'] = array(
       '#title' => t('Moderation state'),
@@ -854,7 +852,7 @@ function workbench_moderation_node_edit_page_override($node) {
  * @TODO: make this configurable.
  */
 function workbench_moderation_state_published() {
-  return 'Published';
+  return 'published';
 }
 
 /**
@@ -863,7 +861,7 @@ function workbench_moderation_state_published() {
  * @TODO: make this configurable.
  */
 function workbench_moderation_state_none() {
-  return 'Draft';
+  return 'draft';
 }
 
 /**
@@ -1164,16 +1162,65 @@ function workbench_moderation_states() {
   static $states;
   if (!isset($states)) {
     $states = db_select('workbench_moderation_states', 'states')
-      ->fields('states', array('name', 'description', 'weight'))
+      ->fields('states', array('name', 'label', 'description', 'weight'))
       ->orderBy('states.weight', 'ASC')
       ->execute()
       ->fetchAllAssoc('name');
   }
+
   return $states;
 }
 
 /**
- * Saves a new or existing moderation state.
+ * Generate an array of moderation states suitable for use as Form API #options.
+ *
+ * @return
+ *   An array of states with machine names as keys and labels as values.
+ */
+function workbench_moderation_state_labels() {
+  $labels = &drupal_static(__FUNCTION__);
+
+  if (!isset($labels)) {
+    $labels = array();
+    foreach (workbench_moderation_states() as $machine_name => $state) {
+      $labels[$machine_name] = $state->label;
+    }
+  }
+
+  return $labels;
+}
+
+/**
+ * Get the label for a state based on its machine name.
+ *
+ * @param type $machine_name
+ *   The machine name of the state.
+ * @return
+ *   An unsanitized label or an empty string if the state does not exist.
+ */
+function workbench_moderation_state_label($machine_name) {
+  $labels = workbench_moderation_state_labels();
+  return isset($labels[$machine_name]) ? $labels[$machine_name] : '';
+}
+
+/**
+ * Get information about a single moderation state.
+ *
+ * @param type $machine_name
+ *   The machine name of the state.
+ * @return
+ *   An object of information about the state or FALSE if the state does not exist.
+ */
+function workbench_moderation_state_load($machine_name) {
+  $states = workbench_moderation_states();
+  if (isset($states[$machine_name])) {
+    return $states[$machine_name];
+  }
+  return FALSE;
+}
+
+/**
+ * Save a new or existing moderation state.
  *
  * Moderation state names must be unique, so saving a state object with a
  * non-unique name updates the existing state.
@@ -1191,7 +1238,7 @@ function workbench_moderation_state_save($state) {
 }
 
 /**
- * Deletes a moderation state.
+ * Delete a moderation state.
  *
  * This function also deletes any transitions that reference the deleted
  * moderation state.
@@ -1213,7 +1260,7 @@ function workbench_moderation_state_delete($state) {
 }
 
 /**
- * Returns a list of all moderation state transitions.
+ * Get a list of all moderation state transitions.
  *
  * @return
  *   An array of transition objects, each with from_name and to_name properties
@@ -1299,25 +1346,27 @@ function workbench_moderation_states_next($current_state, $account, $node_type) 
 
   if (user_access('bypass workbench moderation', $account)) {
     // Some functions expect an array of $state => $state pairs.
-    $states = drupal_map_assoc(array_keys(workbench_moderation_states()));
+    $states = workbench_moderation_state_labels();
     unset($states[$current_state]);
     return $states;
   }
   else {
     // Get a list of possible transitions.
-    $states = db_select('workbench_moderation_transitions', 'transitions')
+    $select = db_select('workbench_moderation_transitions', 'transitions')
       ->condition('transitions.from_name', $current_state)
       ->fields('transitions', array('to_name'))
-      ->execute()
-      ->fetchAllKeyed(0, 0);
+      ->fields('states', array('label'));
+    $select->join('workbench_moderation_states', 'states', 'transitions.to_name = states.name');
+
+    $states = $select->execute()->fetchAllKeyed();
 
     // Checks whether the user has permission to make each transition. The
     // 'bypass workbench moderation' permission is accounted for in
     // workbench_moderation_state_allowed().
     if ($states) {
-      foreach ($states as $state) {
-        if (!workbench_moderation_state_allowed($account, $current_state, $state, $node_type)) {
-          unset($states[$state]);
+      foreach ($states as $machine_name => $label) {
+        if (!workbench_moderation_state_allowed($account, $current_state, $machine_name, $node_type)) {
+          unset($states[$machine_name]);
         }
       }
       return $states;
@@ -1498,7 +1547,7 @@ function workbench_moderation_get_moderation_links($node, $url_options = array()
       && $next_states = workbench_moderation_states_next($my_revision->state, $user, $node->type)) {
     foreach ($next_states as $state => $label) {
       $links[] = array_merge($url_options, array(
-        'title' => $state,
+        'title' => workbench_moderation_state_label($state),
         'href' => "node/{$node->nid}/moderation/{$node->vid}/change-state/{$state}",
       ));
     }
@@ -1633,7 +1682,7 @@ function workbench_moderation_messages($context, $node = NULL) {
   if ($context == 'view') {
     $info_block_messages[] = array(
       'label' => t('Revision state'),
-      'message' => check_plain($state['my_revision']->state),
+      'message' => check_plain(workbench_moderation_state_label($state['my_revision']->state)),
     );
     $info_block_messages[] = array(
       'label' => t('Current draft'),

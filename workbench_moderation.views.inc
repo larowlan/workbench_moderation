@@ -50,7 +50,7 @@ function workbench_moderation_views_data() {
       'handler' => 'workbench_moderation_handler_filter_state',
     ),
     'field' => array(
-      'handler' => 'views_handler_field',
+      'handler' => 'workbench_moderation_handler_field_state',
       'click sortable' => TRUE,
     ),
     'sort' => array(
@@ -58,6 +58,8 @@ function workbench_moderation_views_data() {
     ),
     'argument' => array(
       'handler' => 'views_handler_argument_string',
+      'name table' => 'workbench_moderation_states',
+      'name field' => 'label',
     ),
   );
   $data['workbench_moderation_node_history']['from_state'] = array(
@@ -75,6 +77,8 @@ function workbench_moderation_views_data() {
     ),
     'argument' => array(
       'handler' => 'views_handler_argument_string',
+      'name table' => 'workbench_moderation_states',
+      'name field' => 'label',
     ),
   );
   $data['workbench_moderation_node_history']['uid'] = array(
@@ -147,6 +151,15 @@ function workbench_moderation_views_data() {
       'title' => t('User Can Moderate'),
       'handler' => 'workbench_moderation_handler_filter_user_can_moderate',
       'label' => t('Can moderate'),
+    ),
+  );
+
+  $data['workbench_moderation_states']['table']['group'] = t('Workbench Moderation');
+  $data['workbench_moderation_states']['table']['join'] = array(
+    // Add a join for labeling the 'state' and 'from_state' arguments on workbench_moderation_node_history.
+    'workbench_moderation_node_history' => array(
+      'left_field' => 'state',
+      'field' => 'name',
     ),
   );
 
