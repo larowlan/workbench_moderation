@@ -61,7 +61,7 @@ function workbench_moderation_admin_states_form($form, &$form_state) {
     '#type' => 'textfield',
     '#maxlength' => 255,
     '#title' => '&nbsp;',
-    '#description' => 'Enter a description of the new state.'
+    '#description' => t('Enter a description of the new state.')
   );
   $new_state['weight'] = array(
     '#type' => 'weight',
