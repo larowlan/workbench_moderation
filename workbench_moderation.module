@@ -1334,14 +1334,14 @@ function workbench_moderation_transition_delete($transition) {
  *   If the user may moderate a change, return an array of possible state
  *   changes. Otherwise, return FALSE.
  */
-function workbench_moderation_states_next($current_state, $account, $node_type) {
+function workbench_moderation_states_next($current_state, $account = NULL, $node_type) {
   // Make sure we have a current state.
   if (!$current_state) {
     $current_state = workbench_moderation_state_none();
   }
 
-  if (!$account) {
-    $account = $user;
+  if (empty($account)) {
+    $account = $GLOBALS['user'];
   }
 
   if (user_access('bypass workbench moderation', $account)) {
@@ -1517,6 +1517,10 @@ function workbench_moderation_store($node) {
  *   The new moderation state requested.
  */
 function workbench_moderation_moderate_callback($node, $state) {
+  if (!isset($_GET['token']) || !drupal_valid_token($_GET['token'], "{$node->nid}:{$node->vid}:$state")) {
+    return MENU_ACCESS_DENIED;
+  }
+
   workbench_moderation_moderate($node, $state);
   drupal_goto(isset($_GET['destination']) ? $_GET['destination'] : 'node/' . $node->nid . '/moderation');
 }
@@ -1533,8 +1537,6 @@ function workbench_moderation_moderate_callback($node, $state) {
  *   A list of links to display with the revision.
  */
 function workbench_moderation_get_moderation_links($node, $url_options = array()) {
-  global $user;
-
   // Make sure that this node type is moderated.
   if (!workbench_moderation_node_type_moderated($node->type)) {
     return;
@@ -1544,12 +1546,14 @@ function workbench_moderation_get_moderation_links($node, $url_options = array()
   $links = array();
   $my_revision = $node->workbench_moderation['my_revision'];
   if ($my_revision->vid == $node->workbench_moderation['current']->vid
-      && $next_states = workbench_moderation_states_next($my_revision->state, $user, $node->type)) {
+      && $next_states = workbench_moderation_states_next($my_revision->state, NULL, $node->type)) {
     foreach ($next_states as $state => $label) {
-      $links[] = array_merge($url_options, array(
+      $link = array_merge($url_options, array(
         'title' => workbench_moderation_state_label($state),
         'href' => "node/{$node->nid}/moderation/{$node->vid}/change-state/{$state}",
       ));
+      $link['query']['token'] = drupal_get_token("{$node->nid}:{$node->vid}:{$state}");
+      $links[] = $link;
     }
   }
 

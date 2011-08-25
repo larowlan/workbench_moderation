@@ -58,6 +58,18 @@ class WorkbenchModerationModerateTabTestCase extends WorkbenchModerationTestCase
     $this->drupalLogin($this->moderator_user);
   }
 
+  /**
+   * Override DrupalWebTestCase::drupalGetToken() as it does not return the
+   * correct token for the currently logged-in testing user.
+   */
+  protected function drupalGetToken($value = '') {
+    $session_id = $this->session_id;
+    if (empty($session_id) && !empty($this->loggedInUser)) {
+      $session_id = db_query("SELECT sid FROM {sessions} WHERE uid = :uid ORDER BY timestamp DESC", array(':uid' => $this->loggedInUser->uid))->fetchField();
+    }
+    return drupal_hmac_base64($value, $session_id . drupal_get_private_key() . drupal_get_hash_salt());
+  }
+
   function testModerateTab() {
     $is_moderated = workbench_moderation_node_type_moderated($this->content_type);
     $this->assertTrue($is_moderated, t('The content type is moderated.'));
@@ -80,6 +92,18 @@ class WorkbenchModerationModerateTabTestCase extends WorkbenchModerationTestCase
 
     // Make sure the "Moderate" tab is accessible.
     $this->drupalGet("node/{$node->nid}/moderation");
+
+    // Attempt to change the moderation state without a token in the link.
+    $this->drupalGet("node/{$node->nid}/moderation/{$node->vid}/change-state/needs_review");
+    $this->assertResponse(403);
+
+    // Run the same state change with a valid token, which should succeed.
+    $this->drupalGet("node/{$node->nid}/moderation/{$node->vid}/change-state/needs_review", array(
+      'query' => array('token' => $this->drupalGetToken("{$node->nid}:{$node->vid}:needs_review"))
+    ));
+    $this->assertResponse(200);
+    $node = node_load($node->nid, NULL, TRUE);
+    $this->assertEqual($node->workbench_moderation['current']->state, 'needs_review', 'Node state changed to Needs Review via callback.');
 
     // Publish the node via the moderation form.
     $moderate = array('state' => workbench_moderation_state_published());
