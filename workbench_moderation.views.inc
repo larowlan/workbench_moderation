@@ -161,6 +161,28 @@ function workbench_moderation_views_data() {
       'left_field' => 'state',
       'field' => 'name',
     ),
+    'node' => array(
+      'left_table' => 'workbench_moderation_node_history',
+      'left_field' => 'state',
+      'field' => 'name',
+    ),
+    'node_revision' => array(
+      'left_table' => 'workbench_moderation_node_history',
+      'left_field' => 'state',
+      'field' => 'name',
+    ),
+  );
+  $data['workbench_moderation_states']['description'] = array(
+    'title' => t('Moderation state description'),
+    'field' => array(
+      'handler' => 'views_handler_field',
+    ),
+  );
+  $data['workbench_moderation_states']['weight'] = array(
+    'title' => t('Moderation state order'),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
   );
 
   // Declare a virtual field on the {node} table.
