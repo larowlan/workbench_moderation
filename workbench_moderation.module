@@ -669,7 +669,7 @@ function workbench_moderation_node_load($nodes, $types) {
  */
 function workbench_moderation_node_view($node, $view_mode = 'full') {
   // Show moderation state messages if we're on a node page.
-  if (node_is_page($node) && $view_mode = 'full' && empty($node->in_preview)) {
+  if (node_is_page($node) && $view_mode == 'full' && empty($node->in_preview)) {
     workbench_moderation_messages('view', $node);
   }
 }
