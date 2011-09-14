@@ -733,17 +733,15 @@ function workbench_moderation_node_type_form_validate($from, &$form_state) {
 }
 
 /**
- * Implements hook_form_alter().
+ * Implements hook_form_BASE_FORM_ID_alter().
  *
  * Forcing new reversion and publishing.
- *
- * @TODO: Use the node_forms alter instead?
  */
-function workbench_moderation_form_alter(&$form, $form_state, $form_id) {
+function workbench_moderation_form_node_form_alter(&$form, $form_state) {
   global $user;
 
   // This must be a node form and a type that has moderation enabled
-  if (!(isset($form['#node_edit_form']) && workbench_moderation_node_type_moderated($form['type']['#value']))) {
+  if (!workbench_moderation_node_type_moderated($form['type']['#value'])) {
     return;
   }
   // Set a moderation state even if there is not one defined
