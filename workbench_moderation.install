@@ -529,3 +529,43 @@ function workbench_moderation_update_7006() {
 
   return t("Added column to store moderation state labels.");
 }
+
+/**
+ * Replace the "Unpublish the current live revision" permission with a transition.
+ */
+function workbench_moderation_update_7007() {
+  // Normally we would use workbench_moderation_states(), but we can't guarantee that workbench_moderation is enabled.
+  $states = db_select('workbench_moderation_states', 'states')
+    ->fields('states', array('name', 'label', 'description', 'weight'))
+    ->orderBy('states.weight', 'ASC')
+    ->execute()
+    ->fetchAllAssoc('name');
+
+  // Add an unpublish transition from published to draft. The 'published' state
+  // currently can't be deleted, but the draft state may or may not be present.
+  $transition = (object) array(
+    'from_name' => 'published',
+    'to_name' => (isset($states['draft']) ? 'draft' : key($states)),
+  );
+  // Normally we would use workbench_moderation_transition_save(), but we can't guarantee that workbench_moderation is enabled.
+  db_merge('workbench_moderation_transitions')
+    ->key(array('from_name' => $transition->from_name, 'to_name' => $transition->to_name))
+    ->fields((array) $transition)
+    ->execute();
+
+  // Change permission grants from the deprecated unpublish permission to the
+  // new transition permission.
+  $roles = user_roles(FALSE, 'unpublish live revision');
+  $permissions = array(
+    'unpublish live revision' => FALSE,
+    "moderate content from {$transition->from_name} to {$transition->to_name}" => TRUE,
+  );
+  foreach ($roles as $rid => $role) {
+    user_role_change_permissions($rid, $permissions);
+  }
+
+  return t("Added a new transition from %from to %to and updated unpublish permissions. Unpublishing content is now controlled by transition permissions, and roles with the 'Bypass moderation restrictions' permission may unpublish content.", array(
+    '%from' => $transition->from_name,
+    '%to' => $transition->to_name,
+  ));
+}

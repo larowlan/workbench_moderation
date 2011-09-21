@@ -266,7 +266,7 @@ class WorkbenchModerationUnpublishTestCase extends WorkbenchModerationTestCase {
     $node = $this->drupalGetNodeByTitle($edit['title']);
 
     // Unpublish the node via the unpublish confirmation form.
-    $this->drupalPost("node/{$node->nid}/moderation/{$node->vid}/unpublish", array(), t('Confirm'));
+    $this->drupalPost("node/{$node->nid}/moderation/{$node->vid}/unpublish", array(), t('Unpublish'));
 
     $unpublished_node = node_load($node->nid, FALSE, TRUE);
     $this->assertFalse($unpublished_node->status, t('The node is not published.'));

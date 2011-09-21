@@ -206,7 +206,6 @@ function workbench_moderation_admin_transitions_form($form, &$form_state) {
     '#title' => t('New transition'),
     '#options' => $options,
   );
-  unset($element['from_name']['#options'][workbench_moderation_state_published()]);
   $element['to_name'] = array(
     '#type' => 'select',
     '#title' => '&nbsp;',
@@ -472,7 +471,6 @@ function workbench_moderation_recommended_permissions($types = array()) {
       "view moderation messages",
       "view moderation history",
       "use workbench_moderation needs review tab",
-      "unpublish live revision",
     ),
   );
 

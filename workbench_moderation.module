@@ -329,9 +329,6 @@ function workbench_moderation_permission() {
   $permissions['view moderation messages'] = array(
     'title' => t('View the moderation messages on a node')
   );
-  $permissions['unpublish live revision'] = array(
-    'title' => t('Unpublish the current live revision'),
-  );
   $permissions['use workbench_moderation my drafts tab'] = array(
     'title' => t('Use "My Drafts" workbench tab')
   );
@@ -390,6 +387,8 @@ function workbench_moderation_node_access($node, $op, $account) {
  *   Boolean TRUE or FALSE.
  */
 function _workbench_moderation_access($op, $node) {
+  global $user;
+
   // If we do not control this node type, deny access.
   if (workbench_moderation_node_type_moderated($node->type) === FALSE) {
     return FALSE;
@@ -404,7 +403,9 @@ function _workbench_moderation_access($op, $node) {
   $access &= node_access('update', $node);
 
   if ($op == 'unpublish') {
-    $access &= (user_access('unpublish live revision') || user_access('bypass workbench moderation'));
+    // workbench_moderation_states_next() checks transition permissions.
+    $next_states = workbench_moderation_states_next(workbench_moderation_state_published(), $user, $node->type);
+    $access &= !empty($next_states);
   }
 
   // Allow other modules to change our rule set.
@@ -620,7 +621,7 @@ function workbench_moderation_node_update($node) {
     $node->workbench_moderation_state_current = ($node->status ? workbench_moderation_state_published() : workbench_moderation_state_none());
   };
   if (!isset($node->workbench_moderation_state_new)) {
-    $node->workbench_moderation_state_new = variable_get('workbench_moderation_default_state_' . $node->type);
+    $node->workbench_moderation_state_new = variable_get('workbench_moderation_default_state_' . $node->type, workbench_moderation_state_none());
   };
 
   // If this is a new node, give it some information about 'my revision'.
@@ -749,7 +750,7 @@ function workbench_moderation_form_node_form_alter(&$form, $form_state) {
     $moderation_state = $form['#node']->workbench_moderation['current']->state;
   }
   else {
-    $moderation_state = variable_get('workbench_moderation_default_state_' . $form['type']['#value']);
+    $moderation_state = variable_get('workbench_moderation_default_state_' . $form['type']['#value'], workbench_moderation_state_none());
   }
 
   // Store the current moderation state
@@ -1588,7 +1589,7 @@ function workbench_moderation_moderate_form($form, &$form_state, $node, $destina
     $form['state'] = array(
       '#type' => 'select',
       '#options' => $next_states,
-      '#default_value' => $node->workbench_moderation['current']->state,
+      '#default_value' => _workbench_moderation_default_next_state($my_revision->state, $next_states),
     );
     $form['submit'] = array(
       '#type' => 'submit',
@@ -1605,6 +1606,15 @@ function workbench_moderation_moderate_form($form, &$form_state, $node, $destina
   }
 
   return $form;
+}
+
+function _workbench_moderation_default_next_state($current_state, $next_states) {
+  $states = workbench_moderation_states();
+  foreach ($states as $state_name => $state) {
+    if ($state->weight > $states[$current_state]->weight && isset($next_states[$state_name])) {
+      return $state_name;
+    }
+  }
 }
 
 function workbench_moderation_moderate_form_validate($form, &$form_state) {
@@ -1654,6 +1664,7 @@ function workbench_moderation_moderate_form_submit($form, $form_state) {
  *   this variable was not set.
  */
 function workbench_moderation_messages($context, $node = NULL) {
+  global $user;
   if (!user_access('view moderation messages')
       || (!$node && !($node = menu_get_object()))
       || !workbench_moderation_node_type_moderated($node->type)) {
@@ -1705,7 +1716,8 @@ function workbench_moderation_messages($context, $node = NULL) {
     }
 
     // Add an unpublish link.
-    if ($revision_published && user_access('unpublish live revision') && $link = workbench_moderation_access_link(t('Unpublish this revision'), "node/{$node->nid}/moderation/{$node->vid}/unpublish")) {
+    $next_states = workbench_moderation_states_next(workbench_moderation_state_published(), $user, $node->type);
+    if ($revision_published && !empty($next_states) && $link = workbench_moderation_access_link(t('Unpublish this revision'), "node/{$node->nid}/moderation/{$node->vid}/unpublish")) {
       $info_block_messages[] = array(
         'label' => t('Actions'),
         'message' => $link,
