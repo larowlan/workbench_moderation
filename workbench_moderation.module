@@ -126,6 +126,12 @@ function workbench_moderation_menu_alter(&$items) {
   $items['node/%node/revisions']['page callback'] = 'workbench_moderation_node_revisions_redirect';
   $items['node/%node/revisions']['page arguments'] = array(1);
 
+  // Override the node revision view callback.
+ $items['node/%node/revisions/%/view']['page callback'] = 'workbench_moderation_node_view_revision';
+ $items['node/%node/revisions/%/view']['file path'] = drupal_get_path('module', 'workbench_moderation');
+ $items['node/%node/revisions/%/view']['file'] = 'workbench_moderation.node.inc';
+
+
   // For revert and delete operations, use our own access check.
   $items['node/%node/revisions/%/revert']['access callback'] = '_workbench_moderation_revision_access';
   $items['node/%node/revisions/%/delete']['access callback'] = '_workbench_moderation_revision_access';
@@ -1851,4 +1857,24 @@ function workbench_moderation_workbench_block() {
   }
 
   return $output;
+}
+
+/**
+ * Implements hook_ctools_plugin_directory() to let the system know
+ * where our task and task_handler plugins are.
+ */
+function workbench_moderation_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'page_manager') {
+    return 'plugins/page_manager/' . $plugin_type;
+  }
+}
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function workbench_moderation_ctools_plugin_api($module, $api) {
+
+  if ($module == 'page_manager' && $api == 'pages_default') {
+    return array('version' => 1);
+  }
 }
