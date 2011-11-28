@@ -532,7 +532,7 @@ function workbench_moderation_help($path, $arg) {
         'Legal Review,' 'PR Review,' or any or state your site may need.") . '</p>';
 
     case 'admin/config/workbench/moderation/transitions':
-      return '<p>' . t("The Workbench Moderation module keeeps track of when a node moves from one state to
+      return '<p>' . t("The Workbench Moderation module keeps track of when a node moves from one state to
         another. By default, nodes begin in the %draft state and end in the %published state. The transitions
         on this page control how nodes move from state to state.", array('%draft' => workbench_moderation_state_label(workbench_moderation_state_none()),
         '%published' => workbench_moderation_state_label(workbench_moderation_state_published()))) . ' ' . l(t('Permission to perform these transitions
