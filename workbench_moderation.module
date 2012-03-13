@@ -1659,6 +1659,8 @@ function workbench_moderation_moderate_form($form, &$form_state, $node, $destina
     $form['#attached']['css'][] = drupal_get_path('module', 'workbench_moderation') . '/css/workbench_moderation.css';
     $form['state'] = array(
       '#type' => 'select',
+      '#title' => t('Moderation state'),
+      '#title_display' => 'invisible',
       '#options' => $next_states,
       '#default_value' => _workbench_moderation_default_next_state($my_revision->state, $next_states),
     );
