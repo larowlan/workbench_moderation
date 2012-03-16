@@ -116,6 +116,25 @@ function workbench_moderation_rules_event_info() {
 function workbench_moderation_rules_action_info() {
   $items = array();
 
+  $items['workbench_moderation_set_state_during_save'] = array(
+    'label' => t("Set moderation state during save"),
+    'group' => t("Node"),
+    'base' => 'workbench_moderation_set_state_during_save_rules_action',
+
+    'parameter' => array(
+      'node' => array(
+        'type' => 'node',
+        'label' => t("Content"),
+      ),
+      'moderation_state' => array(
+        'type' => 'text',
+        'label' => t("Workbench moderation state"),
+        'options list' => 'workbench_moderation_state_labels',
+        'restriction' => 'input',
+      ),
+    ),
+  );
+
   $items['workbench_moderation_set_state'] = array(
     'label' => t("Set moderation state"),
     'group' => t("Node"),
@@ -264,6 +283,27 @@ function workbench_moderation_set_state_rules_action($node, $moderation_state, $
   if (is_object($node) && !empty($moderation_state)){
     actions_do('workbench_moderation_set_state_action', $node, array('state' => $moderation_state, 'force_transition' => $force_transition));
   }
+
+  return array('node' => $node);
+}
+
+/**
+ * Action: Set the moderation state on a node object.
+ *
+ * This should only be used in a process where this node object will later be saved.
+ *
+ * $param $node
+ *   A node object
+ *
+ * $param $moderation_state
+ *   The desired moderation state to assign.
+ *
+ * @return
+ *   An array containing the node object stored in the key called 'node'.
+ */
+function workbench_moderation_set_state_during_save_rules_action($node, $moderation_state) {
+
+  $node->workbench_moderation_state_new = $moderation_state;
 
   return array('node' => $node);
 }
