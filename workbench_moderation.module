@@ -839,7 +839,7 @@ function workbench_moderation_form_node_form_alter(&$form, $form_state) {
   if ($states = workbench_moderation_states_next($moderation_state, $user, $form['#node'])) {
     $current = array($moderation_state => t('Current: @state', array('@state' => workbench_moderation_state_label($moderation_state))));
     $states = array_merge($current, $states);
-    $form['options']['workbench_moderation_state_new'] = array(
+    $form['revision_information']['workbench_moderation_state_new'] = array(
       '#title' => t('Moderation state'),
       '#type' => 'select',
       '#options' => $states,
@@ -871,9 +871,11 @@ function workbench_moderation_form_node_form_alter(&$form, $form_state) {
   if ($form['options']['#access']) {
     $form['options']['log'] = $form['revision_information']['log'];
     $form['options']['log']['#title'] = t('Moderation notes');
+    $form['options']['workbench_moderation_state_new'] = $form['revision_information']['workbench_moderation_state_new'];
 
     // Unset the old placement of the Revision log.
     unset($form['revision_information']['log']);
+    unset($form['revision_information']['workbench_moderation_state_new']);
 
     // The revision information section should now be empty.
     $form['revision_information']['#access'] = FALSE;
