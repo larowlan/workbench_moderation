@@ -154,6 +154,7 @@ function workbench_moderation_node_history_view($node) {
     $query->leftJoin('users', 'u', 'm.uid = u.uid');
     $query->condition('m.vid', $revision->vid)
       ->orderBy('m.stamp', 'DESC')
+      ->orderBy('m.hid', 'DESC')
       ->fields('m')
       ->fields('u', array('name'));
 
