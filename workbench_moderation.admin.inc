@@ -405,7 +405,7 @@ function workbench_moderation_admin_check_role_form_submit($form, &$form_state) 
   }
 
   // Note that we don't cover all configurations.
-  drupal_set_message(t('You must check manually that this role has the appropriate transition permissions for your workflow. <a href="@moderation_permission_link">View moderation permissions for this role.</a>', array('@moderation_permissions_link' => url('admin/people/permissions/' . $rid, array('fragment' => 'module-workbench_moderation')))), 'warning');
+  drupal_set_message(t('You must check manually that this role has the appropriate transition permissions for your workflow. <a href="@moderation_permissions_link">View moderation permissions for this role.</a>', array('@moderation_permissions_link' => url('admin/people/permissions/' . $rid, array('fragment' => 'module-workbench_moderation')))), 'warning');
 
   // Repopulate the form with the submitted values.
   $form_state['rebuild'] = TRUE;
