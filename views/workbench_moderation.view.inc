@@ -9,10 +9,10 @@
 
 $view = new view();
 $view->name = 'workbench_moderation';
-$view->description = '';
+$view->description = 'Lists content by moderation state.';
 $view->tag = 'Workbench Moderation';
 $view->base_table = 'node_revision';
-$view->human_name = 'workbench_moderation';
+$view->human_name = 'Workbench Moderation: Content';
 $view->core = 7;
 $view->api_version = '3.0';
 $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
@@ -312,17 +312,29 @@ $handler->display->display_options['filters']['uid_current']['table'] = 'users';
 $handler->display->display_options['filters']['uid_current']['field'] = 'uid_current';
 $handler->display->display_options['filters']['uid_current']['relationship'] = 'uid';
 $handler->display->display_options['filters']['uid_current']['value'] = '1';
+$handler->display->display_options['filters']['uid_current']['group'] = 1;
 /* Filter criterion: Workbench Moderation: Current */
 $handler->display->display_options['filters']['current']['id'] = 'current';
 $handler->display->display_options['filters']['current']['table'] = 'workbench_moderation_node_history';
 $handler->display->display_options['filters']['current']['field'] = 'current';
 $handler->display->display_options['filters']['current']['value'] = '1';
+$handler->display->display_options['filters']['current']['group'] = 1;
+/* Filter criterion: Workbench Moderation: State */
+$handler->display->display_options['filters']['state_1']['id'] = 'state_1';
+$handler->display->display_options['filters']['state_1']['table'] = 'workbench_moderation_node_history';
+$handler->display->display_options['filters']['state_1']['field'] = 'state';
+$handler->display->display_options['filters']['state_1']['operator'] = 'not in';
+$handler->display->display_options['filters']['state_1']['value'] = array(
+  'published' => 'published',
+);
+$handler->display->display_options['filters']['state_1']['group'] = 1;
 /* Filter criterion: Content: Title */
 $handler->display->display_options['filters']['title']['id'] = 'title';
 $handler->display->display_options['filters']['title']['table'] = 'node';
 $handler->display->display_options['filters']['title']['field'] = 'title';
 $handler->display->display_options['filters']['title']['relationship'] = 'nid';
 $handler->display->display_options['filters']['title']['operator'] = 'contains';
+$handler->display->display_options['filters']['title']['group'] = 1;
 $handler->display->display_options['filters']['title']['exposed'] = TRUE;
 $handler->display->display_options['filters']['title']['expose']['operator_id'] = 'title_op';
 $handler->display->display_options['filters']['title']['expose']['label'] = 'Title';
@@ -334,6 +346,7 @@ $handler->display->display_options['filters']['type']['id'] = 'type';
 $handler->display->display_options['filters']['type']['table'] = 'node';
 $handler->display->display_options['filters']['type']['field'] = 'type';
 $handler->display->display_options['filters']['type']['relationship'] = 'nid';
+$handler->display->display_options['filters']['type']['group'] = 1;
 $handler->display->display_options['filters']['type']['exposed'] = TRUE;
 $handler->display->display_options['filters']['type']['expose']['operator_id'] = 'type_op';
 $handler->display->display_options['filters']['type']['expose']['label'] = 'Type';
@@ -348,6 +361,7 @@ $handler->display->display_options['filters']['state']['value'] = array(
   'draft' => 'draft',
   'needs_review' => 'needs_review',
 );
+$handler->display->display_options['filters']['state']['group'] = 1;
 $handler->display->display_options['filters']['state']['exposed'] = TRUE;
 $handler->display->display_options['filters']['state']['expose']['operator_id'] = 'state_op';
 $handler->display->display_options['filters']['state']['expose']['label'] = 'State';
