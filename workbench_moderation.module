@@ -1621,7 +1621,7 @@ function workbench_moderation_get_moderation_links($node, $url_options = array()
       && $next_states = workbench_moderation_states_next($my_revision->state, NULL, $node)) {
     foreach ($next_states as $state => $label) {
       $link = array_merge($url_options, array(
-        'title' => workbench_moderation_state_label($state),
+        'title' => t('Change to %label', array('%label' => workbench_moderation_state_label($state))),
         'href' => "node/{$node->nid}/moderation/{$node->vid}/change-state/{$state}",
       ));
       $link['query']['token'] = drupal_get_token("{$node->nid}:{$node->vid}:{$state}");
@@ -1789,7 +1789,7 @@ function workbench_moderation_messages($context, $node = NULL) {
     if ($revision_current && !$revision_published && _workbench_moderation_access('update', $node) && $moderate_form = drupal_get_form('workbench_moderation_moderate_form', $node, "node/{$node->nid}/current-revision")) {
       if ($moderate_form = drupal_render($moderate_form)) {
         $info_block_messages[] = array(
-          'label' => t('Moderate'),
+          'label' => t('Set moderation state'),
           'message' => $moderate_form,
         );
       }

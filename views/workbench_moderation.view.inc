@@ -145,7 +145,7 @@ $handler->display->display_options['fields']['state']['machine_name'] = 0;
 $handler->display->display_options['fields']['moderation_actions']['id'] = 'moderation_actions';
 $handler->display->display_options['fields']['moderation_actions']['table'] = 'workbench_moderation_node_history';
 $handler->display->display_options['fields']['moderation_actions']['field'] = 'moderation_actions';
-$handler->display->display_options['fields']['moderation_actions']['label'] = 'Moderate';
+$handler->display->display_options['fields']['moderation_actions']['label'] = 'Set moderation state';
 /* Field: Content: Title */
 $handler->display->display_options['fields']['title']['id'] = 'title';
 $handler->display->display_options['fields']['title']['table'] = 'node';
@@ -383,7 +383,7 @@ $translatables['workbench_moderation'] = array(
   t('Moderation History Link'),
   t('Moderation State'),
   t('<div>[state]</div><div>[workbench_moderation_history_link]</div>'),
-  t('Moderate'),
+  t('Set moderation state'),
   t('Title'),
   t('Type'),
   t('Revised by'),
