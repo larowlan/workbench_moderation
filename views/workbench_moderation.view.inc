@@ -22,7 +22,6 @@ $handler = $view->new_display('default', 'Defaults', 'default');
 $handler->display->display_options['title'] = 'Content I\'ve Edited';
 $handler->display->display_options['use_more_always'] = TRUE;
 $handler->display->display_options['use_more_text'] = 'view all';
-$handler->display->display_options['group_by'] = TRUE;
 $handler->display->display_options['access']['type'] = 'perm';
 $handler->display->display_options['access']['perm'] = 'use workbench_moderation my drafts tab';
 $handler->display->display_options['cache']['type'] = 'none';
