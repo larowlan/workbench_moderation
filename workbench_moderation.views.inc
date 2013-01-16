@@ -43,6 +43,18 @@ function workbench_moderation_views_data() {
       'handler' => 'views_handler_argument',
     ),
   );
+
+  $data['workbench_moderation_node_history']['nid'] = array(
+    'title' => t('Node'),
+    'help' => t('The node according to the Workbench Moderation.'),
+    'relationship' => array(
+        'base' => 'node',
+        'field' => 'nid',
+        'handler' => 'views_handler_relationship',
+        'label' => t('Node'),
+    ),
+  );
+
   $data['workbench_moderation_node_history']['state'] = array(
     'title' => t('State'),
     'help' => t('Content moderation state of the node revisision.'),
