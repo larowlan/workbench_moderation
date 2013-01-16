@@ -117,7 +117,7 @@ function workbench_moderation_menu() {
     $items['node/%node/moderation/diff'] = array(
       'type' => MENU_LOCAL_TASK,
       'file path' => drupal_get_path('module', 'diff'),
-      'title' => 'Diff',
+      'title' => 'Compare revisions',
       'page arguments' => array(1),
     );
 
@@ -125,7 +125,7 @@ function workbench_moderation_menu() {
 
 
     $items['node/%node/moderation/diff/list'] = array(
-      'title' => 'Diff',
+      'title' => 'Compare revisions',
       'type' => MENU_DEFAULT_LOCAL_TASK,
       'weight' => -1,
     );
