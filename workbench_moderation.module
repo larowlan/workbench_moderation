@@ -42,7 +42,7 @@ function workbench_moderation_menu() {
   // Change the moderation state of a node.
   // Used in workbench_moderation_get_moderation_links()
   $items["node/%node/moderation/%/change-state/%"] = array(
-    'title' => 'Change Moderation State',
+    'title' => 'Change moderation state',
     'page callback' => 'workbench_moderation_moderate_callback',
     'page arguments' => array(1, 5),
     'load arguments' => array(3),
@@ -101,7 +101,7 @@ function workbench_moderation_menu() {
     'file' => 'workbench_moderation.admin.inc',
   );
   $items['admin/config/workbench/moderation/check-permissions'] = array(
-    'title' => 'Check Permissions',
+    'title' => 'Check permissions',
     'type' => MENU_LOCAL_TASK,
     'page callback' => 'drupal_get_form',
     'page arguments' => array('workbench_moderation_admin_check_role_form'),
@@ -394,10 +394,10 @@ function workbench_moderation_permission() {
     'title' => t('View the moderation messages on a node')
   );
   $permissions['use workbench_moderation my drafts tab'] = array(
-    'title' => t('Use "My Drafts" workbench tab')
+    'title' => t('Use "My drafts" workbench tab')
   );
   $permissions['use workbench_moderation needs review tab'] = array(
-    'title' => t('Use "Needs Review" workbench tab')
+    'title' => t('Use "Needs review" workbench tab')
   );
 
   // Per-node-type, per-transition permissions. Used by workbench_moderation_state_allowed().
@@ -410,7 +410,7 @@ function workbench_moderation_permission() {
 
     // Always set a permission to perform all moderation states.
     $permissions["moderate content from $from_state to $to_state"] = array(
-      'title' => t('Moderate all content from @from_state to @to_state', array('@from_state' => workbench_moderation_state_label($from_state), '@to_state' => workbench_moderation_state_label($to_state))),
+      'title' => t('Moderate all content from %from_state to %to_state', array('%from_state' => workbench_moderation_state_label($from_state), '%to_state' => workbench_moderation_state_label($to_state))),
     );
     // Per-node type permissions are very complex, and should only be used if
     // absolutely needed. For right now, this is hardcoded to OFF. To enable it,
@@ -419,7 +419,7 @@ function workbench_moderation_permission() {
     if (variable_get('workbench_moderation_per_node_type', FALSE)) {
       foreach ($node_types as $node_type) {
         $permissions["moderate $node_type state from $from_state to $to_state"] = array(
-          'title' => t('Moderate @node_type state from @from_state to @to_state', array('@node_type' => node_type_get_name($node_type), '@from_state' => workbench_moderation_state_label($from_state), '@to_state' => workbench_moderation_state_label($to_state))),
+          'title' => t('Moderate %node_type state from %from_state to %to_state', array('%node_type' => node_type_get_name($node_type), '%from_state' => workbench_moderation_state_label($from_state), '%to_state' => workbench_moderation_state_label($to_state))),
         );
       }
     }
@@ -579,28 +579,16 @@ function _workbench_moderation_access_current_draft($node) {
 function workbench_moderation_help($path, $arg) {
   switch ($path) {
     case 'admin/help#workbench_moderation':
-      return '<p>' . t("Enables you to control node display with a moderation
-        workflow. You can have a 'Live revision' for all visitors and pending
-        revisions which need to be approved to become the new 'Live Revision.'") . '</p>';
+      return '<p>' . t("Enables you to control node display with a moderation workflow. You can have a 'Live revision' for all visitors and pending revisions which need to be approved to become the new 'Live revision.'") . '</p>';
 
     case 'admin/config/workbench/moderation':
-      return '<p>' . t("These are the states through which a node passes in order to become published. By
-        default, the Workbench Moderation module provides the states 'Draft,' 'Needs Review,' and 'Published.'
-        On this screen you may create, delete and re-order states. Additional states might include
-        'Legal Review,' 'PR Review,' or any or state your site may need.") . '</p>';
+      return '<p>' . t("These are the states through which a node passes in order to become published. By default, the Workbench Moderation module provides the states 'Draft,' 'Needs review,' and 'Published'. On this screen you may create, delete and re-order states. Additional states might include 'Legal review,' 'PR review', or any or state your site may need.") . '</p>';
 
     case 'admin/config/workbench/moderation/transitions':
-      return '<p>' . t("The Workbench Moderation module keeps track of when a node moves from one state to
-        another. By default, nodes begin in the %draft state and end in the %published state. The transitions
-        on this page control how nodes move from state to state.", array('%draft' => workbench_moderation_state_label(workbench_moderation_state_none()),
-        '%published' => workbench_moderation_state_label(workbench_moderation_state_published()))) . ' ' . l(t('Permission to perform these transitions
-        is controlled on a role-by-role basis.'), 'admin/people/permissions', array('fragment' => 'module-workbench_moderation')) . '</p>';
+      return '<p>' . t('The Workbench Moderation module keeps track of when a node moves from one state to another. By default, nodes begin in the %draft state and end in the %published state. The transitions on this page control how nodes move from state to state. <a href="@permissions">Permission to perform these transitions is controlled on a role-by-role basis</a>.', array('%draft' => workbench_moderation_state_label(workbench_moderation_state_none()), '%published' => workbench_moderation_state_label(workbench_moderation_state_published()), '@permissions' => url('admin/people/permissions', array('fragment' => 'module-workbench_moderation')))) . '</p>';
 
     case 'admin/config/workbench/moderation/check-permissions':
-      return '<p>' . t("In order to participate in the moderation process,
-        Drupal users must be granted several node- and moderation- related
-        permissions. This page can help check whether roles have the correct
-        permissions to author, edit, moderate, and publish moderated content.") . '</p>';
+      return '<p>' . t("In order to participate in the moderation process, Drupal users must be granted several node- and moderation- related permissions. This page can help check whether roles have the correct permissions to author, edit, moderate, and publish moderated content.") . '</p>';
   }
 }
 
@@ -857,8 +845,12 @@ function workbench_moderation_form_node_form_alter(&$form, $form_state) {
 
   // Set a default revision log message.
   $logged_name = (user_is_anonymous() ? variable_get('anonymous', t('Anonymous')) : $user->name);
-  $logged_action = !empty($form['#node']->nid) ? t('Edited') : t('Created');
-  $form['revision_information']['log']['#default_value'] = t('!action by @user.', array('!action' => $logged_action, '@user' => $logged_name));
+  if (!empty($form['#node']->nid)) {
+    $form['revision_information']['log']['#default_value'] = t('Edited by @user.', array('@user' => $logged_name));
+  }
+  else {
+    $form['revision_information']['log']['#default_value'] = t('Created by @user.', array('@user' => $logged_name));
+  }
 
   // Move the revision log into the publishing options to make things pretty.
   if ($form['options']['#access']) {

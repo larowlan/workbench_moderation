@@ -2,8 +2,8 @@
 
 /**
  * @file workbench_moderation.view.inc
- * Default view. Provides two tabs on the Workbench, "My Drafts" and "Needs
- * Review", which list the moderation state for content relevant to the current
+ * Default view. Provides two tabs on the Workbench, "My drafts" and "Needs
+ * review", which list the moderation state for content relevant to the current
  * user.
  */
 
@@ -19,7 +19,7 @@ $view->disabled = FALSE; /* Edit this to true to make a default view disabled in
 
 /* Display: Defaults */
 $handler = $view->new_display('default', 'Defaults', 'default');
-$handler->display->display_options['title'] = 'Content I\'ve Edited';
+$handler->display->display_options['title'] = 'Content I\'ve edited';
 $handler->display->display_options['use_more_always'] = TRUE;
 $handler->display->display_options['use_more_text'] = 'view all';
 $handler->display->display_options['access']['type'] = 'perm';
@@ -131,12 +131,12 @@ $handler->display->display_options['fields']['workbench_moderation_history_link'
 $handler->display->display_options['fields']['workbench_moderation_history_link']['field'] = 'workbench_moderation_history_link';
 $handler->display->display_options['fields']['workbench_moderation_history_link']['exclude'] = TRUE;
 $handler->display->display_options['fields']['workbench_moderation_history_link']['hide_alter_empty'] = FALSE;
-/* Field: Moderation State */
+/* Field: Moderation state */
 $handler->display->display_options['fields']['state']['id'] = 'state';
 $handler->display->display_options['fields']['state']['table'] = 'workbench_moderation_node_history';
 $handler->display->display_options['fields']['state']['field'] = 'state';
-$handler->display->display_options['fields']['state']['ui_name'] = 'Moderation State';
-$handler->display->display_options['fields']['state']['label'] = 'Moderation State';
+$handler->display->display_options['fields']['state']['ui_name'] = 'Moderation state';
+$handler->display->display_options['fields']['state']['label'] = 'Moderation state';
 $handler->display->display_options['fields']['state']['alter']['alter_text'] = TRUE;
 $handler->display->display_options['fields']['state']['alter']['text'] = '<div>[state]</div><div>[workbench_moderation_history_link]</div>';
 $handler->display->display_options['fields']['state']['hide_alter_empty'] = FALSE;
@@ -232,10 +232,10 @@ $handler->display->display_options['filters']['current']['id'] = 'current';
 $handler->display->display_options['filters']['current']['table'] = 'workbench_moderation_node_history';
 $handler->display->display_options['filters']['current']['field'] = 'current';
 
-/* Display: Needs Review Page */
-$handler = $view->new_display('page', 'Needs Review Page', 'needs_review_page');
+/* Display: Needs review page */
+$handler = $view->new_display('page', 'Needs review page', 'needs_review_page');
 $handler->display->display_options['defaults']['title'] = FALSE;
-$handler->display->display_options['title'] = 'Needs Review';
+$handler->display->display_options['title'] = 'Needs review';
 $handler->display->display_options['defaults']['hide_admin_links'] = FALSE;
 $handler->display->display_options['defaults']['access'] = FALSE;
 $handler->display->display_options['access']['type'] = 'perm';
@@ -245,7 +245,7 @@ $handler->display->display_options['defaults']['empty'] = FALSE;
 $handler->display->display_options['empty']['area']['id'] = 'area';
 $handler->display->display_options['empty']['area']['table'] = 'views';
 $handler->display->display_options['empty']['area']['field'] = 'area';
-$handler->display->display_options['empty']['area']['content'] = 'This list displays content in the "Needs Review" state that you can moderate. Currently there is no such content.';
+$handler->display->display_options['empty']['area']['content'] = 'This list displays content in the "Needs review" state that you can moderate. Currently there is no such content.';
 $handler->display->display_options['empty']['area']['format'] = 'plain_text';
 $handler->display->display_options['defaults']['filter_groups'] = FALSE;
 $handler->display->display_options['defaults']['filters'] = FALSE;
@@ -289,13 +289,13 @@ $handler->display->display_options['filters']['type']['expose']['identifier'] = 
 $handler->display->display_options['filters']['type']['expose']['remember'] = TRUE;
 $handler->display->display_options['path'] = 'admin/workbench/needs-review';
 $handler->display->display_options['menu']['type'] = 'tab';
-$handler->display->display_options['menu']['title'] = 'Needs Review';
+$handler->display->display_options['menu']['title'] = 'Needs review';
 $handler->display->display_options['menu']['weight'] = '99';
 
-/* Display: Drafts Page */
-$handler = $view->new_display('page', 'Drafts Page', 'drafts_page');
+/* Display: Drafts page */
+$handler = $view->new_display('page', 'Drafts page', 'drafts_page');
 $handler->display->display_options['defaults']['title'] = FALSE;
-$handler->display->display_options['title'] = 'My Drafts';
+$handler->display->display_options['title'] = 'My drafts';
 $handler->display->display_options['defaults']['hide_admin_links'] = FALSE;
 $handler->display->display_options['defaults']['empty'] = FALSE;
 /* No results behavior: Global: Text area */
@@ -371,11 +371,11 @@ $handler->display->display_options['filters']['state']['expose']['remember'] = T
 $handler->display->display_options['filters']['state']['expose']['reduce'] = TRUE;
 $handler->display->display_options['path'] = 'admin/workbench/drafts';
 $handler->display->display_options['menu']['type'] = 'tab';
-$handler->display->display_options['menu']['title'] = 'My Drafts';
+$handler->display->display_options['menu']['title'] = 'My drafts';
 $handler->display->display_options['menu']['weight'] = '98';
 $translatables['workbench_moderation'] = array(
   t('Defaults'),
-  t('Content I\'ve Edited'),
+  t('Content I\'ve edited'),
   t('view all'),
   t('Apply'),
   t('Reset'),
@@ -394,8 +394,8 @@ $translatables['workbench_moderation'] = array(
   t('revision user'),
   t('Nid'),
   t('Log message'),
-  t('Moderation History Link'),
-  t('Moderation State'),
+  t('Moderation history link'),
+  t('Moderation state'),
   t('<div>[state]</div><div>[workbench_moderation_history_link]</div>'),
   t('Set moderation state'),
   t('Title'),
@@ -403,12 +403,12 @@ $translatables['workbench_moderation'] = array(
   t('Revised by'),
   t('Last updated'),
   t('State'),
-  t('Needs Review Page'),
-  t('Needs Review'),
+  t('Needs review page'),
+  t('Needs review'),
   t('more'),
-  t('This list displays content in the "Needs Review" state that you can moderate. Currently there is no such content.'),
+  t('This list displays content in the "Needs review" state that you can moderate. Currently there is no such content.'),
   t('Workbench Moderation: State'),
-  t('Drafts Page'),
-  t('My Drafts'),
+  t('Drafts page'),
+  t('My drafts'),
   t('This list displays content you have created that is not published. Currently there is no such content.'),
 );
