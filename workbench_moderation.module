@@ -851,12 +851,12 @@ function workbench_moderation_form_node_form_alter(&$form, $form_state) {
   );
 
   // Set a default revision log message.
-  $logged_name = (user_is_anonymous() ? variable_get('anonymous', t('Anonymous')) : $user->name);
+  $logged_name = (user_is_anonymous() ? variable_get('anonymous', t('Anonymous')) : format_username($user));
   if (!empty($form['#node']->nid)) {
-    $form['revision_information']['log']['#default_value'] = t('Edited by @user.', array('@user' => $logged_name));
+    $form['revision_information']['log']['#default_value'] = t('Edited by !user.', array('!user' => $logged_name));
   }
   else {
-    $form['revision_information']['log']['#default_value'] = t('Created by @user.', array('@user' => $logged_name));
+    $form['revision_information']['log']['#default_value'] = t('Created by !user.', array('!user' => $logged_name));
   }
 
   // Move the revision log into the publishing options to make things pretty.
