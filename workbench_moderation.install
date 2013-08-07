@@ -55,7 +55,7 @@ function workbench_moderation_schema() {
         'description' => 'The machine name of the moderation state.',
         'type' => 'varchar',
         'length' => '255',
-        'not null' => FALSE,
+        'not null' => TRUE,
       ),
       'label' => array(
         'description' => 'A label for the moderation state.',
@@ -595,4 +595,18 @@ function workbench_moderation_update_7007() {
     '%from' => $transition->from_name,
     '%to' => $transition->to_name,
   ));
+}
+
+/**
+ * Fix the not null column schema for {workbench_moderation_states}.name.
+ */
+function workbench_moderation_update_7008() {
+  db_drop_primary_key('workbench_moderation_states');
+  db_change_field('workbench_moderation_states', 'name', 'name', array(
+    'description' => 'The machine name of the moderation state.',
+    'type' => 'varchar',
+    'length' => '255',
+    'not null' => TRUE,
+  ));
+  db_add_primary_key('workbench_moderation_states', array('name'));
 }
