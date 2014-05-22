@@ -1772,6 +1772,10 @@ function workbench_moderation_messages($context, $node = NULL) {
   $info_block_messages = array();
 
   if ($context == 'view') {
+    if (workbench_moderation_messages_shown($context, $node)) {
+      // Prevent multiple moderation status.
+      return;
+    }
     $info_block_messages[] = array(
       'label' => t('Revision state'),
       'message' => check_plain(workbench_moderation_state_label($state['my_revision']->state)),
@@ -1872,6 +1876,29 @@ function workbench_moderation_messages($context, $node = NULL) {
 
   // Send the info block array to a static variable.
   workbench_moderation_set_message($info_block_messages);
+}
+
+/**
+ * Prevent multiple moderation status.
+ *
+ * This function is a helper called from workbench_moderation_messages(). If the same node
+ *  node_view() called multiple times in a page request there could be duplicate messages.
+ *
+ * @param $context
+ *   A string, either 'view' or 'edit'. Currently only "view" is implemented.
+ * @param $node
+ *   A node object for which workbench_moderation_messages() is adding messages.
+ * @return BOOL
+ *  TRUE or FALSE for whether the given node has had messages added in the given
+ *  context.
+ */
+function workbench_moderation_messages_shown($context, $node) {
+  $shown = &drupal_static(__FUNCTION__);
+  if (!empty($shown[$context][$node->nid])) {
+    return TRUE;
+  }
+  $shown[$context][$node->nid] = TRUE;
+  return FALSE;
 }
 
 /**
