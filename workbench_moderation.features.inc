@@ -142,7 +142,7 @@ function workbench_moderation_transitions_features_export_render($module_name, $
   foreach ($data as $transition) {
     list($from_name, $to_name) = explode(':', $transition);
     $item = db_select('workbench_moderation_transitions', 't')
-      ->fields('t', array('from_name', 'to_name'))
+      ->fields('t', array('from_name', 'to_name', 'name'))
       ->condition('from_name', $from_name)
       ->condition('to_name', $to_name)
       ->execute()

@@ -1382,7 +1382,7 @@ function workbench_moderation_transitions() {
   $transitions = &drupal_static(__FUNCTION__);
   if (!isset($transitions)) {
     $query = db_select('workbench_moderation_transitions', 't')
-      ->fields('t', array('from_name', 'to_name'));
+      ->fields('t', array('id', 'name', 'from_name', 'to_name'));
 
     $alias_from = $query->addJoin('INNER', 'workbench_moderation_states', NULL, 't.from_name = %alias.name');
     $alias_to = $query->addJoin('INNER', 'workbench_moderation_states', NULL, 't.to_name = %alias.name');
@@ -1413,7 +1413,11 @@ function workbench_moderation_transitions() {
  */
 function workbench_moderation_transition_save($transition) {
   $status = db_merge('workbench_moderation_transitions')
-    ->key(array('from_name' => $transition->from_name, 'to_name' => $transition->to_name))
+    ->key(array(
+      'name' => $transition->name,
+      'from_name' => $transition->from_name,
+      'to_name' => $transition->to_name,
+    ))
     ->fields((array) $transition)
     ->execute();
 
@@ -2209,4 +2213,80 @@ function workbench_moderation_ctools_plugin_api($module, $api) {
  */
 function workbench_moderation_migrate_api() {
   return array('api' => 2);
+}
+
+/**
+ * Implements hook_entity_info().
+ */
+function workbench_moderation_entity_info() {
+  // Entification of transitions, for use with an entity reference field.
+  $entity_info['workbench_moderation_transition'] = array(
+    'label' => t('Workbench Moderation Transition'),
+    'label callback' => 'workbench_moderation_transition_label_callback',
+    'entity class' => 'Entity',
+    'controller class' => 'EntityAPIController',
+    'access callback' => 'workbench_moderation_transition_access',
+    'base table' => 'workbench_moderation_transitions',
+    'fieldable' => FALSE,
+    'module' => 'workbench_moderation',
+    'entity keys' => array(
+      'id' => 'id',
+    ),
+  );
+
+  return $entity_info;
+}
+
+/**
+ * Wrapper for user_access to admin workbench_moderation.
+ */
+function workbench_moderation_transition_access($op, $profile = NULL, $account = NULL) {
+  return user_access('administer workbench moderation');
+}
+
+/**
+ * Label callback for workbench_moderation_transitions, for reference fields.
+ */
+function workbench_moderation_transition_label_callback($workbench_moderation_transition, $type) {
+  return empty($workbench_moderation_transition->name) ? 'Unnamed Workbench Moderation Transition' : $workbench_moderation_transition->name;
+}
+
+/**
+ * Fetch a workbench_moderation_transition object.
+ *
+ * @param int $id
+ *   Integer specifying the workbench_moderation_transition id.
+ * @param bool $reset
+ *   A boolean indicating that the internal cache should be reset.
+ *
+ * @return obj
+ *   A fully-loaded $workbench_moderation_transition object,
+ *   or FALSE if it cannot be loaded.
+ *
+ * @see workbench_moderation_transition_load_multiple()
+ */
+function workbench_moderation_transition_load($id, $reset = FALSE) {
+  $workbench_moderation_transition = workbench_moderation_transition_load_multiple(array($id), array(), $reset);
+  return reset($workbench_moderation_transition);
+}
+
+/**
+ * Load multiple workbench_moderation_transition based on certain conditions.
+ *
+ * @param array $ids
+ *   An array of workbench_moderation_transition IDs.
+ * @param array $conditions
+ *   An array of conditions to match against the
+ *   {workbench_moderation_transition} table.
+ * @param bool $reset
+ *   A boolean indicating that the internal cache should be reset.
+ *
+ * @return array
+ *   An array of workbench_moderation_transition objects, indexed by wmpid.
+ *
+ * @see entity_load()
+ * @see workbench_moderation_transition_load()
+ */
+function workbench_moderation_transition_load_multiple($ids = array(), $conditions = array(), $reset = FALSE) {
+  return entity_load('workbench_moderation_transition', $ids, $conditions, $reset);
 }
