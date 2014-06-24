@@ -219,8 +219,8 @@ function workbench_moderation_menu_alter(&$items) {
  *   The node being acted upon.
  */
 function workbench_moderation_node_revisions_redirect($node) {
-  // Redirect node types subject to moderation.
-  if (workbench_moderation_node_type_moderated($node->type) === TRUE) {
+  // Redirect nodes subject to moderation.
+  if (workbench_moderation_node_moderated($node) === TRUE) {
     drupal_goto('node/' . $node->nid . '/moderation');
   }
   // Return the normal node revisions page for unmoderated types.
@@ -264,8 +264,8 @@ function workbench_moderation_menu_local_tasks_alter(&$data, $router_item, $root
   // Get the node for the current menu router.
   if ($node = menu_get_object()) {
     // Here is the reason this hook implementation exists:
-    // If this is a node type that gets moderated, don't show 'node/%/revisions'
-    if (workbench_moderation_node_type_moderated($node->type) === TRUE) {
+    // If this is a node that gets moderated, don't show 'node/%/revisions'
+    if (workbench_moderation_node_moderated($node) === TRUE) {
       foreach ($data['tabs'][0]['output'] as $key => $value) {
         if (!empty($value['#link']['path']) && $value['#link']['path'] == 'node/%/revisions') {
           unset($data['tabs'][0]['output'][$key]);
@@ -296,8 +296,8 @@ function workbench_moderation_menu_local_tasks_alter(&$data, $router_item, $root
  *   The title for the tab.
  */
 function workbench_moderation_edit_tab_title($node) {
-  // Use the normal tab title if the node type is not under moderation.
-  if (!workbench_moderation_node_type_moderated($node->type)) {
+  // Use the normal tab title if the node is not under moderation.
+  if (!workbench_moderation_node_moderated($node)) {
     return t('Edit');
   }
 
@@ -328,8 +328,8 @@ function workbench_moderation_edit_tab_title($node) {
  *   The title for the tab.
  */
 function workbench_moderation_view_tab_title($node) {
-  // Use the normal tab title if the node type is not under moderation.
-  if (!workbench_moderation_node_type_moderated($node->type)) {
+  // Use the normal tab title if the node is not under moderation.
+  if (!workbench_moderation_node_moderated($node)) {
     return t('View');
   }
 
@@ -495,7 +495,7 @@ function _workbench_moderation_access($op, $node) {
  */
 function _workbench_moderation_revision_access($node, $op) {
   // Normal behavior for unmoderated nodes.
-  if (!workbench_moderation_node_type_moderated($node->type)) {
+  if (!workbench_moderation_node_moderated($node)) {
     return _node_revision_access($node, $op);
   }
 
@@ -569,8 +569,8 @@ function _workbench_moderation_moderate_access($node, $state) {
  */
 function _workbench_moderation_access_current_draft($node) {
 
-  // This tab should only appear for node types under moderation
-  if (!workbench_moderation_node_type_moderated($node->type)) {
+  // This tab should only appear for nodes under moderation
+  if (!workbench_moderation_node_moderated($node)) {
     return FALSE;
   }
 
@@ -668,9 +668,9 @@ function workbench_moderation_node_insert($node) {
 function workbench_moderation_node_update($node) {
   global $user;
 
-  // Don't proceed if moderation is not enabled on this content type, or if
+  // Don't proceed if moderation is not enabled on this content, or if
   // we're replacing an already-published revision.
-  if (!workbench_moderation_node_type_moderated($node->type) ||
+  if (!workbench_moderation_node_moderated($node) || 
       !empty($node->workbench_moderation['updating_live_revision'])) {
     return;
   }
@@ -800,8 +800,9 @@ function workbench_moderation_node_type_form_validate($from, &$form_state) {
 function workbench_moderation_form_node_form_alter(&$form, $form_state) {
   global $user;
 
-  // This must be a node form and a type that has moderation enabled
-  if (!workbench_moderation_node_type_moderated($form['type']['#value'])) {
+  // This must be a node form and a node that has moderation enabled.
+  // Extended to include moderation check on the individual node.
+  if (!workbench_moderation_node_moderated($form['#node'])) {
     return;
   }
   // Set a moderation state even if there is not one defined
@@ -949,6 +950,21 @@ function workbench_moderation_node_type_moderated($type) {
     return TRUE;
   }
   return FALSE;
+}
+
+/**
+ * Determines if this content is set to be moderated.
+ *
+ * @param obj $node
+ *   Node object
+ *
+ * @return boolean
+ */
+function workbench_moderation_node_moderated($node) {
+  // Is this content moderated? (individual node check, for extension purposes).
+  $access = workbench_moderation_node_type_moderated($node->type);
+  drupal_alter('workbench_moderation_node_moderated', $access, $node);
+  return $access;
 }
 
 /**
@@ -1608,8 +1624,8 @@ function workbench_moderation_moderate_callback($node, $state) {
  *   A list of links to display with the revision.
  */
 function workbench_moderation_get_moderation_links($node, $url_options = array()) {
-  // Make sure that this node type is moderated.
-  if (!workbench_moderation_node_type_moderated($node->type)) {
+  // Make sure that this node is moderated.
+  if (!workbench_moderation_node_moderated($node)) {
     return;
   }
 
@@ -1746,7 +1762,7 @@ function workbench_moderation_messages($context, $node = NULL) {
   global $user;
   if (!user_access('view moderation messages')
       || (!$node && !($node = menu_get_object()))
-      || !workbench_moderation_node_type_moderated($node->type)) {
+      || !workbench_moderation_node_moderated($node)) {
     return;
   }
 
