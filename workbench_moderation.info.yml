@@ -1,0 +1,5 @@
+name: Workbench Moderation
+description: Provides content moderation services
+package: Workbench
+core: 8.x
+configure: workbench_moderation.configure
